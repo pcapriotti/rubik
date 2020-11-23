@@ -6,6 +6,7 @@
 #include <memory.h>
 
 #include "polyhedron.h"
+#include "piece.h"
 
 static void handle_error(int error, const char* description)
 {
@@ -104,6 +105,8 @@ void run(GLFWwindow *window)
 
     /* render */
     glfwGetWindowSize(window, &width, &height);
+    piece_t *piece = glfwGetWindowUserPointer(window);
+    piece_render(piece, width, height);
 
     if (0) {
       /* display fps */
@@ -122,11 +125,9 @@ void run(GLFWwindow *window)
 
 int main(int argc, char **argv)
 {
-  poly_t cube;
-  std_cube(&cube);
-  poly_debug(&cube);
-  return 0;
-
+  poly_t *cube = malloc(sizeof(poly_t));
+  std_cube(cube);
+  poly_debug(cube);
 
   if (!glfwInit()) return 1;
   glfwSetErrorCallback(handle_error);
@@ -157,9 +158,14 @@ int main(int argc, char **argv)
   glfwSetKeyCallback(window, handle_keys);
   glfwSetCharCallback(window, handle_char);
 
-  glfwSetWindowUserPointer(window, 0);
+  piece_t *piece = malloc(sizeof(piece_t));
+  piece_init(piece, cube);
+
+  glfwSetWindowUserPointer(window, piece);
 
   run(window);
 
+  free(piece);
+  free(cube);
   return 0;
 }

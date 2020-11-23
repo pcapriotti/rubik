@@ -11,20 +11,22 @@ typedef struct
 } face_t;
 
 /* abstract polyhedron */
-typedef struct
+struct abs_poly_t
 {
   unsigned int num_vertices;
   unsigned int num_faces;
   face_t *faces;
   unsigned int *vertices;
-} abs_poly_t;
+};
+typedef struct abs_poly_t abs_poly_t;
 
 /* realisation of a polyhedron */
-typedef struct
+struct poly_t
 {
   abs_poly_t abs;
   vec3 *vertices;
-} poly_t;
+};
+typedef struct poly_t poly_t;
 
 void abs_cube(abs_poly_t *cube);
 void abs_dodec(abs_poly_t *dodec);
