@@ -5,6 +5,8 @@
 #include <time.h>
 #include <memory.h>
 
+#include "polyhedron.h"
+
 static void handle_error(int error, const char* description)
 {
   fprintf(stderr, "Error %d: %s\n", error, description);
@@ -120,6 +122,12 @@ void run(GLFWwindow *window)
 
 int main(int argc, char **argv)
 {
+  poly_t cube;
+  std_cube(&cube);
+  poly_debug(&cube);
+  return 0;
+
+
   if (!glfwInit()) return 1;
   glfwSetErrorCallback(handle_error);
 
