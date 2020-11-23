@@ -1,0 +1,10 @@
+include_rules
+LIBRARIES += glew glfw3 freetype2
+CFLAGS += -I..
+LDFLAGS += `cat libs.txt` -lm
+
+: |> pkg-config --libs $(LIBRARIES) > %o |> libs.txt
+: |> pkg-config --cflags $(LIBRARIES) > %o |> cflags.txt
+: foreach shaders/*.glsl |> (cd shaders; xxd -i %b) > %o |> %f.h
+: foreach *.c | shaders/*.glsl.h cflags.txt |> gcc $(CFLAGS) -c %f -o %o |> %B.o
+: *.o | libs.txt |> gcc $(LDFLAGS) %f -o %o |> display

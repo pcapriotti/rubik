@@ -1,0 +1,5 @@
+CFLAGS += -Wall -Wextra -Werror
+CFLAGS += -Wno-unused-parameter
+CFLAGS += -Wno-unused-variable
+CFLAGS += -g
+CFLAGS += -fdiagnostics-color=always

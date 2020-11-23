@@ -1,0 +1,4 @@
+include_rules
+
+: foreach *.c |> gcc $(CFLAGS) -c %f -o %o |> %B.o
+: *.o |> ar crs %o %f |> librubik.a
