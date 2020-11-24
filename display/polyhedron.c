@@ -1,5 +1,6 @@
 #include "polyhedron.h"
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +27,8 @@ void abs_cube(abs_poly_t *cube)
   cube->num_vertices = 8;
   cube->num_faces = 6;
   cube->faces = malloc(cube->num_faces * sizeof(face_t));
-  cube->vertices = malloc(cube->num_faces * 4 * sizeof(unsigned int));
+  cube->len = cube->num_faces * 4;
+  cube->vertices = malloc(cube->len * sizeof(unsigned int));
 
   for (unsigned int i = 0; i < cube->num_faces; i++) {
     cube->faces[i].num_vertices = 4;
@@ -38,7 +40,8 @@ void abs_cube(abs_poly_t *cube)
   for (unsigned int i = 0; i < 3; i++) {
     /* vertices are laid out along opposite face pairs using a Grey code */
     for (unsigned int n = 0; n < 8; n++) {
-      cube->vertices[index++] = rotr3(n ^ (n >> 1), i);
+      uint8_t code = n ^ (n >> 1);
+      cube->vertices[index++] = rotr3(~code & 0x7, i);
     }
   }
 }
@@ -48,7 +51,8 @@ void abs_dodec(abs_poly_t *dodec)
   dodec->num_vertices = 20;
   dodec->num_faces = 12;
   dodec->faces = malloc(dodec->num_faces * sizeof(face_t));
-  dodec->vertices = malloc(dodec->num_faces * 5 * sizeof(unsigned int));
+  dodec->len = dodec->num_faces * 5;
+  dodec->vertices = malloc(dodec->len * sizeof(unsigned int));
 
   for (unsigned int i = 0; i < dodec->num_faces; i++) {
     dodec->faces[i].num_vertices = 5;
@@ -95,5 +99,38 @@ void std_cube(poly_t *poly)
     for (unsigned int i = 0; i < 3; i++) {
       poly->vertices[n][i] = (float)((n >> i) & 1) - 0.5f;
     }
+  }
+}
+
+void std_dodec(poly_t *poly)
+{
+  abs_dodec(&poly->abs);
+  poly->vertices = malloc(poly->abs.num_vertices * sizeof(vec3));
+
+  float phi = (sqrt(5) + 1) / 2.0;
+  float r = 2.0 / (sqrt(3) * phi * sqrt(3 - phi));
+  float z = r * (phi + 1) / 2.0;
+  printf("z: %f\n", z);
+
+  mat4x4 rho;
+  mat4x4_identity(rho);
+  mat4x4_rotate_Z(rho, rho, 2 * M_PI / 5);
+
+  vec4 v0 = { r, 0, z, 1};
+  vec4 v5 = { r * phi, 0, z - r, 1 };
+
+  for (unsigned int i = 0; i < 5; i++) {
+    vec4 v;
+
+    memcpy(poly->vertices[i], v0, sizeof(vec3));
+    memcpy(v, v0, sizeof(v));
+    mat4x4_mul_vec4(v0, rho, v);
+
+    memcpy(poly->vertices[i + 5], v5, sizeof(vec3));
+    memcpy(v, v5, sizeof(v));
+    mat4x4_mul_vec4(v5, rho, v);
+
+    vec3_scale(poly->vertices[19 - i], poly->vertices[i], -1);
+    vec3_scale(poly->vertices[14 - i], poly->vertices[i + 5], -1);
   }
 }

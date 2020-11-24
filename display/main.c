@@ -125,9 +125,9 @@ void run(GLFWwindow *window)
 
 int main(int argc, char **argv)
 {
-  poly_t *cube = malloc(sizeof(poly_t));
-  std_cube(cube);
-  poly_debug(cube);
+  poly_t *poly = malloc(sizeof(poly_t));
+  std_dodec(poly);
+  poly_debug(poly);
 
   if (!glfwInit()) return 1;
   glfwSetErrorCallback(handle_error);
@@ -159,13 +159,13 @@ int main(int argc, char **argv)
   glfwSetCharCallback(window, handle_char);
 
   piece_t *piece = malloc(sizeof(piece_t));
-  piece_init(piece, cube);
+  piece_init(piece, poly);
 
   glfwSetWindowUserPointer(window, piece);
 
   run(window);
 
   free(piece);
-  free(cube);
+  free(poly);
   return 0;
 }

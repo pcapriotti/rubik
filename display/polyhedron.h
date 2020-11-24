@@ -17,6 +17,7 @@ struct abs_poly_t
   unsigned int num_faces;
   face_t *faces;
   unsigned int *vertices;
+  unsigned int len; /* size of the vertices array */
 };
 typedef struct abs_poly_t abs_poly_t;
 
@@ -34,6 +35,9 @@ void abs_poly_debug(abs_poly_t *poly);
 
 /* cube of side length 1 centred at the origin */
 void std_cube(poly_t *poly);
+
+/* dodecahedron of radius 1 centred at the origin */
+void std_dodec(poly_t *poly);
 
 void poly_debug(poly_t *poly);
 
