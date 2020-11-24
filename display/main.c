@@ -7,6 +7,7 @@
 
 #include "polyhedron.h"
 #include "piece.h"
+#include "scene.h"
 
 static void handle_error(int error, const char* description)
 {
@@ -27,6 +28,13 @@ static void handle_opengl_error(GLenum source,
 static void handle_resize(GLFWwindow* window, int width, int height)
 {
   glViewport(0.0f, 0.0f, (GLfloat) width, (GLfloat) height);
+
+  mat4x4 proj;
+  mat4x4_perspective(proj, sqrt(2) * 0.5, (float) width / (float) height,
+                     0.1f, 100.0f);
+
+  scene_t *scene = glfwGetWindowUserPointer(window);
+  piece_set_proj(scene->piece, proj);
 }
 
 char translate_key(int key, int mods)
@@ -65,8 +73,15 @@ char translate_key(int key, int mods)
   return 0;
 }
 
-static void handle_keypress(unsigned int c)
+static void handle_keypress(void *data, unsigned int c)
 {
+  scene_t *scene = data;
+  quat r;
+  quat_rotate(r, 0.05, (vec3) {0, 1, 0});
+
+  quat q;
+  quat_mul(q, r, scene->piece->q);
+  piece_set_q(scene->piece, q);
 }
 
 static void handle_keys(GLFWwindow *window,
@@ -75,7 +90,7 @@ static void handle_keys(GLFWwindow *window,
 {
   if (action == GLFW_PRESS || action == GLFW_REPEAT) {
     char c = translate_key(key, mods);
-    if (c != 0) handle_keypress(c);
+    if (c != 0) handle_keypress(glfwGetWindowUserPointer(window), c);
   }
 
 }
@@ -83,19 +98,39 @@ static void handle_keys(GLFWwindow *window,
 static void handle_char(GLFWwindow* window, unsigned int codepoint)
 {
   if (codepoint >= 32 || codepoint < 128) {
-    handle_keypress(codepoint);
+    handle_keypress(glfwGetWindowUserPointer(window), codepoint);
   }
 }
 
 void run(GLFWwindow *window)
 {
+  double tm0 = glfwGetTime();
+  int nframes = 0;
+
+  mat4x4 view;
+  mat4x4_translate(view, 0.0, 0.0, -6.0);
+  mat4x4_rotate_X(view, view, 0.1);
+  mat4x4_rotate_Y(view, view, 0.5);
+
+  mat4x4 view_inv;
+  mat4x4_invert(view_inv, view);
+
+  vec3 lpos = { 4.0, -1.0, 12.0 };
+
+  poly_t *poly = malloc(sizeof(poly_t));
+  std_dodec(poly);
+  poly_debug(poly);
+  piece_t *piece = malloc(sizeof(piece_t));
+  piece_init(piece, poly, view, view_inv, lpos);
+
+  scene_t *scene = malloc(sizeof(scene_t));
+  scene->piece = piece;
+  glfwSetWindowUserPointer(window, scene);
+
   int width, height;
   glfwGetWindowSize(window, &width, &height);
   glfwSetWindowSizeCallback(window, handle_resize);
   handle_resize(window, width, height);
-
-  double tm0 = glfwGetTime();
-  int nframes = 0;
 
   int ok = 1;
   while (ok && !glfwWindowShouldClose(window)) {
@@ -105,7 +140,6 @@ void run(GLFWwindow *window)
 
     /* render */
     glfwGetWindowSize(window, &width, &height);
-    piece_t *piece = glfwGetWindowUserPointer(window);
     piece_render(piece, width, height);
 
     if (0) {
@@ -121,14 +155,14 @@ void run(GLFWwindow *window)
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
+
+  free(scene);
+  free(piece);
+  free(poly);
 }
 
 int main(int argc, char **argv)
 {
-  poly_t *poly = malloc(sizeof(poly_t));
-  std_dodec(poly);
-  poly_debug(poly);
-
   if (!glfwInit()) return 1;
   glfwSetErrorCallback(handle_error);
 
@@ -158,14 +192,7 @@ int main(int argc, char **argv)
   glfwSetKeyCallback(window, handle_keys);
   glfwSetCharCallback(window, handle_char);
 
-  piece_t *piece = malloc(sizeof(piece_t));
-  piece_init(piece, poly);
-
-  glfwSetWindowUserPointer(window, piece);
-
   run(window);
 
-  free(piece);
-  free(poly);
   return 0;
 }
