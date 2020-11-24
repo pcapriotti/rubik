@@ -7,6 +7,7 @@ out vec4 fcol;
 
 uniform vec3 lpos;
 uniform mat4 view_inv;
+uniform vec3 col;
 
 const vec3 lcol = vec3(1.0, 1.0, 1.0);
 
@@ -28,7 +29,6 @@ vec3 lighting(vec3 col0, vec3 norm, float ambient, float diffuse, float specular
 
 void main()
 {
-  vec3 col0 = vec3(1);
-  col0 = lighting(col0, norm, 0.3, 0.5, 0.0, 5.0);
+  vec3 col0 = lighting(col, norm, 0.3, 0.5, 0.0, 5.0);
   fcol = vec4(col0, 1);
 }

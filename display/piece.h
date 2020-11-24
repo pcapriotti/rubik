@@ -14,6 +14,7 @@ struct piece_t
   unsigned int shader;
 
   mat4x4 model;
+  vec3 colour;
 };
 typedef struct piece_t piece_t;
 

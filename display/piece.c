@@ -78,6 +78,7 @@ unsigned int *gen_elements(poly_t *poly, unsigned int *num_elements)
 void piece_init(piece_t *piece, poly_t *poly)
 {
   mat4x4_identity(piece->model);
+  memcpy(piece->colour, (vec3) { 1, 1, 1 }, sizeof(vec3));
 
   glGenVertexArrays(1, &piece->vao);
   glBindVertexArray(piece->vao);
@@ -141,6 +142,10 @@ void piece_update(piece_t *piece, mat4x4 proj,
   {
     unsigned int var = glGetUniformLocation(piece->shader, "proj");
     glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) proj);
+  }
+  {
+    unsigned int var = glGetUniformLocation(piece->shader, "col");
+    glUniform3fv(var, 1, piece->colour);
   }
 }
 

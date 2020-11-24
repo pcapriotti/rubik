@@ -136,25 +136,26 @@ void run(GLFWwindow *window)
   double tm0 = glfwGetTime();
   int nframes = 0;
 
-  poly_t *poly = malloc(sizeof(poly_t));
-  std_dodec(poly);
-  poly_t *cube = malloc(sizeof(poly_t));
-  std_cube(cube);
+  poly_t dodec;
+  std_dodec(&dodec);
+  poly_t corner;
+  megaminx_corner(&corner, &dodec, 0.4);
+  poly_t edge;
+  megaminx_edge(&edge, &dodec, 0.4);
 
-  piece_t *piece = malloc(sizeof(piece_t));
-  piece_init(piece, poly);
-  mat4x4_translate(piece->model, 1.5, 0, 0);
-
-  piece_t *piece2 = malloc(sizeof(piece_t));
-  piece_init(piece2, cube);
+  piece_t piece[2];
+  piece_init(&piece[0], &corner);
+  piece_init(&piece[1], &edge);
+  /* mat4x4_translate(piece[0].model, 0.15, 0.15, 0.15); */
+  memcpy(piece[0].colour, (vec3) { 1, 0.7, 0 }, sizeof(vec3));
 
   int width, height;
   glfwGetWindowSize(window, &width, &height);
 
   scene_t *scene = malloc(sizeof(scene_t));
   scene_init(scene, width, height);
-  scene_add_piece(scene, piece);
-  scene_add_piece(scene, piece2);
+  scene_add_piece(scene, &piece[0]);
+  scene_add_piece(scene, &piece[1]);
   glfwSetWindowUserPointer(window, scene);
 
   glfwSetWindowSizeCallback(window, handle_resize);
@@ -183,12 +184,6 @@ void run(GLFWwindow *window)
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
-
-  free(scene);
-  free(piece);
-  /* free(piece2); */
-  /* free(mm); */
-  free(poly);
 }
 
 int main(int argc, char **argv)
