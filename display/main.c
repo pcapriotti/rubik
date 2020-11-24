@@ -154,16 +154,16 @@ void run(GLFWwindow *window)
 
   mat4x4 view;
   mat4x4_translate(view, 0.0, 0.0, -6.0);
-  mat4x4_rotate_X(view, view, 0.1);
-  mat4x4_rotate_Y(view, view, 0.5);
+  /* mat4x4_rotate_X(view, view, 0.1); */
+  /* mat4x4_rotate_Y(view, view, 0.5); */
 
   mat4x4 view_inv;
   mat4x4_invert(view_inv, view);
 
-  vec3 lpos = { 0.0, 50.0, 50.0 };
+  vec3 lpos = { 0.0, 1.0, 3.0 };
 
   poly_t *poly = malloc(sizeof(poly_t));
-  std_dodec(poly);
+  std_cube(poly);
   poly_debug(poly);
   piece_t *piece = malloc(sizeof(piece_t));
   piece_init(piece, poly, view, view_inv, lpos);

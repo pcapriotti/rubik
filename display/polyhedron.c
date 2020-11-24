@@ -81,6 +81,34 @@ void abs_dodec(abs_poly_t *dodec)
   }
 }
 
+void abs_prism(abs_poly_t *prism, unsigned int num)
+{
+  prism->num_vertices = num * 2;
+  prism->num_faces = 2 + num;
+  prism->len = 2 * num + num * 4;
+  prism->vertices = malloc(prism->len * sizeof(unsigned int));
+  prism->faces = malloc(prism->num_faces * sizeof(face_t));
+
+  /* bases */
+  unsigned int index = 0;
+  prism->faces[0].num_vertices = num;
+  prism->faces[0].vertices = prism->vertices;
+  prism->faces[num + 1].num_vertices = num;
+  prism->faces[num + 1].vertices = prism->vertices + num * 5;
+
+  for (unsigned int i = 0; i < num; i++) {
+    prism->faces[0].vertices[i] = num - i - 1;
+    prism->faces[num + 1].vertices[i] = num + i;
+
+    prism->faces[i + 1].num_vertices = 4;
+    prism->faces[i + 1].vertices = prism->vertices + num + i * 4;
+    prism->faces[i + 1].vertices[0] = i;
+    prism->faces[i + 1].vertices[1] = (i + 1) % num;
+    prism->faces[i + 1].vertices[2] = (i + 1) % num + num;
+    prism->faces[i + 1].vertices[3] = i + num;
+  }
+}
+
 void poly_debug(poly_t *poly)
 {
   abs_poly_debug(&poly->abs);
@@ -93,12 +121,35 @@ void poly_debug(poly_t *poly)
 void std_cube(poly_t *poly)
 {
   abs_cube(&poly->abs);
+
   poly->vertices = malloc(poly->abs.num_vertices * sizeof(vec3));
 
   for (unsigned int n = 0; n < poly->abs.num_vertices; n++) {
     for (unsigned int i = 0; i < 3; i++) {
       poly->vertices[n][i] = (float)((n >> i) & 1) - 0.5f;
     }
+  }
+}
+
+void std_prism(poly_t *poly, unsigned int num)
+{
+  abs_prism(&poly->abs, num);
+  poly->vertices = malloc(poly->abs.num_vertices * sizeof(vec3));
+
+  mat4x4 rho;
+  mat4x4_identity(rho);
+  mat4x4_rotate_Z(rho, rho, 2 * M_PI / num);
+
+  vec4 v0 = { 1, 0, -1, 1 };
+
+  for (unsigned int i = 0; i < num; i++) {
+    vec4 v;
+    memcpy(poly->vertices[i], v0, sizeof(vec3));
+    memcpy(poly->vertices[i + num], v0, sizeof(vec3));
+    poly->vertices[i + num][2] = 1;
+
+    memcpy(v, v0, sizeof(v));
+    mat4x4_mul_vec4(v0, rho, v);
   }
 }
 
@@ -110,7 +161,6 @@ void std_dodec(poly_t *poly)
   float phi = (sqrt(5) + 1) / 2.0;
   float r = 2.0 / (sqrt(3) * phi * sqrt(3 - phi));
   float z = r * (phi + 1) / 2.0;
-  printf("z: %f\n", z);
 
   mat4x4 rho;
   mat4x4_identity(rho);
