@@ -13,13 +13,14 @@ struct piece_t
   unsigned int num_elements;
   unsigned int shader;
 
-  quat q;
+  mat4x4 model;
 };
 typedef struct piece_t piece_t;
 
-void piece_render(piece_t *piece, unsigned int width, unsigned int height);
-void piece_init(piece_t *piece, poly_t *poly, mat4x4 view, mat4x4 view_inv, vec3 lpos);
-void piece_set_q(piece_t *piece, quat q);
-void piece_set_proj(piece_t *piece, mat4x4 proj);
+void piece_render(piece_t *piece);
+void piece_init(piece_t *piece, poly_t *poly);
+void piece_update(piece_t *piece, mat4x4 proj,
+                  mat4x4 view, mat4x4 view_inv,
+                  mat4x4 model, vec3 lpos);
 
 #endif /* PIECE_H */

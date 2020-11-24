@@ -9,7 +9,14 @@ typedef struct piece_t piece_t;
 
 typedef struct
 {
-  piece_t *piece;
+  piece_t **pieces;
+  unsigned int num_pieces;
+  unsigned int piece_cap;
+
+  quat rot;
+  mat4x4 view;
+  mat4x4 proj;
+  vec3 lpos;
 
   /* trackball information */
   vec3 tb_down; /* point of the trackball where dragging started */
@@ -17,10 +24,15 @@ typedef struct
   int tb_active;
 } scene_t;
 
-void scene_init(scene_t *scene, piece_t *piece);
+void scene_init(scene_t *scene, unsigned int width, unsigned int height);
+void scene_add_piece(scene_t *scene, piece_t *piece);
+void scene_resize(scene_t *scene, unsigned int width, unsigned int height);
+void scene_render(scene_t *scene);
 
 void scene_tb_start(scene_t *scene, float x, float y);
 void scene_tb_update(scene_t *scene, float x, float y);
 void scene_tb_end(scene_t *scene, float x, float y);
+
+void scene_update_pieces(scene_t *scene);
 
 #endif /* SCENE_H */

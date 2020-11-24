@@ -75,27 +75,9 @@ unsigned int *gen_elements(poly_t *poly, unsigned int *num_elements)
   return elements;
 }
 
-void piece_set_model(piece_t *piece)
+void piece_init(piece_t *piece, poly_t *poly)
 {
-  mat4x4 m;
-  mat4x4_from_quat(m, piece->q);
-
-  glUseProgram(piece->shader);
-  unsigned int var = glGetUniformLocation(piece->shader, "model");
-  glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) m);
-}
-
-void piece_set_q(piece_t *piece, quat q)
-{
-  memcpy(piece->q, q, sizeof(piece->q));
-  piece_set_model(piece);
-}
-
-void piece_init(piece_t *piece, poly_t *poly,
-                mat4x4 view, mat4x4 view_inv,
-                vec3 lpos)
-{
-  quat_identity(piece->q);
+  mat4x4_identity(piece->model);
 
   glGenVertexArrays(1, &piece->vao);
   glBindVertexArray(piece->vao);
@@ -133,6 +115,13 @@ void piece_init(piece_t *piece, poly_t *poly,
   /* set up shaders and uniforms */
   piece->shader = shader_load_program(piece_v_glsl, piece_v_glsl_len,
                                       piece_f_glsl, piece_f_glsl_len);
+}
+
+void piece_update(piece_t *piece, mat4x4 proj,
+                  mat4x4 view, mat4x4 view_inv,
+                  mat4x4 model, vec3 lpos)
+{
+  glUseProgram(piece->shader);
   {
     unsigned int var = glGetUniformLocation(piece->shader, "view");
     glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) view);
@@ -140,20 +129,22 @@ void piece_init(piece_t *piece, poly_t *poly,
     glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) view_inv);
   }
   {
+    mat4x4 m;
+    mat4x4_mul(m, model, piece->model);
+    unsigned int var = glGetUniformLocation(piece->shader, "model");
+    glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) m);
+  }
+  {
     unsigned int var = glGetUniformLocation(piece->shader, "lpos");
     glUniform3fv(var, 1, lpos);
   }
-
-  piece_set_model(piece);
+  {
+    unsigned int var = glGetUniformLocation(piece->shader, "proj");
+    glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) proj);
+  }
 }
 
-void piece_set_proj(piece_t *piece, mat4x4 proj)
-{
-  unsigned int var = glGetUniformLocation(piece->shader, "proj");
-  glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) proj);
-}
-
-void piece_render(piece_t *piece, unsigned int width, unsigned int height)
+void piece_render(piece_t *piece)
 {
   glBindVertexArray(piece->vao);
   glUseProgram(piece->shader);

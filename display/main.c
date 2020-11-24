@@ -30,12 +30,8 @@ static void handle_resize(GLFWwindow* window, int width, int height)
 {
   glViewport(0.0f, 0.0f, (GLfloat) width, (GLfloat) height);
 
-  mat4x4 proj;
-  mat4x4_perspective(proj, sqrt(2) * 0.5, (float) width / (float) height,
-                     0.1f, 100.0f);
-
   scene_t *scene = glfwGetWindowUserPointer(window);
-  piece_set_proj(scene->piece, proj);
+  scene_resize(scene, width, height);
 }
 
 char translate_key(int key, int mods)
@@ -78,19 +74,6 @@ static void handle_keypress(void *data, unsigned int c)
 {
   scene_t *scene = data;
   if (!scene) return;
-
-  quat r;
-  quat_identity(r);
-
-  if (c == 'l') {
-    quat_rotate(r, 0.05, (vec3) {0, 1, 0});
-  } else if (c == 'h') {
-    quat_rotate(r, -0.05, (vec3) {0, 1, 0});
-  }
-
-  quat q;
-  quat_mul(q, r, scene->piece->q);
-  piece_set_q(scene->piece, q);
 }
 
 static void handle_keys(GLFWwindow *window,
@@ -153,32 +136,27 @@ void run(GLFWwindow *window)
   double tm0 = glfwGetTime();
   int nframes = 0;
 
-  mat4x4 view;
-  mat4x4_translate(view, 0.0, 0.0, -6.0);
-  mat4x4_scale_aniso(view, view, 2.0, 2.0, 2.0);
-  /* mat4x4_rotate_X(view, view, 0.1); */
-  /* mat4x4_rotate_Y(view, view, 0.5); */
-
-  mat4x4 view_inv;
-  mat4x4_invert(view_inv, view);
-
-  vec3 lpos = { 0.0, 1.0, 3.0 };
-
   poly_t *poly = malloc(sizeof(poly_t));
   std_dodec(poly);
-  poly_debug(poly);
-  poly_t *mm = malloc(sizeof(poly_t));
-  megaminx_corner(mm, poly, 0.3);
-  poly_debug(mm);
-  piece_t *piece = malloc(sizeof(piece_t));
-  piece_init(piece, mm, view, view_inv, lpos);
+  poly_t *cube = malloc(sizeof(poly_t));
+  std_cube(cube);
 
-  scene_t *scene = malloc(sizeof(scene_t));
-  scene_init(scene, piece);
-  glfwSetWindowUserPointer(window, scene);
+  piece_t *piece = malloc(sizeof(piece_t));
+  piece_init(piece, poly);
+  mat4x4_translate(piece->model, 1.5, 0, 0);
+
+  piece_t *piece2 = malloc(sizeof(piece_t));
+  piece_init(piece2, cube);
 
   int width, height;
   glfwGetWindowSize(window, &width, &height);
+
+  scene_t *scene = malloc(sizeof(scene_t));
+  scene_init(scene, width, height);
+  scene_add_piece(scene, piece);
+  scene_add_piece(scene, piece2);
+  glfwSetWindowUserPointer(window, scene);
+
   glfwSetWindowSizeCallback(window, handle_resize);
   handle_resize(window, width, height);
 
@@ -190,7 +168,7 @@ void run(GLFWwindow *window)
 
     /* render */
     glfwGetWindowSize(window, &width, &height);
-    piece_render(piece, width, height);
+    scene_render(scene);
 
     if (0) {
       /* display fps */
@@ -208,6 +186,8 @@ void run(GLFWwindow *window)
 
   free(scene);
   free(piece);
+  /* free(piece2); */
+  /* free(mm); */
   free(poly);
 }
 
