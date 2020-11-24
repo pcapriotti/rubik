@@ -138,6 +138,7 @@ void run(GLFWwindow *window)
 
   poly_t dodec;
   std_dodec(&dodec);
+  poly_debug(&dodec);
   poly_t corner;
   megaminx_corner(&corner, &dodec, 0.4);
   poly_t edge;
@@ -151,7 +152,8 @@ void run(GLFWwindow *window)
   piece_init(&piece[2], &centre);
   /* mat4x4_translate(piece[0].model, 0.15, 0.15, 0.15); */
   memcpy(piece[0].colour, (vec3) { 1, 0.7, 0 }, sizeof(vec3));
-  memcpy(piece[1].colour, (vec3) { 0, 0.7, 1 }, sizeof(vec3));
+  memcpy(piece[1].colour, (vec3) { 0, 1, 0.7 }, sizeof(vec3));
+  memcpy(piece[2].colour, (vec3) { 0.7, 0, 1 }, sizeof(vec3));
 
   int width, height;
   glfwGetWindowSize(window, &width, &height);

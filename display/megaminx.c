@@ -73,8 +73,8 @@ void megaminx_centre(poly_t *mm, poly_t *dodec, float edge)
     vec3_sub(v3, dodec->vertices[i + 5], dodec->vertices[i]);
     vec3_scale(v3, v3, edge);
 
-    vec3_add(mm->vertices[i], dodec->vertices[i], v1);
-    vec3_add(mm->vertices[i], mm->vertices[i], v2);
-    vec3_add(mm->vertices[i + 5], mm->vertices[i], v3);
+    vec3_add(mm->vertices[i + 5], dodec->vertices[i], v1);
+    vec3_add(mm->vertices[i + 5], mm->vertices[i + 5], v2);
+    vec3_add(mm->vertices[i], mm->vertices[i + 5], v3);
   }
 }
