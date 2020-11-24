@@ -5,6 +5,7 @@
 #include <time.h>
 #include <memory.h>
 
+#include "megaminx.h"
 #include "polyhedron.h"
 #include "piece.h"
 #include "scene.h"
@@ -154,6 +155,7 @@ void run(GLFWwindow *window)
 
   mat4x4 view;
   mat4x4_translate(view, 0.0, 0.0, -6.0);
+  mat4x4_scale_aniso(view, view, 2.0, 2.0, 2.0);
   /* mat4x4_rotate_X(view, view, 0.1); */
   /* mat4x4_rotate_Y(view, view, 0.5); */
 
@@ -163,10 +165,13 @@ void run(GLFWwindow *window)
   vec3 lpos = { 0.0, 1.0, 3.0 };
 
   poly_t *poly = malloc(sizeof(poly_t));
-  std_cube(poly);
+  std_dodec(poly);
   poly_debug(poly);
+  poly_t *mm = malloc(sizeof(poly_t));
+  megaminx_corner(mm, poly, 0.3);
+  poly_debug(mm);
   piece_t *piece = malloc(sizeof(piece_t));
-  piece_init(piece, poly, view, view_inv, lpos);
+  piece_init(piece, mm, view, view_inv, lpos);
 
   scene_t *scene = malloc(sizeof(scene_t));
   scene_init(scene, piece);
