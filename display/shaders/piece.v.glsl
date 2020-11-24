@@ -13,5 +13,5 @@ void main()
 {
   pos = model * vec4(p, 1);
   gl_Position = proj * view * pos;
-  norm = n;
+  norm = vec3(model * vec4(n, 1));
 }

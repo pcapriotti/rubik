@@ -29,6 +29,6 @@ vec3 lighting(vec3 col0, vec3 norm, float ambient, float diffuse, float specular
 void main()
 {
   vec3 col0 = vec3(1);
-  col0 = lighting(col0, norm, 0.1, 1.3, 0.1, 5.0);
+  col0 = lighting(col0, norm, 0.1, 0.8, 0.1, 5.0);
   fcol = vec4(col0, 1);
 }

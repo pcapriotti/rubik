@@ -76,8 +76,16 @@ char translate_key(int key, int mods)
 static void handle_keypress(void *data, unsigned int c)
 {
   scene_t *scene = data;
+  if (!scene) return;
+
   quat r;
-  quat_rotate(r, 0.05, (vec3) {0, 1, 0});
+  quat_identity(r);
+
+  if (c == 'l') {
+    quat_rotate(r, 0.05, (vec3) {0, 1, 0});
+  } else if (c == 'h') {
+    quat_rotate(r, -0.05, (vec3) {0, 1, 0});
+  }
 
   quat q;
   quat_mul(q, r, scene->piece->q);
@@ -102,6 +110,43 @@ static void handle_char(GLFWwindow* window, unsigned int codepoint)
   }
 }
 
+void normalise_screen_coords(GLFWwindow *window, double *x, double *y)
+{
+  int width, height;
+  glfwGetWindowSize(window, &width, &height);
+
+  *x = *x / width * 2 - 1;
+  *y = 1 - *y / height * 2;
+}
+
+static void handle_move(GLFWwindow* window, double x, double y)
+{
+  scene_t *scene = glfwGetWindowUserPointer(window);
+  if (!scene) return;
+  if (!scene->tb_active) return;
+
+  normalise_screen_coords(window, &x, &y);
+
+  scene_tb_update(scene, x, y);
+}
+
+static void handle_click(GLFWwindow* window, int button, int action, int mods)
+{
+  if (button == GLFW_MOUSE_BUTTON_LEFT) {
+    scene_t *scene = glfwGetWindowUserPointer(window);
+    if (!scene) return;
+
+    double x, y;
+    glfwGetCursorPos(window, &x, &y);
+    normalise_screen_coords(window, &x, &y);
+
+    if (action == GLFW_PRESS)
+      scene_tb_start(scene, x, y);
+    else if (action == GLFW_RELEASE)
+      scene_tb_end(scene, x, y);
+  }
+}
+
 void run(GLFWwindow *window)
 {
   double tm0 = glfwGetTime();
@@ -115,7 +160,7 @@ void run(GLFWwindow *window)
   mat4x4 view_inv;
   mat4x4_invert(view_inv, view);
 
-  vec3 lpos = { 4.0, -1.0, 12.0 };
+  vec3 lpos = { 0.0, 50.0, 50.0 };
 
   poly_t *poly = malloc(sizeof(poly_t));
   std_dodec(poly);
@@ -124,7 +169,7 @@ void run(GLFWwindow *window)
   piece_init(piece, poly, view, view_inv, lpos);
 
   scene_t *scene = malloc(sizeof(scene_t));
-  scene->piece = piece;
+  scene_init(scene, piece);
   glfwSetWindowUserPointer(window, scene);
 
   int width, height;
@@ -191,6 +236,8 @@ int main(int argc, char **argv)
 
   glfwSetKeyCallback(window, handle_keys);
   glfwSetCharCallback(window, handle_char);
+  glfwSetMouseButtonCallback(window, handle_click);
+  glfwSetCursorPosCallback(window, handle_move);
 
   run(window);
 
