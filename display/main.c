@@ -149,10 +149,21 @@ void run(GLFWwindow *window)
   symmetries_t syms;
   gen_megaminx_syms(&syms, &dodec);
 
-  piece_t piece[20];
+  piece_t piece[62];
   for (int i = 0; i < 20; i++) {
     piece_init(&piece[i], &corner);
     mat4x4_from_quat(piece[i].model, syms.syms[syms.by_vertex[i * 3]]);
+    memcpy(piece[i].colour, (vec3) { 0.3, 0.7, 0.1 }, sizeof(vec3));
+  }
+  for (int i = 0; i < 30; i++) {
+    piece_init(&piece[20 + i], &edge);
+    mat4x4_from_quat(piece[20 + i].model, syms.syms[syms.by_edge[i * 2]]);
+    memcpy(piece[20 + i].colour, (vec3) { 0.7, 0.1, 0.3 }, sizeof(vec3));
+  }
+  for (int i = 0; i < 12; i++) {
+    piece_init(&piece[50 + i], &centre);
+    mat4x4_from_quat(piece[50 + i].model, syms.syms[i * 5]);
+    memcpy(piece[50 + i].colour, (vec3) { 0.1, 0.3, 0.7 }, sizeof(vec3));
   }
 
   int width, height;
@@ -160,7 +171,7 @@ void run(GLFWwindow *window)
 
   scene_t *scene = malloc(sizeof(scene_t));
   scene_init(scene, width, height);
-  for (int i = 0; i < 20; i++) {
+  for (int i = 0; i < 62; i++) {
     scene_add_piece(scene, &piece[i]);
   }
   glfwSetWindowUserPointer(window, scene);

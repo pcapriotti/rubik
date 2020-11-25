@@ -169,6 +169,7 @@ void gen_megaminx_syms(symmetries_t *syms, poly_t *dodec)
   int *v0 = abs_poly_first_vertex(&dodec->abs, edges);
   int *adj = abs_poly_adj(&dodec->abs);
 
+  /* by_vertex */
   {
     for (unsigned int i = 0; i < megaminx_num_syms; i++) {
       syms->by_vertex[i] = megaminx_num_syms;
@@ -185,14 +186,36 @@ void gen_megaminx_syms(symmetries_t *syms, poly_t *dodec)
           int vi0 = adj[f * dodec->abs.num_vertices + v0[f]];
           assert(vi0 != -1);
           unsigned int s = f * 5 + (vi - vi0 + 5) % 5;
-          printf("v: %u k: %u f: %u vi: %u, vi0: %u, s: %u\n",
-                 v, k, f, vi, vi0, s);
           syms->by_vertex[v * 3 + k] = s;
 
           f = abs_poly_get_adj_face(&dodec->abs, f, vi - 1, edges);
           assert(f < dodec->abs.num_faces);
           vi = adj[f * dodec->abs.num_vertices + v];
         }
+      }
+    }
+  }
+
+  /* by_edge */
+  {
+    for (unsigned int i = 0; i < megaminx_num_syms; i++) {
+      syms->by_edge[i] = megaminx_num_syms;
+    }
+    unsigned int index = 0;
+    for (unsigned int f = 0; f < dodec->abs.num_faces; f++) {
+      unsigned int n = dodec->abs.faces[f].num_vertices;
+      int vi0 = adj[f * dodec->abs.num_vertices + v0[f]];
+      for (unsigned int i = 0; i < n; i++) {
+        unsigned int v = dodec->abs.faces[f].vertices[i];
+        unsigned int f1 = abs_poly_get_adj_face(&dodec->abs, f, i, edges);
+        if (f1 < f) continue;
+        int i1 = adj[f1 * dodec->abs.num_vertices + v];
+        assert(i1 != -1);
+        i1 -= 1;
+        int vi1 = adj[f1 * dodec->abs.num_vertices + v0[f1]];
+
+        syms->by_edge[index++] = f * 5 + (i - vi0 + 5) % 5;
+        syms->by_edge[index++] = f1 * 5 + (i1 - vi1 + 5) % 5;
       }
     }
   }
