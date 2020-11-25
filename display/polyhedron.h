@@ -35,6 +35,13 @@ void abs_prism(abs_poly_t *prism, unsigned int num);
 
 void abs_poly_debug(abs_poly_t *poly);
 
+int *abs_poly_adj(abs_poly_t *poly);
+int *abs_poly_edges(abs_poly_t *poly);
+int abs_poly_get_adj_face(abs_poly_t *poly,
+                          unsigned int f, int i,
+                          int *edges);
+int *abs_poly_first_vertex(abs_poly_t *poly, int *edges);
+
 /* cube of side length 1 centred at the origin */
 void std_cube(poly_t *poly);
 
