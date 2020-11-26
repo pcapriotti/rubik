@@ -2,6 +2,7 @@
 #define MEGAMINX_H
 
 #include <memory.h>
+#include <stdint.h>
 #include "linmath.h"
 
 /* realisation of a polyhedron */
@@ -19,10 +20,10 @@ typedef struct {
   unsigned int *by_vertex;
   unsigned int *by_edge;
 
-  /* unsigned int *face_action; */
-  /* unsigned int *vertex_action; */
-  /* unsigned int *edge_action; */
+  uint8_t *face_action;
 } symmetries_t;
+
+unsigned int symmetries_act_face(symmetries_t *syms, unsigned int f);
 
 void gen_megaminx_syms(symmetries_t *syms, poly_t *dodec);
 

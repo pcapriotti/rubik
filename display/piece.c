@@ -17,9 +17,10 @@ typedef struct
 {
   vec3 vertex;
   vec3 normal;
-} __attribute__((packed)) vdata_t;
+  int facelet;
+} vdata_t;
 
-vdata_t *gen_vertices(poly_t *poly, unsigned int *num)
+vdata_t *gen_vertices(poly_t *poly, unsigned int *num, int *facelets)
 {
   *num = 0;
   for (unsigned int j = 0; j < poly->abs.num_faces; j++) {
@@ -42,6 +43,7 @@ vdata_t *gen_vertices(poly_t *poly, unsigned int *num)
     for (unsigned int i = 0; i < poly->abs.faces[j].num_vertices; i++) {
       memcpy(vdata[index].vertex, poly->vertices[poly->abs.faces[j].vertices[i]], sizeof(vec3));
       memcpy(vdata[index].normal, n, sizeof(vec3));
+      vdata[index].facelet = facelets[j];
       index++;
     }
   }
@@ -75,7 +77,7 @@ unsigned int *gen_elements(poly_t *poly, unsigned int *num_elements)
   return elements;
 }
 
-void piece_init(piece_t *piece, poly_t *poly)
+void piece_init(piece_t *piece, poly_t *poly, int *facelets)
 {
   mat4x4_identity(piece->model);
   memcpy(piece->colour, (vec3) { 1, 1, 1 }, sizeof(vec3));
@@ -91,12 +93,14 @@ void piece_init(piece_t *piece, poly_t *poly)
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
     unsigned int num;
-    vdata_t *vdata = gen_vertices(poly, &num);
+    vdata_t *vdata = gen_vertices(poly, &num, facelets);
     glBufferData(GL_ARRAY_BUFFER, num * sizeof(vdata_t), vdata, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vdata_t), (void *) offsetof(vdata_t, vertex));
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vdata_t), (void *) offsetof(vdata_t, normal));
     glEnableVertexAttribArray(1);
+    glVertexAttribIPointer(2, 1, GL_INT, sizeof(vdata_t), (void *) offsetof(vdata_t, facelet));
+    glEnableVertexAttribArray(2);
 
     free(vdata);
   }
@@ -142,10 +146,6 @@ void piece_update(piece_t *piece, mat4x4 proj,
   {
     unsigned int var = glGetUniformLocation(piece->shader, "proj");
     glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) proj);
-  }
-  {
-    unsigned int var = glGetUniformLocation(piece->shader, "col");
-    glUniform3fv(var, 1, piece->colour);
   }
 }
 

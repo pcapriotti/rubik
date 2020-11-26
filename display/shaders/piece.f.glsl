@@ -2,12 +2,12 @@
 
 in vec4 pos;
 in vec3 norm;
+in vec3 col;
 
 out vec4 fcol;
 
 uniform vec3 lpos;
 uniform mat4 view_inv;
-uniform vec3 col;
 
 const vec3 lcol = vec3(1.0, 1.0, 1.0);
 

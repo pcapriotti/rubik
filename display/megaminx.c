@@ -129,9 +129,9 @@ void gen_megaminx_syms(symmetries_t *syms, poly_t *dodec)
 
   const unsigned int num_edges = dodec->abs.num_faces +
     dodec->abs.num_vertices - 2;
-  /* syms->face_action = malloc(megaminx_num_syms * */
-  /*                            dodec->abs.num_faces * */
-  /*                            sizeof(unsigned int)); */
+  syms->face_action = malloc(megaminx_num_syms *
+                             dodec->abs.num_faces *
+                             sizeof(unsigned int));
   /* syms->vertex_action = malloc(megaminx_num_syms * */
   /*                              dodec->abs.num_vertices * */
   /*                              sizeof(unsigned int)); */
@@ -217,6 +217,21 @@ void gen_megaminx_syms(symmetries_t *syms, poly_t *dodec)
         syms->by_edge[index++] = f * 5 + (i - vi0 + 5) % 5;
         syms->by_edge[index++] = f1 * 5 + (i1 - vi1 + 5) % 5;
       }
+    }
+  }
+
+  /* actions */
+  for (unsigned int s = 0; s < megaminx_num_syms; s++) {
+    uint8_t action[12];
+    unsigned int f0 = s / 5;
+    unsigned int vi = s % 5;
+
+    action[0] = f0;
+    action[1] = f0 ^ 1;
+    int vi0 = adj[f0 * dodec->abs.num_vertices + v0[f0]];
+    for (unsigned int i = 1; i <= 5; i++) {
+      action[2 * i] = abs_poly_get_adj_face(&dodec->abs, f0, vi0 + i, edges);
+      action[2 * i + 1] = action[2 * i + 1] ^ 1;
     }
   }
 
