@@ -7,16 +7,24 @@
 struct piece_t;
 typedef struct piece_t piece_t;
 
+typedef struct
+{
+  mat4x4 view;
+  mat4x4 view_inv;
+  mat4x4 proj;
+  mat4x4 model;
+  vec3 lpos;
+} __attribute__((packed, aligned(4))) scene_data_t;
+
 struct scene_t
 {
   piece_t **pieces;
   unsigned int num_pieces;
   unsigned int piece_cap;
 
+  scene_data_t data;
+  unsigned int data_ubo;
   quat rot;
-  mat4x4 view;
-  mat4x4 proj;
-  vec3 lpos;
 
   /* trackball information */
   vec3 tb_down; /* point of the trackball where dragging started */

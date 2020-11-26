@@ -7,8 +7,14 @@ in vec3 bary;
 
 out vec4 fcol;
 
-uniform vec3 lpos;
-uniform mat4 view_inv;
+layout (std140, binding = 0) uniform scene_data
+{
+  mat4 view;
+  mat4 view_inv;
+  mat4 proj;
+  mat4 model;
+  vec3 lpos;
+};
 
 const vec3 lcol = vec3(1.0, 1.0, 1.0);
 

@@ -4,9 +4,14 @@ layout (location = 1) in vec3 n;
 layout (location = 2) in int f;
 layout (location = 3) in vec3 b;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 proj;
+layout (std140, binding = 0) uniform scene_data
+{
+  mat4 view;
+  mat4 view_inv;
+  mat4 proj;
+  mat4 model;
+  vec3 lpos;
+};
 
 out vec4 pos;
 out vec3 norm;

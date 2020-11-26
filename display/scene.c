@@ -1,6 +1,7 @@
 #include "scene.h"
 #include "piece.h"
 
+#include <GL/glew.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -14,8 +15,16 @@ void scene_init(scene_t *scene, unsigned int width, unsigned int height)
   scene->tb_active = 0;
 
   quat_identity(scene->rot);
-  memcpy(scene->lpos, (vec3) { 3, 4, 10 }, sizeof(vec3));
-  mat4x4_translate(scene->view, 0.0, 0.0, -6.0);
+  memcpy(scene->data.lpos, (vec3) { 3, 4, 10 }, sizeof(vec3));
+  mat4x4_translate(scene->data.view, 0.0, 0.0, -6.0);
+
+  {
+    glGenBuffers(1, &scene->data_ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, scene->data_ubo);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(scene->data), NULL, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene->data_ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  }
 
   scene_resize(scene, width, height);
 }
@@ -76,20 +85,18 @@ void scene_tb_end(scene_t *scene, float x, float y)
 void scene_update_pieces(scene_t *scene)
 {
   mat4x4 view_inv;
-  mat4x4_invert(view_inv, scene->view);
+  mat4x4_invert(scene->data.view_inv, scene->data.view);
 
   mat4x4 model;
-  mat4x4_from_quat(model, scene->rot);
+  mat4x4_from_quat(scene->data.model, scene->rot);
 
-  for (unsigned int i = 0; i < scene->num_pieces; i++) {
-    piece_update(scene->pieces[i], scene->proj, scene->view,
-                 view_inv, model, scene->lpos);
-  }
+  glBindBuffer(GL_UNIFORM_BUFFER, scene->data_ubo);
+  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(scene->data), &scene->data);
 }
 
 void scene_resize(scene_t *scene, unsigned int width, unsigned int height)
 {
-  mat4x4_perspective(scene->proj, sqrt(2) * 0.5, (float) width / (float) height,
+  mat4x4_perspective(scene->data.proj, sqrt(2) * 0.5, (float) width / (float) height,
                      0.1f, 100.0f);
   scene_update_pieces(scene);
 }
