@@ -80,7 +80,6 @@ unsigned int *gen_elements(poly_t *poly, unsigned int *num_elements)
 void piece_init(piece_t *piece, poly_t *poly, int *facelets)
 {
   mat4x4_identity(piece->model);
-  memcpy(piece->colour, (vec3) { 1, 1, 1 }, sizeof(vec3));
 
   glGenVertexArrays(1, &piece->vao);
   glBindVertexArray(piece->vao);

@@ -1,4 +1,5 @@
 #include "megaminx.h"
+#include "piece.h"
 #include "polyhedron.h"
 
 #include <assert.h>
@@ -7,7 +8,7 @@
 
 /* extract a megaminx corner from vertex 0 of a dodecahedron */
 /* edge is the ratio between the corner edge length and the full edge length */
-void megaminx_corner(poly_t *mm, poly_t *dodec, float edge)
+void megaminx_corner(poly_t *mm, poly_t *dodec, float edge, int *facelets)
 {
   abs_prism(&mm->abs, 4);
 
@@ -25,10 +26,17 @@ void megaminx_corner(poly_t *mm, poly_t *dodec, float edge)
     if (i % 4 == 2 || i % 4 == 3) vec3_add(mm->vertices[i], mm->vertices[i], v2);
     if (i < 4) vec3_add(mm->vertices[i], mm->vertices[i], v3);
   }
+
+  for (int i = 0; i < 6; i++) {
+    facelets[i] = -1;
+  }
+  facelets[5] = 0;
+  facelets[1] = 2;
+  facelets[4] = 10;
 }
 
 
-void megaminx_edge(poly_t *mm, poly_t *dodec, float edge)
+void megaminx_edge(poly_t *mm, poly_t *dodec, float edge, int* facelets)
 {
   abs_prism(&mm->abs, 4);
   mm->vertices = malloc(mm->abs.num_vertices * sizeof(vec3));
@@ -57,9 +65,15 @@ void megaminx_edge(poly_t *mm, poly_t *dodec, float edge)
   vec3_add(mm->vertices[5], mm->vertices[4], v3);
   vec3_add(mm->vertices[6], mm->vertices[5], v2);
   vec3_add(mm->vertices[7], mm->vertices[4], v2);
+
+  for (int i = 0; i < 6; i++) {
+    facelets[i] = -1;
+  }
+  facelets[1] = 2;
+  facelets[4] = 0;
 }
 
-void megaminx_centre(poly_t *mm, poly_t *dodec, float edge)
+void megaminx_centre(poly_t *mm, poly_t *dodec, float edge, int *facelets)
 {
   abs_prism(&mm->abs, 5);
   mm->vertices = malloc(mm->abs.num_vertices * sizeof(vec3));
@@ -77,6 +91,11 @@ void megaminx_centre(poly_t *mm, poly_t *dodec, float edge)
     vec3_add(mm->vertices[i + 5], mm->vertices[i + 5], v2);
     vec3_add(mm->vertices[i], mm->vertices[i + 5], v3);
   }
+
+  for (int i = 0; i < 10; i++) {
+    facelets[i] = -1;
+  }
+  facelets[6] = 0;
 }
 
 /* return symmetry mapping a pair of adjacent vertices to another one */
@@ -131,7 +150,7 @@ void gen_megaminx_syms(symmetries_t *syms, poly_t *dodec)
     dodec->abs.num_vertices - 2;
   syms->face_action = malloc(megaminx_num_syms *
                              dodec->abs.num_faces *
-                             sizeof(unsigned int));
+                             sizeof(uint8_t));
   /* syms->vertex_action = malloc(megaminx_num_syms * */
   /*                              dodec->abs.num_vertices * */
   /*                              sizeof(unsigned int)); */
@@ -222,20 +241,60 @@ void gen_megaminx_syms(symmetries_t *syms, poly_t *dodec)
 
   /* actions */
   for (unsigned int s = 0; s < megaminx_num_syms; s++) {
-    uint8_t action[12];
+    uint8_t *action = &syms->face_action[dodec->abs.num_faces * s];
     unsigned int f0 = s / 5;
     unsigned int vi = s % 5;
 
     action[0] = f0;
     action[1] = f0 ^ 1;
     int vi0 = adj[f0 * dodec->abs.num_vertices + v0[f0]];
-    for (unsigned int i = 1; i <= 5; i++) {
-      action[2 * i] = abs_poly_get_adj_face(&dodec->abs, f0, vi0 + i, edges);
-      action[2 * i + 1] = action[2 * i + 1] ^ 1;
+    for (unsigned int i = 0; i < 5; i++) {
+      action[2 * i + 2] = abs_poly_get_adj_face
+        (&dodec->abs, f0, vi0 + vi + i, edges);
+      action[2 * i + 3] = action[2 * i + 2] ^ 1;
     }
   }
 
   free(adj);
   free(v0);
   free(edges);
+}
+
+void megaminx_corner_piece(piece_t *piece, poly_t *corner,
+                           symmetries_t *syms, int *facelets,
+                           unsigned int v)
+{
+  int fl[6];
+  unsigned int s = syms->by_vertex[v * 3];
+  for (unsigned int i = 0; i < 6; i++) {
+    fl[i] = facelets[i] >= 0 ? syms->face_action[s * 12 + facelets[i]] : -1;
+  }
+  piece_init(piece, corner, fl);
+  mat4x4_from_quat(piece->model, syms->syms[s]);
+}
+
+void megaminx_edge_piece(piece_t *piece, poly_t *edge,
+                         symmetries_t *syms, int *facelets,
+                         unsigned int e)
+{
+  int fl[6];
+  unsigned int s = syms->by_edge[e * 2];
+  for (unsigned int i = 0; i < 6; i++) {
+    fl[i] = facelets[i] >= 0 ? syms->face_action[s * 12 + facelets[i]] : -1;
+  }
+  piece_init(piece, edge, fl);
+  mat4x4_from_quat(piece->model, syms->syms[s]);
+}
+
+void megaminx_centre_piece(piece_t *piece, poly_t *centre,
+                           symmetries_t *syms, int *facelets,
+                           unsigned int f)
+{
+  int fl[7];
+  unsigned int s = f * 5;
+  for (unsigned int i = 0; i < 7; i++) {
+    fl[i] = facelets[i] >= 0 ? syms->face_action[s * 12 + facelets[i]] : -1;
+  }
+  piece_init(piece, centre, fl);
+  mat4x4_from_quat(piece->model, syms->syms[s]);
 }

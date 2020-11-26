@@ -139,33 +139,38 @@ void run(GLFWwindow *window)
   poly_t dodec;
   std_dodec(&dodec);
   poly_debug(&dodec);
+
+  int vfacelets[6];
   poly_t corner;
-  megaminx_corner(&corner, &dodec, 0.4);
+  megaminx_corner(&corner, &dodec, 0.4, vfacelets);
+
+  int efacelets[6];
   poly_t edge;
-  megaminx_edge(&edge, &dodec, 0.4);
+  megaminx_edge(&edge, &dodec, 0.4, efacelets);
+
+  int ffacelets[7];
   poly_t centre;
-  megaminx_centre(&centre, &dodec, 0.4);
+  megaminx_centre(&centre, &dodec, 0.4, ffacelets);
 
   symmetries_t syms;
   gen_megaminx_syms(&syms, &dodec);
 
-  int facelets[10] = { 5, 2, 11, -1, -1, -1, -1, -1, -1, -1 };
+  static const int num_corners = 20;
+  static const int num_edges = 30;
+  static const int num_centres = 12;
 
   piece_t piece[62];
-  for (int i = 0; i < 20; i++) {
-    piece_init(&piece[i], &corner, facelets);
-    mat4x4_from_quat(piece[i].model, syms.syms[syms.by_vertex[i * 3]]);
-    memcpy(piece[i].colour, (vec3) { 0.3, 0.7, 0.1 }, sizeof(vec3));
+  for (int i = 0; i < num_corners; i++) {
+    megaminx_corner_piece(&piece[i], &corner,
+                          &syms, vfacelets, i);
   }
-  for (int i = 0; i < 30; i++) {
-    piece_init(&piece[20 + i], &edge, facelets);
-    mat4x4_from_quat(piece[20 + i].model, syms.syms[syms.by_edge[i * 2]]);
-    memcpy(piece[20 + i].colour, (vec3) { 0.7, 0.1, 0.3 }, sizeof(vec3));
+  for (int i = 0; i < num_edges; i++) {
+    megaminx_edge_piece(&piece[num_corners + i], &edge,
+                          &syms, efacelets, i);
   }
-  for (int i = 0; i < 12; i++) {
-    piece_init(&piece[50 + i], &centre, facelets);
-    mat4x4_from_quat(piece[50 + i].model, syms.syms[i * 5]);
-    memcpy(piece[50 + i].colour, (vec3) { 0.1, 0.3, 0.7 }, sizeof(vec3));
+  for (int i = 0; i < num_centres; i++) {
+    megaminx_centre_piece(&piece[num_corners + num_edges + i], &centre,
+                          &syms, ffacelets, i);
   }
 
   int width, height;
@@ -173,7 +178,7 @@ void run(GLFWwindow *window)
 
   scene_t *scene = malloc(sizeof(scene_t));
   scene_init(scene, width, height);
-  for (int i = 0; i < 62; i++) {
+  for (int i = 0; i < num_corners + num_edges + num_centres; i++) {
     scene_add_piece(scene, &piece[i]);
   }
   glfwSetWindowUserPointer(window, scene);
