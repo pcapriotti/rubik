@@ -12,6 +12,7 @@ struct piece_t
   unsigned int vao;
   unsigned int num_elements;
   unsigned int shader;
+  unsigned int instances;
 
   mat4x4 model;
 };

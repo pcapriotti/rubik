@@ -1,6 +1,7 @@
 #include "megaminx.h"
 #include "piece.h"
 #include "polyhedron.h"
+#include "scene.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -137,7 +138,7 @@ void rot_by_vertices(quat q, vec3 v1, vec3 v2, vec3 w1, vec3 w2)
   #endif
 }
 
-void gen_megaminx_syms(symmetries_t *syms, poly_t *dodec)
+void megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
 {
   /* symmetry i * 5 + j maps face 0 to i, and face 1 to the
   j-th face (in order from the lowest-numbered face) adjacent to i */
@@ -260,6 +261,14 @@ void gen_megaminx_syms(symmetries_t *syms, poly_t *dodec)
   free(edges);
 }
 
+void megaminx_syms_cleanup(symmetries_t *syms)
+{
+  free(syms->syms);
+  free(syms->by_vertex);
+  free(syms->by_edge);
+  free(syms->face_action);
+}
+
 void megaminx_corner_piece(piece_t *piece, poly_t *corner,
                            symmetries_t *syms, int *facelets,
                            unsigned int v)
@@ -297,4 +306,69 @@ void megaminx_centre_piece(piece_t *piece, poly_t *centre,
   }
   piece_init(piece, centre, fl);
   mat4x4_from_quat(piece->model, syms->syms[s]);
+}
+
+struct megaminx_scene_t
+{
+  poly_t dodec;
+  struct {
+    poly_t poly;
+    int facelets[6];
+  } corner;
+
+  struct {
+    poly_t poly;
+    int facelets[6];
+  } edge;
+
+  struct {
+    poly_t poly;
+    int facelets[7];
+  } centre;
+
+  symmetries_t syms;
+  piece_t piece[62];
+};
+
+void megaminx_scene_del(megaminx_scene_t *ms)
+{
+  megaminx_syms_cleanup(&ms->syms);
+  free(ms);
+}
+
+megaminx_scene_t *megaminx_scene_new(scene_t *scene)
+{
+  static const float edge_size = 0.4;
+
+  megaminx_scene_t *ms = malloc(sizeof(megaminx_scene_t));
+  std_dodec(&ms->dodec);
+  megaminx_corner(&ms->corner.poly, &ms->dodec, edge_size, ms->corner.facelets);
+  megaminx_edge(&ms->edge.poly, &ms->dodec, edge_size, ms->edge.facelets);
+  megaminx_centre(&ms->centre.poly, &ms->dodec, edge_size, ms->centre.facelets);
+
+  megaminx_syms_init(&ms->syms, &ms->dodec);
+
+  const int num_corners = ms->dodec.abs.num_vertices;
+  const int num_centres = ms->dodec.abs.num_faces;
+  const int num_edges = num_corners + num_centres - 2;
+
+  for (int i = 0; i < num_corners; i++) {
+    megaminx_corner_piece(&ms->piece[i], &ms->corner.poly,
+                          &ms->syms, ms->corner.facelets, i);
+  }
+  for (int i = 0; i < num_edges; i++) {
+    megaminx_edge_piece(&ms->piece[num_corners + i], &ms->edge.poly,
+                        &ms->syms, ms->edge.facelets, i);
+  }
+  for (int i = 0; i < num_centres; i++) {
+    megaminx_centre_piece(&ms->piece[num_corners + num_edges + i],
+                          &ms->centre.poly, &ms->syms,
+                          ms->centre.facelets, i);
+  }
+
+  for (int i = 0; i < num_corners + num_edges + num_centres; i++) {
+    scene_add_piece(scene, &ms->piece[i]);
+  }
+
+  return ms;
 }

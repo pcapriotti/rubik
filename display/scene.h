@@ -7,7 +7,7 @@
 struct piece_t;
 typedef struct piece_t piece_t;
 
-typedef struct
+struct scene_t
 {
   piece_t **pieces;
   unsigned int num_pieces;
@@ -22,7 +22,8 @@ typedef struct
   vec3 tb_down; /* point of the trackball where dragging started */
   quat tb_rot;
   int tb_active;
-} scene_t;
+};
+typedef struct scene_t scene_t;
 
 void scene_init(scene_t *scene, unsigned int width, unsigned int height);
 void scene_add_piece(scene_t *scene, piece_t *piece);

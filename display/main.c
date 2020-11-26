@@ -140,47 +140,14 @@ void run(GLFWwindow *window)
   std_dodec(&dodec);
   poly_debug(&dodec);
 
-  int vfacelets[6];
-  poly_t corner;
-  megaminx_corner(&corner, &dodec, 0.4, vfacelets);
-
-  int efacelets[6];
-  poly_t edge;
-  megaminx_edge(&edge, &dodec, 0.4, efacelets);
-
-  int ffacelets[7];
-  poly_t centre;
-  megaminx_centre(&centre, &dodec, 0.4, ffacelets);
-
-  symmetries_t syms;
-  gen_megaminx_syms(&syms, &dodec);
-
-  static const int num_corners = 20;
-  static const int num_edges = 30;
-  static const int num_centres = 12;
-
-  piece_t piece[62];
-  for (int i = 0; i < num_corners; i++) {
-    megaminx_corner_piece(&piece[i], &corner,
-                          &syms, vfacelets, i);
-  }
-  for (int i = 0; i < num_edges; i++) {
-    megaminx_edge_piece(&piece[num_corners + i], &edge,
-                          &syms, efacelets, i);
-  }
-  for (int i = 0; i < num_centres; i++) {
-    megaminx_centre_piece(&piece[num_corners + num_edges + i], &centre,
-                          &syms, ffacelets, i);
-  }
-
   int width, height;
   glfwGetWindowSize(window, &width, &height);
 
   scene_t *scene = malloc(sizeof(scene_t));
   scene_init(scene, width, height);
-  for (int i = 0; i < num_corners + num_edges + num_centres; i++) {
-    scene_add_piece(scene, &piece[i]);
-  }
+
+  megaminx_scene_t *ms = megaminx_scene_new(scene);
+
   glfwSetWindowUserPointer(window, scene);
 
   glfwSetWindowSizeCallback(window, handle_resize);
@@ -209,6 +176,8 @@ void run(GLFWwindow *window)
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
+
+  free(ms);
 }
 
 int main(int argc, char **argv)
