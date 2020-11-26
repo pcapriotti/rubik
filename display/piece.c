@@ -18,18 +18,20 @@ typedef struct
   vec3 vertex;
   vec3 normal;
   int facelet;
+  vec3 bary;
 } vdata_t;
 
 vdata_t *gen_vertices(poly_t *poly, unsigned int *num, int *facelets)
 {
   *num = 0;
   for (unsigned int j = 0; j < poly->abs.num_faces; j++) {
-    *num += poly->abs.faces[j].num_vertices;
+    *num += poly->abs.faces[j].num_vertices * 3;
   }
   vdata_t *vdata = malloc(*num * sizeof(vdata_t));
 
   unsigned int index = 0;
   for (unsigned int j = 0; j < poly->abs.num_faces; j++) {
+    unsigned int num = poly->abs.faces[j].num_vertices;
     /* compute face normal */
     vec3 a, b, n;
     vec3_sub(a, poly->vertices[poly->abs.faces[j].vertices[1]],
@@ -40,8 +42,25 @@ vdata_t *gen_vertices(poly_t *poly, unsigned int *num, int *facelets)
     vec3_mul_cross(n, a, b);
     vec3_norm(n, n);
 
-    for (unsigned int i = 0; i < poly->abs.faces[j].num_vertices; i++) {
+    /* compute centre */
+    vec3 centre = {0, 0, 0};
+    for (unsigned int i = 0; i < num; i++) {
+      vec3_add(centre, centre, poly->vertices[poly->abs.faces[j].vertices[i]]);
+    }
+    vec3_scale(centre, centre, 1.0 / (float) num);
+
+    for (unsigned int i = 0; i < num; i++) {
+      memcpy(vdata[index].vertex, centre, sizeof(vec3));
+      memcpy(vdata[index].normal, n, sizeof(vec3));
+      vdata[index].facelet = facelets[j];
+      index++;
+
       memcpy(vdata[index].vertex, poly->vertices[poly->abs.faces[j].vertices[i]], sizeof(vec3));
+      memcpy(vdata[index].normal, n, sizeof(vec3));
+      vdata[index].facelet = facelets[j];
+      index++;
+
+      memcpy(vdata[index].vertex, poly->vertices[poly->abs.faces[j].vertices[(i + 1) % num]], sizeof(vec3));
       memcpy(vdata[index].normal, n, sizeof(vec3));
       vdata[index].facelet = facelets[j];
       index++;
@@ -56,7 +75,7 @@ unsigned int *gen_elements(poly_t *poly, unsigned int *num_elements)
 {
   *num_elements = 0;
   for (unsigned int j = 0; j < poly->abs.num_faces; j++) {
-    *num_elements += (poly->abs.faces[j].num_vertices - 2) * 3;
+    *num_elements += poly->abs.faces[j].num_vertices * 3;
   }
 
   unsigned int *elements = malloc(*num_elements * sizeof(unsigned int));
@@ -64,13 +83,14 @@ unsigned int *gen_elements(poly_t *poly, unsigned int *num_elements)
   unsigned int index = 0;
   unsigned int vindex = 0;
   for (unsigned int j = 0; j < poly->abs.num_faces; j++) {
-    for (unsigned int i = 1; i < poly->abs.faces[j].num_vertices - 1; i++) {
-      elements[index++] = vindex;
-      elements[index++] = vindex + i;
-      elements[index++] = vindex + i + 1;
+    unsigned int n = poly->abs.faces[j].num_vertices;
+    for (unsigned int i = 0; i < n; i++) {
+      elements[index++] = vindex + i * 3;
+      elements[index++] = vindex + i * 3 + 1;
+      elements[index++] = vindex + i * 3 + 2;
     }
 
-    vindex += poly->abs.faces[j].num_vertices;
+    vindex += poly->abs.faces[j].num_vertices * 3;
   }
 
   /* assert(index == *num_elements); */
@@ -91,29 +111,21 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets)
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-    unsigned int num;
-    vdata_t *vdata = gen_vertices(poly, &num, facelets);
-    glBufferData(GL_ARRAY_BUFFER, num * sizeof(vdata_t), vdata, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vdata_t), (void *) offsetof(vdata_t, vertex));
+    vdata_t *vdata = gen_vertices(poly, &piece->num_elements, facelets);
+    glBufferData(GL_ARRAY_BUFFER,
+                 piece->num_elements * sizeof(vdata_t),
+                 vdata, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+                          sizeof(vdata_t), (void *) offsetof(vdata_t, vertex));
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vdata_t), (void *) offsetof(vdata_t, normal));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+                          sizeof(vdata_t), (void *) offsetof(vdata_t, normal));
     glEnableVertexAttribArray(1);
-    glVertexAttribIPointer(2, 1, GL_INT, sizeof(vdata_t), (void *) offsetof(vdata_t, facelet));
+    glVertexAttribIPointer(2, 1, GL_INT,
+                           sizeof(vdata_t), (void *) offsetof(vdata_t, facelet));
     glEnableVertexAttribArray(2);
 
     free(vdata);
-  }
-
-  /* elements */
-  {
-    unsigned int ebo;
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-
-    unsigned int *elements = gen_elements(poly, &piece->num_elements);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, piece->num_elements * sizeof(unsigned int),
-                 elements, GL_STATIC_DRAW);
-    free(elements);
   }
 
   /* set up shaders and uniforms */
@@ -152,6 +164,5 @@ void piece_render(piece_t *piece)
 {
   glBindVertexArray(piece->vao);
   glUseProgram(piece->shader);
-
-  glDrawElementsInstanced(GL_TRIANGLES, piece->num_elements, GL_UNSIGNED_INT, 0, 1);
+  glDrawArrays(GL_TRIANGLES, 0, piece->num_elements);
 }
