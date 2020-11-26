@@ -114,8 +114,10 @@ unsigned int *gen_elements(poly_t *poly, unsigned int *num_elements)
   return elements;
 }
 
-void piece_init(piece_t *piece, poly_t *poly, int *facelets)
+void piece_init(piece_t *piece, poly_t *poly, int *facelets,
+                unsigned int instances)
 {
+  piece->instances = instances;
   mat4x4_identity(piece->model);
 
   glGenVertexArrays(1, &piece->vao);

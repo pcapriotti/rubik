@@ -278,7 +278,7 @@ void megaminx_corner_piece(piece_t *piece, poly_t *corner,
   for (unsigned int i = 0; i < 6; i++) {
     fl[i] = facelets[i] >= 0 ? syms->face_action[s * 12 + facelets[i]] : -1;
   }
-  piece_init(piece, corner, fl);
+  piece_init(piece, corner, fl, 1);
   mat4x4_from_quat(piece->model, syms->syms[s]);
 }
 
@@ -291,7 +291,7 @@ void megaminx_edge_piece(piece_t *piece, poly_t *edge,
   for (unsigned int i = 0; i < 6; i++) {
     fl[i] = facelets[i] >= 0 ? syms->face_action[s * 12 + facelets[i]] : -1;
   }
-  piece_init(piece, edge, fl);
+  piece_init(piece, edge, fl, 1);
   mat4x4_from_quat(piece->model, syms->syms[s]);
 }
 
@@ -304,7 +304,7 @@ void megaminx_centre_piece(piece_t *piece, poly_t *centre,
   for (unsigned int i = 0; i < 7; i++) {
     fl[i] = facelets[i] >= 0 ? syms->face_action[s * 12 + facelets[i]] : -1;
   }
-  piece_init(piece, centre, fl);
+  piece_init(piece, centre, fl, 1);
   mat4x4_from_quat(piece->model, syms->syms[s]);
 }
 
