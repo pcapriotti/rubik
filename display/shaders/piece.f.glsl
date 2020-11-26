@@ -3,6 +3,7 @@
 in vec4 pos;
 in vec3 norm;
 in vec3 col;
+in vec3 bary;
 
 out vec4 fcol;
 
@@ -30,5 +31,9 @@ vec3 lighting(vec3 col0, vec3 norm, float ambient, float diffuse, float specular
 void main()
 {
   vec3 col0 = lighting(col, norm, 0.3, 0.5, 0.0, 5.0);
+
+  float eps = fwidth(bary[0]);
+  float a = smoothstep(0.01 - eps, 0.01 + eps, bary[0]);
+  col0 = mix(vec3(0), col0, a);
   fcol = vec4(col0, 1);
 }

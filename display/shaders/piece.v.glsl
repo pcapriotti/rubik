@@ -2,6 +2,7 @@
 layout (location = 0) in vec3 p;
 layout (location = 1) in vec3 n;
 layout (location = 2) in int f;
+layout (location = 3) in vec3 b;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -10,6 +11,7 @@ uniform mat4 proj;
 out vec4 pos;
 out vec3 norm;
 out vec3 col;
+out vec3 bary;
 
 vec3 colours[12] = {
   vec3(1.0, 1.0, 1.0), // white
@@ -37,4 +39,5 @@ void main()
     col = bcol;
   else
     col = colours[f];
+  bary = b;
 }

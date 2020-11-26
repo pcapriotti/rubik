@@ -53,17 +53,34 @@ vdata_t *gen_vertices(poly_t *poly, unsigned int *num, int *facelets)
       memcpy(vdata[index].vertex, centre, sizeof(vec3));
       memcpy(vdata[index].normal, n, sizeof(vec3));
       vdata[index].facelet = facelets[j];
+      memcpy(vdata[index].bary, (vec3) {0, 0, 0}, sizeof(vec3));
       index++;
 
       memcpy(vdata[index].vertex, poly->vertices[poly->abs.faces[j].vertices[i]], sizeof(vec3));
       memcpy(vdata[index].normal, n, sizeof(vec3));
       vdata[index].facelet = facelets[j];
+      memcpy(vdata[index].bary, (vec3) {0, 0, 0}, sizeof(vec3));
       index++;
 
       memcpy(vdata[index].vertex, poly->vertices[poly->abs.faces[j].vertices[(i + 1) % num]], sizeof(vec3));
       memcpy(vdata[index].normal, n, sizeof(vec3));
       vdata[index].facelet = facelets[j];
+      memcpy(vdata[index].bary, (vec3) {0, 0, 0}, sizeof(vec3));
       index++;
+
+      /* compute barycentric coordinates */
+      for (unsigned int k = 0; k < 3; k++) {
+        vec3 d, r;
+        vec3_sub(d,
+                 vdata[index - 3 + (k + 1) % 3].vertex,
+                 vdata[index - 3 + (k + 2) % 3].vertex);
+        vec3_mul_cross(r, n, d);
+        vec3_norm(r, r);
+
+        float value = vec3_mul_inner(vdata[index - 3 + (k + 1) % 3].vertex, r) -
+          vec3_mul_inner(vdata[index - 3 + k].vertex, r);
+        vdata[index - 3 + k].bary[k] = value;
+      }
     }
   }
 
@@ -124,6 +141,9 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets)
     glVertexAttribIPointer(2, 1, GL_INT,
                            sizeof(vdata_t), (void *) offsetof(vdata_t, facelet));
     glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE,
+                          sizeof(vdata_t), (void *) offsetof(vdata_t, bary));
+    glEnableVertexAttribArray(3);
 
     free(vdata);
   }
