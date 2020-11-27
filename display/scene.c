@@ -13,6 +13,8 @@ void scene_init(scene_t *scene, unsigned int width, unsigned int height)
   scene->pieces = malloc(sizeof(piece_t) * scene->piece_cap);
   scene->num_pieces = 0;
   scene->tb_active = 0;
+  scene->on_keypress = 0;
+  scene->on_keypress_data = 0;
 
   quat_identity(scene->rot);
   memcpy(scene->data.lpos, (vec3) { 3, 4, 10 }, sizeof(vec3));

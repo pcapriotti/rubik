@@ -139,12 +139,12 @@ void rot_by_vertices(quat q, vec3 v1, vec3 v2, vec3 w1, vec3 w2)
   #endif
 }
 
-void megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
+quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
 {
   /* symmetry i * 5 + j maps face 0 to i, and face 1 to the
   j-th face (in order from the lowest-numbered face) adjacent to i */
 
-  syms->syms = malloc(megaminx_num_syms * sizeof(quat));
+  quat *rots = malloc(megaminx_num_syms * sizeof(quat));
   syms->by_vertex = malloc(megaminx_num_syms * sizeof(unsigned int));
   syms->by_edge = malloc(megaminx_num_syms * sizeof(unsigned int));
 
@@ -168,21 +168,21 @@ void megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
   rot_by_vertices(tau, dodec->vertices[0], dodec->vertices[1],
                   dodec->vertices[1], dodec->vertices[0]);
 
-  quat_identity(syms->syms[0]);
+  quat_identity(rots[0]);
   /* map face 0 to 1 and 2 to 3 */
-  rot_by_vertices(syms->syms[5], dodec->vertices[0], dodec->vertices[1],
+  rot_by_vertices(rots[5], dodec->vertices[0], dodec->vertices[1],
                   dodec->vertices[18], dodec->vertices[19]);
 
   for (unsigned int k = 0; k < 2; k++) {
-    quat_mul(syms->syms[(2 + k) * 5], syms->syms[k * 5], tau);
+    quat_mul(rots[(2 + k) * 5], rots[k * 5], tau);
     for (unsigned int j = 2; j <= 5; j++) {
-      quat_mul(syms->syms[(2 * j + k) * 5], rho, syms->syms[(2 * (j - 1) + k) * 5]);
+      quat_mul(rots[(2 * j + k) * 5], rho, rots[(2 * (j - 1) + k) * 5]);
     }
   }
 
   for (unsigned int j = 0; j < 12; j++) {
     for (unsigned int i = 1; i < 5; i++) {
-      quat_mul(syms->syms[j * 5 + i], syms->syms[j * 5 + i - 1], rho);
+      quat_mul(rots[j * 5 + i], rots[j * 5 + i - 1], rho);
     }
   }
 
@@ -260,11 +260,12 @@ void megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
   free(adj);
   free(v0);
   free(edges);
+
+  return rots;
 }
 
 void megaminx_syms_cleanup(symmetries_t *syms)
 {
-  free(syms->syms);
   free(syms->by_vertex);
   free(syms->by_edge);
   free(syms->face_action);
@@ -301,13 +302,23 @@ struct megaminx_scene_t
   } centre;
 
   symmetries_t syms;
+  quat *rots;
   piece_t piece[3];
 };
 
 void megaminx_scene_del(megaminx_scene_t *ms)
 {
   megaminx_syms_cleanup(&ms->syms);
+  free(ms->rots);
   free(ms);
+}
+
+void megaminx_on_keypress(void *data, unsigned int c)
+{
+  megaminx_scene_t *ms = data;
+  printf("key press\n");
+  unsigned int s[] = { 5, 0, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55 };
+  piece_set_syms(&ms->piece[2], s);
 }
 
 megaminx_scene_t *megaminx_scene_new(scene_t *scene)
@@ -315,12 +326,15 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
   static const float edge_size = 0.4;
 
   megaminx_scene_t *ms = malloc(sizeof(megaminx_scene_t));
+
+  scene->on_keypress_data = ms;
+  scene->on_keypress = megaminx_on_keypress;
+
   std_dodec(&ms->dodec);
   megaminx_corner(&ms->corner.poly, &ms->dodec, edge_size, ms->corner.facelets);
   megaminx_edge(&ms->edge.poly, &ms->dodec, edge_size, ms->edge.facelets);
   megaminx_centre(&ms->centre.poly, &ms->dodec, edge_size, ms->centre.facelets);
-
-  megaminx_syms_init(&ms->syms, &ms->dodec);
+  ms->rots = megaminx_syms_init(&ms->syms, &ms->dodec);
 
   /* symmetries */
   {
@@ -330,7 +344,7 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
 
     mat4x4 *syms = malloc(megaminx_num_syms * sizeof(mat4x4));
     for (unsigned int s = 0; s < megaminx_num_syms; s++) {
-      mat4x4_from_quat(syms[s], ms->syms.syms[s]);
+      mat4x4_from_quat(syms[s], ms->rots[s]);
     }
     glBufferData(GL_SHADER_STORAGE_BUFFER,
                  sizeof(mat4x4) * megaminx_num_syms,

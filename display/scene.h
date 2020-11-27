@@ -36,6 +36,9 @@ struct scene_t
   vec3 tb_down; /* point of the trackball where dragging started */
   quat tb_rot;
   int tb_active;
+
+  void (*on_keypress)(void *data, unsigned int c);
+  void *on_keypress_data;
 };
 typedef struct scene_t scene_t;
 

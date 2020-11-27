@@ -4,6 +4,7 @@ layout (location = 1) in vec3 n;
 layout (location = 2) in int f;
 layout (location = 3) in vec3 b;
 layout (location = 4) in uint s;
+layout (location = 5) in uint s0;
 
 layout (std140, binding = 0) uniform scene_data
 {
@@ -58,7 +59,7 @@ void main()
   if (f < 0)
     col = bcol;
   else
-    col = colours[face_action[s * 12 + f]];
+    col = colours[face_action[s0 * 12 + f]];
 
   bary = b;
 }

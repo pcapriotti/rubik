@@ -1,9 +1,11 @@
-#ifndef MEGAMINX_H
-#define MEGAMINX_H
+#ifndef DISPLAY_MEGAMINX_H
+#define DISPLAY_MEGAMINX_H
 
 #include <memory.h>
 #include <stdint.h>
 #include "linmath.h"
+
+#include "lib/megaminx.h"
 
 struct poly_t;
 typedef struct poly_t poly_t;
@@ -18,18 +20,9 @@ void megaminx_corner(poly_t *mm, poly_t *dodec, float edge, int *facelets);
 void megaminx_edge(poly_t *mm, poly_t *dodec, float edge, int* facelets);
 void megaminx_centre(poly_t *mm, poly_t *dodec, float edge, int *facelets);
 
-static const unsigned int megaminx_num_syms = 60;
-typedef struct {
-  quat *syms;
-  unsigned int *by_vertex;
-  unsigned int *by_edge;
-
-  uint32_t *face_action;
-} symmetries_t;
-
 unsigned int symmetries_act_face(symmetries_t *syms, unsigned int f);
 
-void megaminx_syms_init(symmetries_t *syms, poly_t *dodec);
+quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec);
 void megaminx_syms_cleanup(symmetries_t *syms);
 
 void megaminx_corner_piece(piece_t *piece, poly_t *corner,
@@ -47,4 +40,4 @@ typedef struct megaminx_scene_t megaminx_scene_t;
 
 megaminx_scene_t *megaminx_scene_new(scene_t *scene);
 
-#endif /* MEGAMINX_H */
+#endif /* DISPLAY_MEGAMINX_H */

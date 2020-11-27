@@ -163,11 +163,29 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
     glEnableVertexAttribArray(4);
     glVertexAttribDivisor(4, 1);
   }
+  {
+    unsigned int vbo;
+    glGenBuffers(1, &vbo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, instances * sizeof(unsigned int),
+                 s, GL_STATIC_DRAW);
+    glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, 0, 0);
+    glEnableVertexAttribArray(5);
+    glVertexAttribDivisor(5, 1);
+  }
 
   /* set up shaders and uniforms */
   if (shader == 0)
     shader = shader_load_program(piece_v_glsl, piece_v_glsl_len,
                                  piece_f_glsl, piece_f_glsl_len);
+}
+
+void piece_set_syms(piece_t *piece, unsigned int *s)
+{
+  glBindBuffer(GL_ARRAY_BUFFER, piece->sym_vbo);
+  glBufferSubData(GL_ARRAY_BUFFER, 0,
+                  piece->instances * sizeof(unsigned int), s);
 }
 
 void piece_render(piece_t *piece)

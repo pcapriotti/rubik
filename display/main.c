@@ -74,6 +74,8 @@ static void handle_keypress(void *data, unsigned int c)
 {
   scene_t *scene = data;
   if (!scene) return;
+  if (!scene->on_keypress) return;
+  scene->on_keypress(scene->on_keypress_data, c);
 }
 
 static void handle_keys(GLFWwindow *window,
