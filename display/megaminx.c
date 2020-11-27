@@ -153,12 +153,12 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
   syms->face_action = malloc(megaminx_num_syms *
                              dodec->abs.num_faces *
                              sizeof(uint32_t));
-  /* syms->vertex_action = malloc(megaminx_num_syms * */
-  /*                              dodec->abs.num_vertices * */
-  /*                              sizeof(unsigned int)); */
-  /* syms->edge_action = malloc(megaminx_num_syms * */
-  /*                            num_edges * */
-  /*                            sizeof(unsigned int)); */
+  syms->vertex_action = malloc(megaminx_num_syms *
+                               dodec->abs.num_vertices *
+                               sizeof(uint8_t));
+  syms->edge_action = malloc(megaminx_num_syms *
+                             num_edges *
+                             sizeof(uint8_t));
 
   quat rho;
   quat_rotate(rho, 2 * M_PI / 5, (vec3) { 0, 0, 1 });
@@ -241,21 +241,72 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
     }
   }
 
-  /* actions */
+  /* construct multiplication table */
+  syms->mul = malloc(megaminx_num_syms * megaminx_num_syms * sizeof(uint8_t));
   for (unsigned int s = 0; s < megaminx_num_syms; s++) {
-    uint32_t *action = &syms->face_action[dodec->abs.num_faces * s];
+    uint8_t *table = &syms->mul[megaminx_num_syms * s];
+
     unsigned int f0 = s / 5;
     unsigned int vi = s % 5;
 
-    action[0] = f0;
-    action[1] = f0 ^ 1;
+    for (unsigned int j = 0; j < 5; j++) {
+      table[j] = f0 * 5 + (vi + j) % 5;
+      table[5 + j] = (f0 ^ 1) * 5 + (vi + j) % 5;
+    }
+
     int vi0 = adj[f0 * dodec->abs.num_vertices + v0[f0]];
+    assert(vi0 != -1);
     for (unsigned int i = 0; i < 5; i++) {
-      action[2 * i + 2] = abs_poly_get_adj_face
-        (&dodec->abs, f0, vi0 + vi + i, edges);
-      action[2 * i + 3] = action[2 * i + 2] ^ 1;
+      unsigned int v = dodec->abs.faces[f0].vertices[(vi0 + vi + i) % 5];
+      unsigned int w = dodec->abs.faces[f0].vertices[(vi0 + vi + i + 1) % 5];
+      unsigned int f1 = edges[w * dodec->abs.num_vertices + v];
+
+      int wi0 = adj[f1 * dodec->abs.num_vertices + v0[f1]];
+      assert(wi0 != -1);
+      int wi = adj[f1 * dodec->abs.num_vertices + w];
+      assert(wi != -1);
+
+      for (unsigned int j = 0; j < 5; j++) {
+        table[10 * i + 10 + j] = f1 * 5 + (wi - wi0 + j + 5) % 5;
+        table[10 * i + 15 + j] = (f1 ^ 1) * 5 + (wi - wi0 + j + 5) % 5;
+      }
     }
   }
+
+  /* face action */
+  for (unsigned int s = 0; s < megaminx_num_syms; s++) {
+    for (unsigned int i = 0; i < dodec->abs.num_faces; i++) {
+      syms->face_action[dodec->abs.num_faces * s + i] =
+        syms->mul[megaminx_num_syms * s + i * 5] / 5;
+    }
+  }
+  /* action on vertex 0 */
+  for (unsigned int i = 0; i < dodec->abs.num_vertices; i++) {
+    syms->vertex_action[dodec->abs.num_vertices * syms->by_vertex[i * 3]] = i;
+  }
+  /* vertex action */
+  for (unsigned int s = 0; s < megaminx_num_syms; s++) {
+    for (unsigned int i = 1; i < dodec->abs.num_vertices; i++) {
+      syms->vertex_action[dodec->abs.num_vertices * s + i] =
+        syms->vertex_action[dodec->abs.num_vertices *
+                            syms->mul[megaminx_num_syms * s +
+                                      syms->by_vertex[i * 3]]];
+    }
+  }
+  /* action on edge 0 */
+  for (unsigned int i = 0; i < num_edges; i++) {
+    syms->edge_action[num_edges * syms->by_edge[i * 2]] = i;
+  }
+  /* edge action */
+  for (unsigned int s = 0; s < megaminx_num_syms; s++) {
+    for (unsigned int i = 1; i < num_edges; i++) {
+      syms->vertex_action[num_edges * s + i] =
+        syms->vertex_action[num_edges *
+                            syms->mul[megaminx_num_syms * s +
+                                      syms->by_edge[i * 2]]];
+    }
+  }
+
 
   free(adj);
   free(v0);
