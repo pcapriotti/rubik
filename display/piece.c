@@ -21,6 +21,8 @@ typedef struct
   vec3 bary;
 } vdata_t;
 
+static unsigned int shader = 0;
+
 vdata_t *gen_vertices(poly_t *poly, unsigned int *num, int *facelets)
 {
   *num = 0;
@@ -152,10 +154,9 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
 
   /* instance data */
   {
-    unsigned int vbo;
-    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &piece->sym_vbo);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, piece->sym_vbo);
     glBufferData(GL_ARRAY_BUFFER, instances * sizeof(unsigned int),
                  s, GL_DYNAMIC_DRAW);
     glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, 0, 0);
@@ -164,40 +165,14 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
   }
 
   /* set up shaders and uniforms */
-  piece->shader = shader_load_program(piece_v_glsl, piece_v_glsl_len,
-                                      piece_f_glsl, piece_f_glsl_len);
-}
-
-void piece_update(piece_t *piece, mat4x4 proj,
-                  mat4x4 view, mat4x4 view_inv,
-                  mat4x4 model, vec3 lpos)
-{
-  glUseProgram(piece->shader);
-  {
-    unsigned int var = glGetUniformLocation(piece->shader, "view");
-    glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) view);
-    var = glGetUniformLocation(piece->shader, "view_inv");
-    glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) view_inv);
-  }
-  {
-    mat4x4 m;
-    mat4x4_mul(m, model, piece->model);
-    unsigned int var = glGetUniformLocation(piece->shader, "model");
-    glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) m);
-  }
-  {
-    unsigned int var = glGetUniformLocation(piece->shader, "lpos");
-    glUniform3fv(var, 1, lpos);
-  }
-  {
-    unsigned int var = glGetUniformLocation(piece->shader, "proj");
-    glUniformMatrix4fv(var, 1, GL_FALSE, (GLfloat *) proj);
-  }
+  if (shader == 0)
+    shader = shader_load_program(piece_v_glsl, piece_v_glsl_len,
+                                 piece_f_glsl, piece_f_glsl_len);
 }
 
 void piece_render(piece_t *piece)
 {
   glBindVertexArray(piece->vao);
-  glUseProgram(piece->shader);
+  glUseProgram(shader);
   glDrawArraysInstanced(GL_TRIANGLES, 0, piece->num_elements, piece->instances);
 }
