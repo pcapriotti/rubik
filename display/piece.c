@@ -115,7 +115,7 @@ unsigned int *gen_elements(poly_t *poly, unsigned int *num_elements)
 }
 
 void piece_init(piece_t *piece, poly_t *poly, int *facelets,
-                unsigned int instances)
+                unsigned int *s, unsigned int instances)
 {
   piece->instances = instances;
   mat4x4_identity(piece->model);
@@ -148,6 +148,19 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
     glEnableVertexAttribArray(3);
 
     free(vdata);
+  }
+
+  /* instance data */
+  {
+    unsigned int vbo;
+    glGenBuffers(1, &vbo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, instances * sizeof(unsigned int),
+                 s, GL_DYNAMIC_DRAW);
+    glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, 0, 0);
+    glEnableVertexAttribArray(4);
+    glVertexAttribDivisor(4, 1);
   }
 
   /* set up shaders and uniforms */
@@ -186,5 +199,5 @@ void piece_render(piece_t *piece)
 {
   glBindVertexArray(piece->vao);
   glUseProgram(piece->shader);
-  glDrawArrays(GL_TRIANGLES, 0, piece->num_elements);
+  glDrawArraysInstanced(GL_TRIANGLES, 0, piece->num_elements, piece->instances);
 }

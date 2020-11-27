@@ -20,7 +20,7 @@ typedef struct piece_t piece_t;
 
 void piece_render(piece_t *piece);
 void piece_init(piece_t *piece, poly_t *poly, int *facelets,
-                unsigned int instances);
+                unsigned int *s, unsigned int instances);
 void piece_update(piece_t *piece, mat4x4 proj,
                   mat4x4 view, mat4x4 view_inv,
                   mat4x4 model, vec3 lpos);

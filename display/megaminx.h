@@ -24,7 +24,7 @@ typedef struct {
   unsigned int *by_vertex;
   unsigned int *by_edge;
 
-  uint8_t *face_action;
+  uint32_t *face_action;
 } symmetries_t;
 
 unsigned int symmetries_act_face(symmetries_t *syms, unsigned int f);

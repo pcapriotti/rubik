@@ -3,6 +3,7 @@
 #include "polyhedron.h"
 #include "scene.h"
 
+#include <GL/glew.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -151,7 +152,7 @@ void megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
     dodec->abs.num_vertices - 2;
   syms->face_action = malloc(megaminx_num_syms *
                              dodec->abs.num_faces *
-                             sizeof(uint8_t));
+                             sizeof(uint32_t));
   /* syms->vertex_action = malloc(megaminx_num_syms * */
   /*                              dodec->abs.num_vertices * */
   /*                              sizeof(unsigned int)); */
@@ -242,7 +243,7 @@ void megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
 
   /* actions */
   for (unsigned int s = 0; s < megaminx_num_syms; s++) {
-    uint8_t *action = &syms->face_action[dodec->abs.num_faces * s];
+    uint32_t *action = &syms->face_action[dodec->abs.num_faces * s];
     unsigned int f0 = s / 5;
     unsigned int vi = s % 5;
 
@@ -269,43 +270,16 @@ void megaminx_syms_cleanup(symmetries_t *syms)
   free(syms->face_action);
 }
 
-void megaminx_corner_piece(piece_t *piece, poly_t *corner,
-                           symmetries_t *syms, int *facelets,
-                           unsigned int v)
+void megaminx_piece_init(piece_t *piece, poly_t *poly, int *facelets,
+                         unsigned int *sym_indices, unsigned int sym_stride,
+                         unsigned int num)
 {
-  int fl[6];
-  unsigned int s = syms->by_vertex[v * 3];
-  for (unsigned int i = 0; i < 6; i++) {
-    fl[i] = facelets[i] >= 0 ? syms->face_action[s * 12 + facelets[i]] : -1;
+  unsigned int *s = malloc(num * sizeof(unsigned int));
+  for (unsigned int i = 0; i < num; i++) {
+    s[i] = sym_indices[i * sym_stride];
   }
-  piece_init(piece, corner, fl, 1);
-  mat4x4_from_quat(piece->model, syms->syms[s]);
-}
-
-void megaminx_edge_piece(piece_t *piece, poly_t *edge,
-                         symmetries_t *syms, int *facelets,
-                         unsigned int e)
-{
-  int fl[6];
-  unsigned int s = syms->by_edge[e * 2];
-  for (unsigned int i = 0; i < 6; i++) {
-    fl[i] = facelets[i] >= 0 ? syms->face_action[s * 12 + facelets[i]] : -1;
-  }
-  piece_init(piece, edge, fl, 1);
-  mat4x4_from_quat(piece->model, syms->syms[s]);
-}
-
-void megaminx_centre_piece(piece_t *piece, poly_t *centre,
-                           symmetries_t *syms, int *facelets,
-                           unsigned int f)
-{
-  int fl[7];
-  unsigned int s = f * 5;
-  for (unsigned int i = 0; i < 7; i++) {
-    fl[i] = facelets[i] >= 0 ? syms->face_action[s * 12 + facelets[i]] : -1;
-  }
-  piece_init(piece, centre, fl, 1);
-  mat4x4_from_quat(piece->model, syms->syms[s]);
+  piece_init(piece, poly, facelets, s, num);
+  free(s);
 }
 
 struct megaminx_scene_t
@@ -327,7 +301,7 @@ struct megaminx_scene_t
   } centre;
 
   symmetries_t syms;
-  piece_t piece[62];
+  piece_t piece[3];
 };
 
 void megaminx_scene_del(megaminx_scene_t *ms)
@@ -348,27 +322,56 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
 
   megaminx_syms_init(&ms->syms, &ms->dodec);
 
-  const int num_corners = ms->dodec.abs.num_vertices;
-  const int num_centres = ms->dodec.abs.num_faces;
-  const int num_edges = num_corners + num_centres - 2;
+  /* symmetries */
+  {
+    unsigned int b;
+    glGenBuffers(1, &b);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
 
-  for (int i = 0; i < num_corners; i++) {
-    megaminx_corner_piece(&ms->piece[i], &ms->corner.poly,
-                          &ms->syms, ms->corner.facelets, i);
-  }
-  for (int i = 0; i < num_edges; i++) {
-    megaminx_edge_piece(&ms->piece[num_corners + i], &ms->edge.poly,
-                        &ms->syms, ms->edge.facelets, i);
-  }
-  for (int i = 0; i < num_centres; i++) {
-    megaminx_centre_piece(&ms->piece[num_corners + num_edges + i],
-                          &ms->centre.poly, &ms->syms,
-                          ms->centre.facelets, i);
+    mat4x4 *syms = malloc(megaminx_num_syms * sizeof(mat4x4));
+    for (unsigned int s = 0; s < megaminx_num_syms; s++) {
+      mat4x4_from_quat(syms[s], ms->syms.syms[s]);
+    }
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
+                 sizeof(mat4x4) * megaminx_num_syms,
+                 syms, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SYMS, b);
+    free(syms);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
-  for (int i = 0; i < num_corners + num_edges + num_centres; i++) {
-    scene_add_piece(scene, &ms->piece[i]);
+  /* face action */
+  {
+    unsigned int b;
+    glGenBuffers(1, &b);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
+
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
+                 sizeof(uint32_t) * megaminx_num_syms * 12,
+                 ms->syms.face_action, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
+
+  megaminx_piece_init(&ms->piece[0], &ms->corner.poly,
+                      ms->corner.facelets,
+                      ms->syms.by_vertex, 3,
+                      ms->dodec.abs.num_vertices);
+  megaminx_piece_init(&ms->piece[1], &ms->edge.poly,
+                      ms->edge.facelets,
+                      ms->syms.by_edge, 2,
+                      ms->dodec.abs.num_faces +
+                      ms->dodec.abs.num_vertices - 2);
+  unsigned int face_sym_indices[] = { 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55 };
+  megaminx_piece_init(&ms->piece[2], &ms->centre.poly,
+                      ms->centre.facelets,
+                      face_sym_indices, 1,
+                      ms->dodec.abs.num_faces);
+
+  scene_add_piece(scene, &ms->piece[0]);
+  scene_add_piece(scene, &ms->piece[1]);
+  scene_add_piece(scene, &ms->piece[2]);
 
   return ms;
 }

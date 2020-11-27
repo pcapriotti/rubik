@@ -22,7 +22,7 @@ void scene_init(scene_t *scene, unsigned int width, unsigned int height)
     glGenBuffers(1, &scene->data_ubo);
     glBindBuffer(GL_UNIFORM_BUFFER, scene->data_ubo);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(scene->data), NULL, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene->data_ubo);
+    glBindBufferBase(GL_UNIFORM_BUFFER, BINDING_SCENE_DATA, scene->data_ubo);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 

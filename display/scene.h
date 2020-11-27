@@ -16,6 +16,12 @@ typedef struct
   vec3 lpos;
 } __attribute__((packed, aligned(4))) scene_data_t;
 
+enum {
+  BINDING_SCENE_DATA,
+  BINDING_SYMS,
+  BINDING_FACE_ACTION,
+};
+
 struct scene_t
 {
   piece_t **pieces;
