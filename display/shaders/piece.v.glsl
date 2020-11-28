@@ -13,6 +13,7 @@ layout (std140, binding = 0) uniform scene_data
   mat4 proj;
   mat4 model;
   vec3 lpos;
+  float time;
 };
 
 layout (std430, binding = 1) buffer _syms

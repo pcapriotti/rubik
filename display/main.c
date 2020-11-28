@@ -146,7 +146,7 @@ void run(GLFWwindow *window)
   glfwGetWindowSize(window, &width, &height);
 
   scene_t *scene = malloc(sizeof(scene_t));
-  scene_init(scene, width, height);
+  scene_init(scene, width, height, glfwGetTime());
 
   megaminx_scene_t *ms = megaminx_scene_new(scene);
 
@@ -163,7 +163,7 @@ void run(GLFWwindow *window)
 
     /* render */
     glfwGetWindowSize(window, &width, &height);
-    scene_render(scene);
+    scene_render(scene, tm);
 
     if (0) {
       /* display fps */

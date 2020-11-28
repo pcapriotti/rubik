@@ -14,6 +14,7 @@ layout (std140, binding = 0) uniform scene_data
   mat4 proj;
   mat4 model;
   vec3 lpos;
+  float time;
 };
 
 const vec3 lcol = vec3(1.0, 1.0, 1.0);

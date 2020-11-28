@@ -7,7 +7,9 @@
 
 #define TB_RADIUS 0.7
 
-void scene_init(scene_t *scene, unsigned int width, unsigned int height)
+void scene_init(scene_t *scene,
+                unsigned int width, unsigned int height,
+                double time0)
 {
   scene->piece_cap = 16;
   scene->pieces = malloc(sizeof(piece_t) * scene->piece_cap);
@@ -15,6 +17,7 @@ void scene_init(scene_t *scene, unsigned int width, unsigned int height)
   scene->tb_active = 0;
   scene->on_keypress = 0;
   scene->on_keypress_data = 0;
+  scene->time0 = time0;
 
   quat_identity(scene->rot);
   memcpy(scene->data.lpos, (vec3) { 3, 4, 10 }, sizeof(vec3));
@@ -103,8 +106,15 @@ void scene_resize(scene_t *scene, unsigned int width, unsigned int height)
   scene_update_pieces(scene);
 }
 
-void scene_render(scene_t *scene)
+void scene_render(scene_t *scene, double time)
 {
+  /* update time */
+  scene->data.time = time - scene->time0;
+  glBindBuffer(GL_UNIFORM_BUFFER, scene->data_ubo);
+  glBufferSubData(GL_UNIFORM_BUFFER,
+                  offsetof(scene_data_t, time),
+                  sizeof(float), &scene->data.time);
+
   for (unsigned int i = 0; i < scene->num_pieces; i++) {
     piece_render(scene->pieces[i]);
   }
