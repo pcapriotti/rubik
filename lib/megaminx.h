@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+struct abs_poly_t;
+typedef struct abs_poly_t abs_poly_t;
+
 static const unsigned int megaminx_num_syms = 60;
 
 #define MEGAMINX_NUM_CORNERS 20
@@ -17,10 +20,12 @@ typedef struct {
   uint8_t *vertex_action;
   uint8_t *edge_action;
 
+  unsigned int *edges_by_face;
+
   /* multiplication table */
   uint8_t *mul;
-  /* inverse table */
-  uint8_t *inv;
+  /* inverse multiplication table */
+  uint8_t *inv_mul;
 } symmetries_t;
 
 /* [Note]
@@ -43,15 +48,22 @@ u(x)).
 */
 typedef struct
 {
-  unsigned int corners[MEGAMINX_NUM_CORNERS];
-  unsigned int edges[MEGAMINX_NUM_EDGES];
-  unsigned int centres[MEGAMINX_NUM_CENTRES];
+  uint8_t corners[MEGAMINX_NUM_CORNERS];
+  uint8_t edges[MEGAMINX_NUM_EDGES];
+  uint8_t centres[MEGAMINX_NUM_CENTRES];
 } megaminx_t;
 
 /* set the ground absolute configuration */
 void megaminx_init(symmetries_t *syms, megaminx_t *mm);
 
 /* action */
-void megaminx_act_(megaminx_t *conf, megaminx_t *move);
+void megaminx_act_(symmetries_t *syms, megaminx_t *conf, megaminx_t *move);
+void megaminx_act(symmetries_t *syms, megaminx_t *conf1,
+                  megaminx_t *conf, megaminx_t *move);
+
+/* generators */
+megaminx_t *megaminx_generators(symmetries_t *syms,
+                                abs_poly_t *dodec,
+                                unsigned int *num);
 
 #endif /* MEGAMINX_H */

@@ -39,5 +39,6 @@ struct megaminx_scene_t;
 typedef struct megaminx_scene_t megaminx_scene_t;
 
 megaminx_scene_t *megaminx_scene_new(scene_t *scene);
+void megaminx_scene_del(megaminx_scene_t *ms);
 
 #endif /* DISPLAY_MEGAMINX_H */

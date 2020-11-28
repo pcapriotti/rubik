@@ -179,7 +179,8 @@ void run(GLFWwindow *window)
     glfwPollEvents();
   }
 
-  free(ms);
+  megaminx_scene_del(ms);
+  free(scene);
 }
 
 int main(int argc, char **argv)

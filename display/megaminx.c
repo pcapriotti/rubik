@@ -147,6 +147,7 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
   quat *rots = malloc(megaminx_num_syms * sizeof(quat));
   syms->by_vertex = malloc(megaminx_num_syms * sizeof(unsigned int));
   syms->by_edge = malloc(megaminx_num_syms * sizeof(unsigned int));
+  syms->edges_by_face = malloc(dodec->abs.num_faces * 5 * sizeof(unsigned int));
 
   const unsigned int num_edges = dodec->abs.num_faces +
     dodec->abs.num_vertices - 2;
@@ -223,6 +224,8 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
       syms->by_edge[i] = megaminx_num_syms;
     }
     unsigned int index = 0;
+    unsigned int *edge_index = calloc(sizeof(unsigned int),
+                                      dodec->abs.num_faces * 5);
     for (unsigned int f = 0; f < dodec->abs.num_faces; f++) {
       unsigned int n = dodec->abs.faces[f].num_vertices;
       int vi0 = adj[f * dodec->abs.num_vertices + v0[f]];
@@ -235,10 +238,14 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
         i1 -= 1;
         int vi1 = adj[f1 * dodec->abs.num_vertices + v0[f1]];
 
+        syms->edges_by_face[f * 5 + edge_index[f]++] = index / 2;
+        syms->edges_by_face[f1 * 5 + edge_index[f1]++] = index / 2;
         syms->by_edge[index++] = f * 5 + (i - vi0 + 5) % 5;
         syms->by_edge[index++] = f1 * 5 + (i1 - vi1 + 5) % 5;
       }
     }
+
+    free(edge_index);
   }
 
   /* construct multiplication table */
@@ -273,6 +280,15 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
     }
   }
 
+  /* inverse multiplication table */
+  syms->inv_mul = malloc(megaminx_num_syms * megaminx_num_syms * sizeof(uint8_t));
+  for (unsigned int a = 0; a < megaminx_num_syms; a++) {
+    for (unsigned int b = 0; b < megaminx_num_syms; b++) {
+      unsigned int c = syms->mul[megaminx_num_syms * b + a];
+      syms->inv_mul[megaminx_num_syms * c + a] = b;
+    }
+  }
+
   /* face action */
   for (unsigned int s = 0; s < megaminx_num_syms; s++) {
     for (unsigned int i = 0; i < dodec->abs.num_faces; i++) {
@@ -300,10 +316,10 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
   /* edge action */
   for (unsigned int s = 0; s < megaminx_num_syms; s++) {
     for (unsigned int i = 1; i < num_edges; i++) {
-      syms->vertex_action[num_edges * s + i] =
-        syms->vertex_action[num_edges *
-                            syms->mul[megaminx_num_syms * s +
-                                      syms->by_edge[i * 2]]];
+      syms->edge_action[num_edges * s + i] =
+        syms->edge_action[num_edges *
+                          syms->mul[megaminx_num_syms * s +
+                                    syms->by_edge[i * 2]]];
     }
   }
 
@@ -319,7 +335,12 @@ void megaminx_syms_cleanup(symmetries_t *syms)
 {
   free(syms->by_vertex);
   free(syms->by_edge);
+  free(syms->edges_by_face);
   free(syms->face_action);
+  free(syms->vertex_action);
+  free(syms->edge_action);
+  free(syms->mul);
+  free(syms->inv_mul);
 }
 
 void megaminx_piece_init(piece_t *piece, poly_t *poly, int *facelets,
