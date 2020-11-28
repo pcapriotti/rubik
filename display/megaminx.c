@@ -277,9 +277,17 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
 
       for (unsigned int j = 0; j < 5; j++) {
         table[10 * i + 10 + j] = f1 * 5 + (wi - wi0 + j + 5) % 5;
-        table[10 * i + 15 + j] = (f1 ^ 1) * 5 + (wi - wi0 + j + 5) % 5;
+        table[10 * i + 15 + j] = (f1 ^ 1) * 5 + (wi0 - wi + j + 5) % 5;
       }
     }
+  }
+
+  for (unsigned int a = 0; a < 60; a++) {
+    printf("%u: ", a);
+    for (unsigned int b = 0; b < 60; b++) {
+      printf("%u ", syms->mul[a * 60 + b]);
+    }
+    printf("\n");
   }
 
   /* inverse multiplication table */
@@ -300,7 +308,10 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
   }
   /* action on vertex 0 */
   for (unsigned int i = 0; i < dodec->abs.num_vertices; i++) {
-    syms->vertex_action[dodec->abs.num_vertices * syms->by_vertex[i * 3]] = i;
+    for (unsigned int j = 0; j < 3; j++) {
+      unsigned int s = syms->by_vertex[i * 3 + j];
+      syms->vertex_action[dodec->abs.num_vertices * s] = i;
+    }
   }
   /* vertex action */
   for (unsigned int s = 0; s < megaminx_num_syms; s++) {
@@ -313,7 +324,10 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
   }
   /* action on edge 0 */
   for (unsigned int i = 0; i < num_edges; i++) {
-    syms->edge_action[num_edges * syms->by_edge[i * 2]] = i;
+    for (unsigned int j = 0; j < 2; j++) {
+      unsigned int s = syms->by_edge[i * 2 + j];
+      syms->edge_action[num_edges * s] = i;
+    }
   }
   /* edge action */
   for (unsigned int s = 0; s < megaminx_num_syms; s++) {
@@ -357,6 +371,13 @@ void megaminx_piece_init(piece_t *piece, poly_t *poly, int *facelets,
   free(s);
 }
 
+struct action_t
+{
+  uint8_t axis;
+  uint8_t count;
+};
+typedef struct action_t action_t;
+
 struct megaminx_scene_t
 {
   poly_t dodec;
@@ -376,6 +397,11 @@ struct megaminx_scene_t
   } centre;
 
   megaminx_t mm;
+  megaminx_t *gen;
+  unsigned int num_gens;
+
+  action_t *key_bindings;
+
   symmetries_t syms;
   quat *rots;
   piece_t piece[3];
@@ -391,9 +417,35 @@ void megaminx_scene_del(megaminx_scene_t *ms)
 void megaminx_on_keypress(void *data, unsigned int c)
 {
   megaminx_scene_t *ms = data;
-  printf("key press\n");
-  unsigned int s[] = { 5, 0, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55 };
-  piece_set_syms(&ms->piece[2], s);
+  if (c >= 256) return;
+
+  action_t *a = &ms->key_bindings[c];
+  if (a->count == 0) return;
+
+  for (unsigned int i = 0; i < a->count; i++) {
+    megaminx_act_(&ms->syms, &ms->mm, &ms->gen[a->axis]);
+  }
+
+  piece_set_conf(&ms->piece[0], ms->mm.corners);
+  piece_set_conf(&ms->piece[1], ms->mm.edges);
+  piece_set_conf(&ms->piece[2], ms->mm.centres);
+}
+
+void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
+{
+  ms->key_bindings = calloc(256, sizeof(action_t));
+  ms->key_bindings['j'] = (action_t) { 0, 1 };
+  ms->key_bindings['f'] = (action_t) { 0, 4 };
+  ms->key_bindings['k'] = (action_t) { 2, 1 };
+  ms->key_bindings['d'] = (action_t) { 2, 4 };
+  ms->key_bindings['l'] = (action_t) { 10, 1 };
+  ms->key_bindings['s'] = (action_t) { 10, 4 };
+  ms->key_bindings[';'] = (action_t) { 8, 1 };
+  ms->key_bindings['a'] = (action_t) { 8, 4 };
+  ms->key_bindings['m'] = (action_t) { 4, 1 };
+  ms->key_bindings['v'] = (action_t) { 4, 4 };
+  ms->key_bindings[','] = (action_t) { 6, 1 };
+  ms->key_bindings['c'] = (action_t) { 6, 4 };
 }
 
 megaminx_scene_t *megaminx_scene_new(scene_t *scene)
@@ -444,6 +496,7 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
   }
 
   megaminx_init(&ms->syms, &ms->mm);
+  ms->gen = megaminx_generators(&ms->syms, &ms->dodec.abs, &ms->num_gens);
 
   const unsigned int num_edges = ms->dodec.abs.num_faces +
     ms->dodec.abs.num_vertices - 2;
@@ -457,6 +510,8 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
   scene_add_piece(scene, &ms->piece[0]);
   scene_add_piece(scene, &ms->piece[1]);
   scene_add_piece(scene, &ms->piece[2]);
+
+  megaminx_scene_set_up_key_bindings(ms);
 
   return ms;
 }

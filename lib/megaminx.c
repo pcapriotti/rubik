@@ -1,5 +1,6 @@
 #include "megaminx.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -38,16 +39,17 @@ void megaminx_act(symmetries_t *syms, megaminx_t *conf1,
                   megaminx_t *conf, megaminx_t *move)
 {
   for (unsigned int i = 0; i < MEGAMINX_NUM_CORNERS; i++) {
-    unsigned int i1 = syms->vertex_action[conf->corners[i] * megaminx_num_syms];
-    conf1->corners[i] = smul(syms, conf->corners[i], move->corners[i1]);
+    unsigned int i1 = syms->vertex_action[conf->corners[i] * 20];
+    uint8_t new = smul(syms, conf->corners[i], move->corners[i1]);
+    conf1->corners[i] = new;
   }
   for (unsigned int i = 0; i < MEGAMINX_NUM_EDGES; i++) {
-    unsigned int i1 = syms->edge_action[conf->edges[i] * megaminx_num_syms];
+    unsigned int i1 = syms->edge_action[conf->edges[i] * 30];
     conf1->edges[i] = smul(syms, conf->edges[i], move->edges[i1]);
   }
   for (unsigned int i = 0; i < MEGAMINX_NUM_CENTRES; i++) {
-    unsigned int i1 = syms->face_action[conf->centres[i] * megaminx_num_syms];
-    conf1->centres[i] = smul(syms, conf->centres[i], move->corners[i1]);
+    unsigned int i1 = syms->face_action[conf->centres[i] * 12];
+    conf1->centres[i] = smul(syms, conf->centres[i], move->centres[i1]);
   }
 }
 
@@ -56,18 +58,18 @@ void megaminx_mul(symmetries_t *syms, megaminx_t *ret,
 {
   for (unsigned int i = 0; i < MEGAMINX_NUM_CORNERS; i++) {
     unsigned int i1 = syms->vertex_action
-      [move1->corners[i] * megaminx_num_syms + i];
+      [move1->corners[i] * 20 + i];
     ret->corners[i] = smul(syms, move1->corners[i], move2->corners[i1]);
   }
   for (unsigned int i = 0; i < MEGAMINX_NUM_EDGES; i++) {
     unsigned int i1 = syms->edge_action
-      [move1->edges[i] * megaminx_num_syms + i];
+      [move1->edges[i] * 30 + i];
     ret->edges[i] = smul(syms, move1->edges[i], move2->edges[i1]);
   }
   for (unsigned int i = 0; i < MEGAMINX_NUM_CENTRES; i++) {
     unsigned int i1 = syms->face_action
-      [move1->centres[i] * megaminx_num_syms + i];
-    ret->centres[i] = smul(syms, move1->centres[i], move2->corners[i1]);
+      [move1->centres[i] * 12 + i];
+    ret->centres[i] = smul(syms, move1->centres[i], move2->centres[i1]);
   }
 }
 
@@ -75,17 +77,17 @@ void megaminx_inv(symmetries_t *syms, megaminx_t *ret, megaminx_t *move)
 {
   for (unsigned int i = 0; i < MEGAMINX_NUM_CORNERS; i++) {
     unsigned int i1 = syms->vertex_action
-      [move->corners[i] * megaminx_num_syms + i];
+      [move->corners[i] * 20 + i];
     ret->corners[i1] = syms->inv_mul[move->corners[i]];
   }
   for (unsigned int i = 0; i < MEGAMINX_NUM_EDGES; i++) {
     unsigned int i1 = syms->edge_action
-      [move->edges[i] * megaminx_num_syms + i];
+      [move->edges[i] * 30 + i];
     ret->edges[i1] = syms->inv_mul[move->edges[i]];
   }
   for (unsigned int i = 0; i < MEGAMINX_NUM_CORNERS; i++) {
     unsigned int i1 = syms->face_action
-      [move->centres[i] * megaminx_num_syms + i];
+      [move->centres[i] * 12 + i];
     ret->centres[i1] = syms->inv_mul[move->centres[i]];
   }
 }

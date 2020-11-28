@@ -23,6 +23,6 @@ typedef struct piece_t piece_t;
 void piece_render(piece_t *piece);
 void piece_init(piece_t *piece, poly_t *poly, int *facelets,
                 uint8_t *conf, unsigned int instances);
-void piece_set_syms(piece_t *piece, unsigned int *s);
+void piece_set_conf(piece_t *piece, uint8_t *conf);
 
 #endif /* PIECE_H */

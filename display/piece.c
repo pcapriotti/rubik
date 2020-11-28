@@ -188,11 +188,16 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
                                  piece_f_glsl, piece_f_glsl_len);
 }
 
-void piece_set_syms(piece_t *piece, unsigned int *s)
+void piece_set_conf(piece_t *piece, uint8_t *conf)
 {
+  unsigned int *buf = malloc(piece->instances * sizeof(unsigned int));
+  for (unsigned int i = 0; i < piece->instances; i++) {
+    buf[i] = conf[i];
+  }
   glBindBuffer(GL_ARRAY_BUFFER, piece->sym_vbo);
   glBufferSubData(GL_ARRAY_BUFFER, 0,
-                  piece->instances * sizeof(unsigned int), s);
+                  piece->instances * sizeof(unsigned int), buf);
+  free(buf);
 }
 
 void piece_render(piece_t *piece)
