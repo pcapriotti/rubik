@@ -282,14 +282,6 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
     }
   }
 
-  for (unsigned int a = 0; a < 60; a++) {
-    printf("%u: ", a);
-    for (unsigned int b = 0; b < 60; b++) {
-      printf("%u ", syms->mul[a * 60 + b]);
-    }
-    printf("\n");
-  }
-
   /* inverse multiplication table */
   syms->inv_mul = malloc(megaminx_num_syms * megaminx_num_syms * sizeof(uint8_t));
   for (unsigned int a = 0; a < megaminx_num_syms; a++) {

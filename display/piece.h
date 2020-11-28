@@ -15,8 +15,6 @@ struct piece_t
   unsigned int num_elements;
   unsigned int shader;
   unsigned int instances;
-
-  mat4x4 model;
 };
 typedef struct piece_t piece_t;
 

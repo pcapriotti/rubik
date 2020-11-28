@@ -120,7 +120,6 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
                 uint8_t *conf, unsigned int instances)
 {
   piece->instances = instances;
-  mat4x4_identity(piece->model);
 
   glGenVertexArrays(1, &piece->vao);
   glBindVertexArray(piece->vao);

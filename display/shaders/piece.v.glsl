@@ -49,8 +49,6 @@ vec3 bcol = vec3(0.05, 0.05, 0.05);
 
 void main()
 {
-  // mat4 sym = mat4(1);
-  // sym[3].x = float(s) / 3;
   mat4 sym = model * syms[s];
 
   pos = sym * vec4(p, 1);
