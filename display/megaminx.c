@@ -461,15 +461,10 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
     glGenBuffers(1, &b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
 
-    mat4x4 *syms = malloc(megaminx_num_syms * sizeof(mat4x4));
-    for (unsigned int s = 0; s < megaminx_num_syms; s++) {
-      mat4x4_from_quat(syms[s], ms->rots[s]);
-    }
     glBufferData(GL_SHADER_STORAGE_BUFFER,
-                 sizeof(mat4x4) * megaminx_num_syms,
-                 syms, GL_STATIC_DRAW);
+                 sizeof(quat) * megaminx_num_syms,
+                 ms->rots, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SYMS, b);
-    free(syms);
 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }

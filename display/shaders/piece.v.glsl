@@ -18,7 +18,7 @@ layout (std140, binding = 0) uniform scene_data
 
 layout (std430, binding = 1) buffer _syms
 {
-  mat4 syms[];
+  vec4 syms[];
 };
 
 layout (std430, binding = 2) buffer _face_action
@@ -48,13 +48,17 @@ vec3 colours[12] = {
 
 vec3 bcol = vec3(0.05, 0.05, 0.05);
 
+vec3 quat_mul(vec4 q, vec3 v)
+{
+  vec3 t = 2 * cross(q.xyz, v);
+  return v + q.w * t + cross(q.xyz, t);
+}
+
 void main()
 {
-  mat4 sym = model * syms[s];
-
-  pos = sym * vec4(p, 1);
+  pos = model * vec4(quat_mul(syms[s], p), 1);
   gl_Position = proj * view * pos;
-  norm = mat3(sym) * n;
+  norm = mat3(model) * quat_mul(syms[s], p);
   if (f < 0)
     col = bcol;
   else
