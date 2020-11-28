@@ -402,6 +402,7 @@ struct megaminx_scene_t
 void megaminx_scene_del(megaminx_scene_t *ms)
 {
   megaminx_syms_cleanup(&ms->syms);
+  for (int i = 0; i < 3; i++) piece_cleanup(&ms->piece[i]);
   free(ms->rots);
   free(ms);
 }

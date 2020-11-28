@@ -5,6 +5,10 @@ layout (location = 2) in int f;
 layout (location = 3) in vec3 b;
 layout (location = 4) in uint s;
 layout (location = 5) in uint s0;
+layout (location = 6) in uint s1;
+layout (location = 7) in float tm0;
+
+uniform float duration;
 
 layout (std140, binding = 0) uniform scene_data
 {
@@ -54,11 +58,24 @@ vec3 quat_mul(vec4 q, vec3 v)
   return v + q.w * t + cross(q.xyz, t);
 }
 
+vec4 quat_normalize(vec4 q)
+{
+  return q / sqrt(pow(length(q.xyz), 2) + pow(q[3], 2));
+}
+
 void main()
 {
-  pos = model * vec4(quat_mul(syms[s], p), 1);
+  vec4 q = syms[s];
+  mat4 tr = mat4(1);
+  if (s1 != s) {
+    q = quat_normalize(mix(q, syms[s1], (time - tm0) / duration));
+    // q = syms[s1];
+    // tr[3] = vec4((time - tm0) / 10, 0, 0, 1);
+  }
+
+  pos = tr * model * vec4(quat_mul(q, p), 1);
   gl_Position = proj * view * pos;
-  norm = mat3(model) * quat_mul(syms[s], p);
+  norm = mat3(model) * quat_mul(q, n);
   if (f < 0)
     col = bcol;
   else

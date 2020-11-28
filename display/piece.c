@@ -120,6 +120,10 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
                 uint8_t *conf, unsigned int instances)
 {
   piece->instances = instances;
+  piece->conf = malloc(instances * sizeof(unsigned int));
+  piece->conf1 = malloc(instances * sizeof(unsigned int));
+  piece->start_time = malloc(instances * sizeof(float));
+  piece->duration = 1.0;
 
   glGenVertexArrays(1, &piece->vao);
   glBindVertexArray(piece->vao);
@@ -151,35 +155,60 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
     free(vdata);
   }
 
-  unsigned int *conf_buf = malloc(instances * sizeof(unsigned int));
   for (unsigned int i = 0; i < instances; i++) {
-    conf_buf[i] = conf[i];
+    piece->conf[i] = conf[i];
   }
+  memcpy(piece->conf1, piece->conf, instances * sizeof(unsigned int));
 
-  /* instance data */
-  {
-    glGenBuffers(1, &piece->sym_vbo);
-
-    glBindBuffer(GL_ARRAY_BUFFER, piece->sym_vbo);
-    glBufferData(GL_ARRAY_BUFFER, instances * sizeof(unsigned int),
-                 conf_buf, GL_DYNAMIC_DRAW);
-    glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, 0, 0);
-    glEnableVertexAttribArray(4);
-    glVertexAttribDivisor(4, 1);
-  }
+  /* initial configuration (used for facelet colours) */
   {
     unsigned int vbo;
     glGenBuffers(1, &vbo);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, instances * sizeof(unsigned int),
-                 conf_buf, GL_STATIC_DRAW);
+                 piece->conf, GL_STATIC_DRAW);
     glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, 0, 0);
     glEnableVertexAttribArray(5);
     glVertexAttribDivisor(5, 1);
   }
+  /* current configuration */
+  {
+    glGenBuffers(1, &piece->sym_vbo);
 
-  free(conf_buf);
+    glBindBuffer(GL_ARRAY_BUFFER, piece->sym_vbo);
+    glBufferData(GL_ARRAY_BUFFER, instances * sizeof(unsigned int),
+                 piece->conf, GL_DYNAMIC_DRAW);
+    glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, 0, 0);
+    glEnableVertexAttribArray(4);
+    glVertexAttribDivisor(4, 1);
+  }
+  /* target configuration for animation */
+  {
+    glGenBuffers(1, &piece->sym1_vbo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, piece->sym1_vbo);
+    glBufferData(GL_ARRAY_BUFFER, instances * sizeof(unsigned int),
+                 piece->conf1, GL_DYNAMIC_DRAW);
+    glVertexAttribIPointer(6, 1, GL_UNSIGNED_INT, 0, 0);
+    glEnableVertexAttribArray(6);
+    glVertexAttribDivisor(6, 1);
+  }
+
+  /* animation start time */
+  {
+    glGenBuffers(1, &piece->time_vbo);
+
+    for (unsigned int i = 0; i < instances; i++) {
+      piece->start_time[i] = 0;
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, piece->time_vbo);
+    glBufferData(GL_ARRAY_BUFFER, instances * sizeof(float),
+                 piece->start_time, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(7);
+    glVertexAttribDivisor(7, 1);
+  }
 
   /* set up shaders and uniforms */
   if (shader == 0)
@@ -187,21 +216,64 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
                                  piece_f_glsl, piece_f_glsl_len);
 }
 
+void piece_cleanup(piece_t *piece)
+{
+  free(piece->conf);
+  free(piece->start_time);
+}
+
 void piece_set_conf(piece_t *piece, uint8_t *conf)
 {
-  unsigned int *buf = malloc(piece->instances * sizeof(unsigned int));
   for (unsigned int i = 0; i < piece->instances; i++) {
-    buf[i] = conf[i];
+    if (conf[i] != piece->conf1[i]) {
+      printf("starting animation for instance %u\n", i);
+      piece->start_time[i] = piece->time;
+      piece->conf[i] = piece->conf1[i];
+      piece->conf1[i] = conf[i];
+    }
   }
   glBindBuffer(GL_ARRAY_BUFFER, piece->sym_vbo);
   glBufferSubData(GL_ARRAY_BUFFER, 0,
-                  piece->instances * sizeof(unsigned int), buf);
-  free(buf);
+                  piece->instances * sizeof(unsigned int), piece->conf);
+  glBindBuffer(GL_ARRAY_BUFFER, piece->sym1_vbo);
+  glBufferSubData(GL_ARRAY_BUFFER, 0,
+                  piece->instances * sizeof(unsigned int), piece->conf1);
+  glBindBuffer(GL_ARRAY_BUFFER, piece->time_vbo);
+  glBufferSubData(GL_ARRAY_BUFFER, 0,
+                  piece->instances * sizeof(float), piece->start_time);
 }
 
-void piece_render(piece_t *piece)
+void piece_render(piece_t *piece, float time)
 {
   glBindVertexArray(piece->vao);
   glUseProgram(shader);
+
+  /* terminate animations */
+  int need_update = 0;
+  for (unsigned int i = 0; i < piece->instances; i++) {
+    if (piece->conf[i] != piece->conf1[i] &&
+        time - piece->start_time[i] >= piece->duration) {
+      printf("terminating animation for instance %u\n", i);
+      piece->conf[i] = piece->conf1[i];
+      piece->start_time[i] = 0;
+      need_update = 1;
+    }
+  }
+  if (need_update) {
+    glBindBuffer(GL_ARRAY_BUFFER, piece->sym_vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0,
+                    piece->instances * sizeof(unsigned int), piece->conf);
+    glBindBuffer(GL_ARRAY_BUFFER, piece->time_vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0,
+                    piece->instances * sizeof(float), piece->start_time);
+  }
+
+  {
+    unsigned int var = glGetUniformLocation(shader, "duration");
+    glUniform1f(var, piece->duration);
+  }
+
   glDrawArraysInstanced(GL_TRIANGLES, 0, piece->num_elements, piece->instances);
+
+  piece->time = time;
 }
