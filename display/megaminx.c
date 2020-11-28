@@ -3,6 +3,8 @@
 #include "polyhedron.h"
 #include "scene.h"
 
+#include "lib/megaminx.h"
+
 #include <GL/glew.h>
 #include <assert.h>
 #include <stdio.h>
@@ -347,7 +349,7 @@ void megaminx_piece_init(piece_t *piece, poly_t *poly, int *facelets,
                          unsigned int *sym_indices, unsigned int sym_stride,
                          unsigned int num)
 {
-  unsigned int *s = malloc(num * sizeof(unsigned int));
+  uint8_t *s = malloc(num * sizeof(uint8_t));
   for (unsigned int i = 0; i < num; i++) {
     s[i] = sym_indices[i * sym_stride];
   }
@@ -373,6 +375,7 @@ struct megaminx_scene_t
     int facelets[7];
   } centre;
 
+  megaminx_t mm;
   symmetries_t syms;
   quat *rots;
   piece_t piece[3];
@@ -440,20 +443,16 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
-  megaminx_piece_init(&ms->piece[0], &ms->corner.poly,
-                      ms->corner.facelets,
-                      ms->syms.by_vertex, 3,
-                      ms->dodec.abs.num_vertices);
-  megaminx_piece_init(&ms->piece[1], &ms->edge.poly,
-                      ms->edge.facelets,
-                      ms->syms.by_edge, 2,
-                      ms->dodec.abs.num_faces +
-                      ms->dodec.abs.num_vertices - 2);
-  unsigned int face_sym_indices[] = { 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55 };
-  megaminx_piece_init(&ms->piece[2], &ms->centre.poly,
-                      ms->centre.facelets,
-                      face_sym_indices, 1,
-                      ms->dodec.abs.num_faces);
+  megaminx_init(&ms->syms, &ms->mm);
+
+  const unsigned int num_edges = ms->dodec.abs.num_faces +
+    ms->dodec.abs.num_vertices - 2;
+  piece_init(&ms->piece[0], &ms->corner.poly, ms->corner.facelets,
+             ms->mm.corners, ms->dodec.abs.num_vertices);
+  piece_init(&ms->piece[1], &ms->edge.poly, ms->edge.facelets,
+             ms->mm.edges, num_edges);
+  piece_init(&ms->piece[2], &ms->centre.poly, ms->centre.facelets,
+             ms->mm.centres, ms->dodec.abs.num_faces);
 
   scene_add_piece(scene, &ms->piece[0]);
   scene_add_piece(scene, &ms->piece[1]);

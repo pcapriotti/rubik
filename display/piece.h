@@ -1,6 +1,7 @@
 #ifndef PIECE_H
 #define PIECE_H
 
+#include <stdint.h>
 #include <memory.h>
 #include "linmath.h"
 
@@ -21,7 +22,7 @@ typedef struct piece_t piece_t;
 
 void piece_render(piece_t *piece);
 void piece_init(piece_t *piece, poly_t *poly, int *facelets,
-                unsigned int *s, unsigned int instances);
+                uint8_t *conf, unsigned int instances);
 void piece_set_syms(piece_t *piece, unsigned int *s);
 
 #endif /* PIECE_H */
