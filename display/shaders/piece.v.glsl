@@ -34,7 +34,7 @@ vec3 colours[12] = {
   vec3(1.0, 1.0, 1.0), // white
   vec3(0.4, 0.4, 0.4), // grey
   vec3(1.0, 1.0, 0.0), // yellow
-  vec3(1.0, 1.0, 0.92), // pale yellow
+  vec3(0.91, 0.85, 0.68), // pale yellow
   vec3(0.5, 0.0, 0.5), // purple
   vec3(1.0, 0.75, 0.8), // pink
   vec3(0.0, 0.6, 0.0), // green
