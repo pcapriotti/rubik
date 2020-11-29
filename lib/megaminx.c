@@ -7,6 +7,7 @@
 
 #include "abs_poly.h"
 #include "perm.h"
+#include "puzzle.h"
 
 unsigned int smul(symmetries_t *syms, unsigned int a, unsigned int b)
 {

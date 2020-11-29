@@ -135,7 +135,7 @@ uint8_t perm_sign(uint8_t *x, size_t len)
 
 void perm_from_index(uint8_t *x, size_t len, int index, size_t n)
 {
-  uint8_t *lehmer = malloc(len);
+  uint8_t *lehmer = calloc(len, 1);
 
   int b = n - len + 1;
   for (size_t i = n - len + 2; i <= n - 1; i++) {

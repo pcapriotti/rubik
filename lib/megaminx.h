@@ -14,21 +14,8 @@ static const unsigned int megaminx_num_syms = 60;
 #define MEGAMINX_NUM_PIECES \
   (MEGAMINX_NUM_CORNERS + MEGAMINX_NUM_EDGES + MEGAMINX_NUM_CENTRES)
 
-typedef struct {
-  unsigned int *by_vertex;
-  unsigned int *by_edge;
-
-  uint32_t *face_action;
-  uint8_t *vertex_action;
-  uint8_t *edge_action;
-
-  unsigned int *edges_by_face;
-
-  /* multiplication table */
-  uint8_t *mul;
-  /* inverse multiplication table */
-  uint8_t *inv_mul;
-} symmetries_t;
+struct symmetries_t;
+typedef struct symmetries_t symmetries_t;
 
 /* [Note]
 

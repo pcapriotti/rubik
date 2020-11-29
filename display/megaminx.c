@@ -4,6 +4,7 @@
 #include "scene.h"
 
 #include "lib/megaminx.h"
+#include "lib/puzzle.h"
 
 #include <GL/glew.h>
 #include <assert.h>
