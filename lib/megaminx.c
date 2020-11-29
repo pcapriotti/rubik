@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "abs_poly.h"
+#include "perm.h"
 
 unsigned int smul(symmetries_t *syms, unsigned int a, unsigned int b)
 {
@@ -43,6 +44,13 @@ unsigned int repr(unsigned int x)
   return MEGAMINX_NUM_CORNERS + MEGAMINX_NUM_EDGES;
 }
 
+unsigned int megaminx_orientations(unsigned int x)
+{
+  if (x < MEGAMINX_NUM_CORNERS) return 3;
+  if (x < MEGAMINX_NUM_CORNERS + MEGAMINX_NUM_EDGES) return 2;
+  return 5;
+}
+
 uint8_t *megaminx_corner(megaminx_t *mm, unsigned int c)
 {
   return &mm->pieces[c];
@@ -56,6 +64,12 @@ uint8_t *megaminx_edge(megaminx_t *mm, unsigned int e)
 uint8_t *megaminx_centre(megaminx_t *mm, unsigned int f)
 {
   return &mm->pieces[f + MEGAMINX_NUM_CORNERS + MEGAMINX_NUM_EDGES];
+}
+
+void megaminx_set_orient(megaminx_t *mm, unsigned int x, unsigned int k)
+{
+  unsigned int s = mm->pieces[x];
+  mm->pieces[x] = s - s % megaminx_orientations(x) + k;
 }
 
 void megaminx_debug(symmetries_t *syms, megaminx_t *mm)
@@ -152,4 +166,58 @@ megaminx_t *megaminx_generators(symmetries_t *syms,
   }
 
   return gen;
+}
+
+void even_shuffle(uint8_t *x, size_t len)
+{
+  shuffle(x, len);
+  uint8_t s = perm_sign(x, len);
+  if (s) {
+    uint8_t tmp = x[0];
+    x[0] = x[1];
+    x[1] = tmp;
+  }
+}
+
+void megaminx_scramble(symmetries_t *syms, megaminx_t *mm)
+{
+  /* corners */
+  {
+    uint8_t perm[MEGAMINX_NUM_CORNERS];
+    perm_id(perm, MEGAMINX_NUM_CORNERS);
+    even_shuffle(perm, MEGAMINX_NUM_CORNERS);
+
+    unsigned int total = 0;
+    for (unsigned int i = 0; i < MEGAMINX_NUM_CORNERS; i++) {
+      unsigned int k;
+      if (i == MEGAMINX_NUM_CORNERS - 1) {
+        k = (3 - total % 3) % 3;
+      }
+      else {
+        k = rand() % 3;
+        total += k;
+      }
+      *megaminx_corner(mm, i) = syms->by_vertex[perm[i] * 3 + k];
+    }
+  }
+
+  {
+    uint8_t perm[MEGAMINX_NUM_EDGES];
+    perm_id(perm, MEGAMINX_NUM_EDGES);
+    even_shuffle(perm, MEGAMINX_NUM_EDGES);
+
+    unsigned int total = 0;
+    for (unsigned int i = 0; i < MEGAMINX_NUM_EDGES; i++) {
+      unsigned int k;
+      if (i == MEGAMINX_NUM_EDGES - 1) {
+        k = (2 - total % 2) % 2;
+      }
+      else {
+        k = rand() % 2;
+        total += k;
+      }
+      *megaminx_edge(mm, i) = syms->by_edge[perm[i] * 2 + k];
+    }
+  }
+
 }

@@ -222,10 +222,15 @@ void piece_cleanup(piece_t *piece)
   free(piece->start_time);
 }
 
-void piece_set_conf(piece_t *piece, uint8_t *conf)
+void piece_set_conf_(piece_t *piece, uint8_t *conf, int animate)
 {
   for (unsigned int i = 0; i < piece->instances; i++) {
-    if (conf[i] != piece->conf1[i]) {
+    if (!animate) {
+      piece->conf[i] = conf[i];
+      piece->conf1[i] = conf[i];
+      piece->start_time[i] = -1;
+    }
+    else if (conf[i] != piece->conf1[i]) {
       piece->conf[i] = piece->conf1[i];
       piece->conf1[i] = conf[i];
       piece->start_time[i] = -1;
@@ -279,4 +284,14 @@ void piece_render(piece_t *piece, float time)
   glDrawArraysInstanced(GL_TRIANGLES, 0, piece->num_elements, piece->instances);
 
   piece->time = time;
+}
+
+void piece_set_conf(piece_t *piece, uint8_t *conf)
+{
+  piece_set_conf_(piece, conf, 1);
+}
+
+void piece_set_conf_instant(piece_t *piece, uint8_t *conf)
+{
+  piece_set_conf_(piece, conf, 0);
 }

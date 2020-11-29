@@ -441,17 +441,9 @@ void megaminx_action_move_face(megaminx_scene_t *ms, void *data_)
 {
   struct move_face_data_t *data = data_;
 
-  printf("moving:\n");
-  megaminx_debug(&ms->syms, &ms->gen[data->face]);
-  printf("---\nbefore:\n");
-  megaminx_debug(&ms->syms, &ms->mm);
-
   for (unsigned int i = 0; i < data->count; i++) {
     megaminx_act_(&ms->syms, &ms->mm, &ms->gen[data->face]);
   }
-
-  printf("---\nafter:\n");
-  megaminx_debug(&ms->syms, &ms->mm);
 
   piece_set_conf(&ms->piece[0], megaminx_corner(&ms->mm, 0));
   piece_set_conf(&ms->piece[1], megaminx_edge(&ms->mm, 0));
@@ -476,6 +468,15 @@ void megaminx_action_rotate(megaminx_scene_t *ms, void *data_)
   piece_set_conf(&ms->piece[2], megaminx_centre(&ms->mm, 0));
 }
 
+void megaminx_action_scramble(megaminx_scene_t *ms, void *data_)
+{
+  megaminx_scramble(&ms->syms, &ms->mm);
+
+  piece_set_conf_instant(&ms->piece[0], megaminx_corner(&ms->mm, 0));
+  piece_set_conf_instant(&ms->piece[1], megaminx_edge(&ms->mm, 0));
+  piece_set_conf_instant(&ms->piece[2], megaminx_centre(&ms->mm, 0));
+}
+
 void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
 {
   ms->key_bindings = calloc(256, sizeof(action_t));
@@ -496,6 +497,11 @@ void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
       .data = rotate_data_new(s)
     };
   }
+
+  ms->key_bindings['s' - 'a' + 1] = (action_t) {
+    .run = megaminx_action_scramble,
+    .data = 0
+  };
 }
 
 megaminx_scene_t *megaminx_scene_new(scene_t *scene)

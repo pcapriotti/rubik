@@ -56,6 +56,7 @@ typedef struct
 uint8_t *megaminx_corner(megaminx_t *mm, unsigned int c);
 uint8_t *megaminx_edge(megaminx_t *mm, unsigned int e);
 uint8_t *megaminx_centre(megaminx_t *mm, unsigned int f);
+unsigned int megaminx_orientations(unsigned int x);
 
 /* set the ground absolute configuration */
 void megaminx_init(symmetries_t *syms, megaminx_t *mm);
@@ -72,6 +73,8 @@ void megaminx_rotate(symmetries_t *syms, megaminx_t *conf1,
 megaminx_t *megaminx_generators(symmetries_t *syms,
                                 abs_poly_t *dodec,
                                 unsigned int *num);
+
+void megaminx_scramble(symmetries_t *syms, megaminx_t *mm);
 
 void megaminx_debug(symmetries_t *syms, megaminx_t *mm);
 
