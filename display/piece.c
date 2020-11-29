@@ -200,7 +200,7 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
     glGenBuffers(1, &piece->time_vbo);
 
     for (unsigned int i = 0; i < instances; i++) {
-      piece->start_time[i] = 0;
+      piece->start_time[i] = -1;
     }
     glBindBuffer(GL_ARRAY_BUFFER, piece->time_vbo);
     glBufferData(GL_ARRAY_BUFFER, instances * sizeof(float),
@@ -226,10 +226,9 @@ void piece_set_conf(piece_t *piece, uint8_t *conf)
 {
   for (unsigned int i = 0; i < piece->instances; i++) {
     if (conf[i] != piece->conf1[i]) {
-      printf("starting animation for instance %u\n", i);
-      piece->start_time[i] = piece->time;
       piece->conf[i] = piece->conf1[i];
       piece->conf1[i] = conf[i];
+      piece->start_time[i] = -1;
     }
   }
   glBindBuffer(GL_ARRAY_BUFFER, piece->sym_vbo);
@@ -251,12 +250,16 @@ void piece_render(piece_t *piece, float time)
   /* terminate animations */
   int need_update = 0;
   for (unsigned int i = 0; i < piece->instances; i++) {
-    if (piece->conf[i] != piece->conf1[i] &&
-        time - piece->start_time[i] >= piece->duration) {
-      printf("terminating animation for instance %u\n", i);
-      piece->conf[i] = piece->conf1[i];
-      piece->start_time[i] = 0;
-      need_update = 1;
+    if (piece->conf[i] != piece->conf1[i]) {
+      if (piece->start_time[i] < 0) {
+        piece->start_time[i] = time;
+        need_update = 1;
+      }
+      else if (time - piece->start_time[i] >= piece->duration) {
+        piece->conf[i] = piece->conf1[i];
+        piece->start_time[i] = -1;
+        need_update = 1;
+      }
     }
   }
   if (need_update) {

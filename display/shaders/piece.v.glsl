@@ -63,14 +63,31 @@ vec4 quat_normalize(vec4 q)
   return q / sqrt(pow(length(q.xyz), 2) + pow(q[3], 2));
 }
 
+vec4 quat_slerp(vec4 q1, vec4 q2, float t)
+{
+  float d = dot(q1.xyz, q2.xyz) + q1.w * q2.w;
+  if (d < 0) {
+    d = -d;
+    q2 = -q2;
+  }
+
+  if (d > 0.99) {
+    return quat_normalize(mix(q1, q2, t));
+  }
+
+  float s = sqrt(1 - d * d);
+  float theta = atan(s, d);
+  float a = sin(theta * (1 - t)) / s;
+  float b = sin(theta * t) / s;
+  return a * q1 + b * q2;
+}
+
 void main()
 {
   vec4 q = syms[s];
   mat4 tr = mat4(1);
   if (s1 != s) {
-    q = quat_normalize(mix(q, syms[s1], (time - tm0) / duration));
-    // q = syms[s1];
-    // tr[3] = vec4((time - tm0) / 10, 0, 0, 1);
+    q = quat_slerp(q, syms[s1], (time - tm0) / duration);
   }
 
   pos = tr * model * vec4(quat_mul(q, p), 1);
