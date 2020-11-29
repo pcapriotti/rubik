@@ -365,8 +365,8 @@ void megaminx_piece_init(piece_t *piece, poly_t *poly, int *facelets,
 
 struct action_t
 {
-  uint8_t axis;
-  uint8_t count;
+  void (*run)(megaminx_scene_t *ms, void *data);
+  void *data;
 };
 typedef struct action_t action_t;
 
@@ -403,6 +403,10 @@ void megaminx_scene_del(megaminx_scene_t *ms)
 {
   megaminx_syms_cleanup(&ms->syms);
   for (int i = 0; i < 3; i++) piece_cleanup(&ms->piece[i]);
+  for (unsigned int i = 0; i < 256; i++) {
+    free(ms->key_bindings[i].data);
+  }
+  free(ms->key_bindings);
   free(ms->rots);
   free(ms);
 }
@@ -413,10 +417,31 @@ void megaminx_on_keypress(void *data, unsigned int c)
   if (c >= 256) return;
 
   action_t *a = &ms->key_bindings[c];
-  if (a->count == 0) return;
+  if (a->run == 0) return;
 
-  for (unsigned int i = 0; i < a->count; i++) {
-    megaminx_act_(&ms->syms, &ms->mm, &ms->gen[a->axis]);
+  a->run(ms, a->data);
+}
+
+struct move_face_data_t
+{
+  unsigned int face;
+  unsigned int count;
+};
+
+struct move_face_data_t *move_face_data_new(unsigned int face, unsigned int count)
+{
+  struct move_face_data_t *data = malloc(sizeof(struct move_face_data_t));
+  data->face = face;
+  data->count = count;
+  return data;
+}
+
+void megaminx_action_move_face(megaminx_scene_t *ms, void *data_)
+{
+  struct move_face_data_t *data = data_;
+
+  for (unsigned int i = 0; i < data->count; i++) {
+    megaminx_act_(&ms->syms, &ms->mm, &ms->gen[data->face]);
   }
 
   piece_set_conf(&ms->piece[0], ms->mm.corners);
@@ -427,18 +452,23 @@ void megaminx_on_keypress(void *data, unsigned int c)
 void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
 {
   ms->key_bindings = calloc(256, sizeof(action_t));
-  ms->key_bindings['j'] = (action_t) { 0, 1 };
-  ms->key_bindings['f'] = (action_t) { 0, 4 };
-  ms->key_bindings['k'] = (action_t) { 2, 1 };
-  ms->key_bindings['d'] = (action_t) { 2, 4 };
-  ms->key_bindings['l'] = (action_t) { 10, 1 };
-  ms->key_bindings['s'] = (action_t) { 10, 4 };
-  ms->key_bindings[';'] = (action_t) { 8, 1 };
-  ms->key_bindings['a'] = (action_t) { 8, 4 };
-  ms->key_bindings['m'] = (action_t) { 4, 1 };
-  ms->key_bindings['v'] = (action_t) { 4, 4 };
-  ms->key_bindings[','] = (action_t) { 6, 1 };
-  ms->key_bindings['c'] = (action_t) { 6, 4 };
+#define BIND(x, f, c) \
+  ms->key_bindings[x] = (action_t) { \
+    .run = megaminx_action_move_face, \
+    .data = move_face_data_new(f, c) }
+  BIND('j', 0, 1);
+  BIND('k', 2, 1);
+  BIND('l', 10, 1);
+  BIND(';', 8, 1);
+  BIND('m', 4, 1);
+  BIND(',', 6, 1);
+  BIND('f', 0, 4);
+  BIND('d', 2, 4);
+  BIND('s', 10, 4);
+  BIND('a', 8, 4);
+  BIND('v', 4, 4);
+  BIND('c', 6, 4);
+#undef BIND
 }
 
 megaminx_scene_t *megaminx_scene_new(scene_t *scene)
