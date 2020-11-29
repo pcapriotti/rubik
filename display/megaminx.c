@@ -7,6 +7,7 @@
 
 #include <GL/glew.h>
 #include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -479,31 +480,22 @@ void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
 {
   ms->key_bindings = calloc(256, sizeof(action_t));
 
-  /* face moves */
-#define BIND(x, f, c) \
-  ms->key_bindings[x] = (action_t) { \
-    .run = megaminx_action_move_face, \
-    .data = move_face_data_new(f, c) }
-  BIND('j', 0, 1);
-  BIND('k', 2, 1);
-  BIND('l', 10, 1);
-  BIND(';', 8, 1);
-  BIND('m', 4, 1);
-  BIND(',', 6, 1);
-  BIND('f', 0, 4);
-  BIND('d', 2, 4);
-  BIND('s', 10, 4);
-  BIND('a', 8, 4);
-  BIND('v', 4, 4);
-  BIND('c', 6, 4);
-#undef BIND
-
-  ms->key_bindings['K'] = (action_t) { \
-    .run = megaminx_action_rotate, \
-    .data = rotate_data_new(21) };
-  ms->key_bindings['D'] = (action_t) { \
-    .run = megaminx_action_rotate, \
-    .data = rotate_data_new(11) };
+  static const unsigned char face_keys[] = "jfkdmv,c;als";
+  static const unsigned char rot_keys[] = "JFKDMV<C/ALS";
+  for (unsigned int i = 0; i < 12; i++) {
+    ms->key_bindings[face_keys[i]] = (action_t) {
+      .run = megaminx_action_move_face,
+      .data = move_face_data_new(i & ~1, i & 1 ? 4 : 1)
+    };
+  }
+  for (unsigned int i = 0; i < 12; i++) {
+    unsigned int s = *megaminx_centre(&ms->gen[i & ~1], (i & ~1));
+    if (i & 1) s = ms->syms.inv_mul[s];
+    ms->key_bindings[rot_keys[i]] = (action_t) {
+      .run = megaminx_action_rotate,
+      .data = rotate_data_new(s)
+    };
+  }
 }
 
 megaminx_scene_t *megaminx_scene_new(scene_t *scene)
