@@ -260,7 +260,7 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
 
     for (unsigned int j = 0; j < 5; j++) {
       table[j] = f0 * 5 + (vi + j) % 5;
-      table[5 + j] = (f0 ^ 1) * 5 + (vi + j) % 5;
+      table[5 + j] = (f0 ^ 1) * 5 + (5 - vi + j) % 5;
     }
 
     int vi0 = adj[f0 * dodec->abs.num_vertices + v0[f0]];
