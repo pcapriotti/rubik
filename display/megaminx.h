@@ -16,9 +16,9 @@ typedef struct piece_t piece_t;
 struct scene_t;
 typedef struct scene_t scene_t;
 
-void megaminx_corner(poly_t *mm, poly_t *dodec, float edge, int *facelets);
-void megaminx_edge(poly_t *mm, poly_t *dodec, float edge, int* facelets);
-void megaminx_centre(poly_t *mm, poly_t *dodec, float edge, int *facelets);
+void megaminx_corner_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets);
+void megaminx_edge_poly(poly_t *mm, poly_t *dodec, float edge, int* facelets);
+void megaminx_centre_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets);
 
 unsigned int symmetries_act_face(symmetries_t *syms, unsigned int f);
 

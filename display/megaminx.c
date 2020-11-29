@@ -12,7 +12,7 @@
 
 /* extract a megaminx corner from vertex 0 of a dodecahedron */
 /* edge is the ratio between the corner edge length and the full edge length */
-void megaminx_corner(poly_t *mm, poly_t *dodec, float edge, int *facelets)
+void megaminx_corner_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
 {
   abs_prism(&mm->abs, 4);
 
@@ -40,7 +40,7 @@ void megaminx_corner(poly_t *mm, poly_t *dodec, float edge, int *facelets)
 }
 
 
-void megaminx_edge(poly_t *mm, poly_t *dodec, float edge, int* facelets)
+void megaminx_edge_poly(poly_t *mm, poly_t *dodec, float edge, int* facelets)
 {
   abs_prism(&mm->abs, 4);
   mm->vertices = malloc(mm->abs.num_vertices * sizeof(vec3));
@@ -77,7 +77,7 @@ void megaminx_edge(poly_t *mm, poly_t *dodec, float edge, int* facelets)
   facelets[4] = 0;
 }
 
-void megaminx_centre(poly_t *mm, poly_t *dodec, float edge, int *facelets)
+void megaminx_centre_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
 {
   abs_prism(&mm->abs, 5);
   mm->vertices = malloc(mm->abs.num_vertices * sizeof(vec3));
@@ -440,13 +440,21 @@ void megaminx_action_move_face(megaminx_scene_t *ms, void *data_)
 {
   struct move_face_data_t *data = data_;
 
+  printf("moving:\n");
+  megaminx_debug(&ms->syms, &ms->gen[data->face]);
+  printf("---\nbefore:\n");
+  megaminx_debug(&ms->syms, &ms->mm);
+
   for (unsigned int i = 0; i < data->count; i++) {
     megaminx_act_(&ms->syms, &ms->mm, &ms->gen[data->face]);
   }
 
-  piece_set_conf(&ms->piece[0], ms->mm.corners);
-  piece_set_conf(&ms->piece[1], ms->mm.edges);
-  piece_set_conf(&ms->piece[2], ms->mm.centres);
+  printf("---\nafter:\n");
+  megaminx_debug(&ms->syms, &ms->mm);
+
+  piece_set_conf(&ms->piece[0], megaminx_corner(&ms->mm, 0));
+  piece_set_conf(&ms->piece[1], megaminx_edge(&ms->mm, 0));
+  piece_set_conf(&ms->piece[2], megaminx_centre(&ms->mm, 0));
 }
 
 unsigned int *rotate_data_new(unsigned int s)
@@ -462,9 +470,9 @@ void megaminx_action_rotate(megaminx_scene_t *ms, void *data_)
 
   megaminx_rotate_(&ms->syms, &ms->mm, *data);
 
-  piece_set_conf(&ms->piece[0], ms->mm.corners);
-  piece_set_conf(&ms->piece[1], ms->mm.edges);
-  piece_set_conf(&ms->piece[2], ms->mm.centres);
+  piece_set_conf(&ms->piece[0], megaminx_corner(&ms->mm, 0));
+  piece_set_conf(&ms->piece[1], megaminx_edge(&ms->mm, 0));
+  piece_set_conf(&ms->piece[2], megaminx_centre(&ms->mm, 0));
 }
 
 void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
@@ -508,9 +516,9 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
   scene->on_keypress = megaminx_on_keypress;
 
   std_dodec(&ms->dodec);
-  megaminx_corner(&ms->corner.poly, &ms->dodec, edge_size, ms->corner.facelets);
-  megaminx_edge(&ms->edge.poly, &ms->dodec, edge_size, ms->edge.facelets);
-  megaminx_centre(&ms->centre.poly, &ms->dodec, edge_size, ms->centre.facelets);
+  megaminx_corner_poly(&ms->corner.poly, &ms->dodec, edge_size, ms->corner.facelets);
+  megaminx_edge_poly(&ms->edge.poly, &ms->dodec, edge_size, ms->edge.facelets);
+  megaminx_centre_poly(&ms->centre.poly, &ms->dodec, edge_size, ms->centre.facelets);
   ms->rots = megaminx_syms_init(&ms->syms, &ms->dodec);
 
   /* symmetries */
@@ -546,11 +554,14 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
   const unsigned int num_edges = ms->dodec.abs.num_faces +
     ms->dodec.abs.num_vertices - 2;
   piece_init(&ms->piece[0], &ms->corner.poly, ms->corner.facelets,
-             ms->mm.corners, ms->dodec.abs.num_vertices);
+             megaminx_corner(&ms->mm, 0),
+             ms->dodec.abs.num_vertices);
   piece_init(&ms->piece[1], &ms->edge.poly, ms->edge.facelets,
-             ms->mm.edges, num_edges);
+             megaminx_edge(&ms->mm, 0),
+             num_edges);
   piece_init(&ms->piece[2], &ms->centre.poly, ms->centre.facelets,
-             ms->mm.centres, ms->dodec.abs.num_faces);
+             megaminx_centre(&ms->mm, 0),
+             ms->dodec.abs.num_faces);
 
   scene_add_piece(scene, &ms->piece[0]);
   scene_add_piece(scene, &ms->piece[1]);

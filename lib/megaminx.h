@@ -11,6 +11,8 @@ static const unsigned int megaminx_num_syms = 60;
 #define MEGAMINX_NUM_CORNERS 20
 #define MEGAMINX_NUM_EDGES 30
 #define MEGAMINX_NUM_CENTRES 12
+#define MEGAMINX_NUM_PIECES \
+  (MEGAMINX_NUM_CORNERS + MEGAMINX_NUM_EDGES + MEGAMINX_NUM_CENTRES)
 
 typedef struct {
   unsigned int *by_vertex;
@@ -48,10 +50,12 @@ u(x)).
 */
 typedef struct
 {
-  uint8_t corners[MEGAMINX_NUM_CORNERS];
-  uint8_t edges[MEGAMINX_NUM_EDGES];
-  uint8_t centres[MEGAMINX_NUM_CENTRES];
+  uint8_t pieces[MEGAMINX_NUM_PIECES];
 } megaminx_t;
+
+uint8_t *megaminx_corner(megaminx_t *mm, unsigned int c);
+uint8_t *megaminx_edge(megaminx_t *mm, unsigned int e);
+uint8_t *megaminx_centre(megaminx_t *mm, unsigned int f);
 
 /* set the ground absolute configuration */
 void megaminx_init(symmetries_t *syms, megaminx_t *mm);
