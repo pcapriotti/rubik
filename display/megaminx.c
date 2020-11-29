@@ -449,9 +449,29 @@ void megaminx_action_move_face(megaminx_scene_t *ms, void *data_)
   piece_set_conf(&ms->piece[2], ms->mm.centres);
 }
 
+unsigned int *rotate_data_new(unsigned int s)
+{
+  unsigned int *data = malloc(sizeof(unsigned int));
+  *data = s;
+  return data;
+}
+
+void megaminx_action_rotate(megaminx_scene_t *ms, void *data_)
+{
+  unsigned int *data = data_;
+
+  megaminx_rotate_(&ms->syms, &ms->mm, *data);
+
+  piece_set_conf(&ms->piece[0], ms->mm.corners);
+  piece_set_conf(&ms->piece[1], ms->mm.edges);
+  piece_set_conf(&ms->piece[2], ms->mm.centres);
+}
+
 void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
 {
   ms->key_bindings = calloc(256, sizeof(action_t));
+
+  /* face moves */
 #define BIND(x, f, c) \
   ms->key_bindings[x] = (action_t) { \
     .run = megaminx_action_move_face, \
@@ -469,6 +489,13 @@ void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
   BIND('v', 4, 4);
   BIND('c', 6, 4);
 #undef BIND
+
+  ms->key_bindings['K'] = (action_t) { \
+    .run = megaminx_action_rotate, \
+    .data = rotate_data_new(21) };
+  ms->key_bindings['D'] = (action_t) { \
+    .run = megaminx_action_rotate, \
+    .data = rotate_data_new(11) };
 }
 
 megaminx_scene_t *megaminx_scene_new(scene_t *scene)

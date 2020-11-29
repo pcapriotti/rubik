@@ -63,15 +63,17 @@ vec4 quat_normalize(vec4 q)
   return q / sqrt(pow(length(q.xyz), 2) + pow(q[3], 2));
 }
 
+
+#define SLERP_EPS 0.0001
 vec4 quat_slerp(vec4 q1, vec4 q2, float t)
 {
   float d = dot(q1.xyz, q2.xyz) + q1.w * q2.w;
-  if (d < 0) {
+  if (d < -SLERP_EPS) {
     d = -d;
     q2 = -q2;
   }
 
-  if (d > 0.99) {
+  if (d > 1 - SLERP_EPS) {
     return quat_normalize(mix(q1, q2, t));
   }
 

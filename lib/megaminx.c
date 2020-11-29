@@ -17,6 +17,22 @@ unsigned int sconj(symmetries_t *syms, unsigned int a, unsigned int b)
   return smul(syms, b_inv_a, b);
 }
 
+void megaminx_debug(symmetries_t *syms, megaminx_t *mm)
+{
+  for (unsigned int i = 0; i < MEGAMINX_NUM_CORNERS; i++) {
+    printf("corner %u symmetry %u position %u\n",
+           i, mm->corners[i], syms->vertex_action[mm->corners[i] * 20]);
+  }
+  for (unsigned int i = 0; i < MEGAMINX_NUM_EDGES; i++) {
+    printf("edge %u symmetry %u position %u\n",
+           i, mm->edges[i], syms->edge_action[mm->edges[i] * 30]);
+  }
+  for (unsigned int i = 0; i < MEGAMINX_NUM_CENTRES; i++) {
+    printf("centre %u symmetry %u position %u\n",
+           i, mm->centres[i], syms->face_action[mm->centres[i] * 12]);
+  }
+}
+
 void megaminx_init(symmetries_t *syms, megaminx_t *mm)
 {
   for (unsigned int i = 0; i < MEGAMINX_NUM_CORNERS; i++) {
@@ -40,8 +56,7 @@ void megaminx_act(symmetries_t *syms, megaminx_t *conf1,
 {
   for (unsigned int i = 0; i < MEGAMINX_NUM_CORNERS; i++) {
     unsigned int i1 = syms->vertex_action[conf->corners[i] * 20];
-    uint8_t new = smul(syms, conf->corners[i], move->corners[i1]);
-    conf1->corners[i] = new;
+    conf1->corners[i] = smul(syms, conf->corners[i], move->corners[i1]);
   }
   for (unsigned int i = 0; i < MEGAMINX_NUM_EDGES; i++) {
     unsigned int i1 = syms->edge_action[conf->edges[i] * 30];
@@ -51,6 +66,25 @@ void megaminx_act(symmetries_t *syms, megaminx_t *conf1,
     unsigned int i1 = syms->face_action[conf->centres[i] * 12];
     conf1->centres[i] = smul(syms, conf->centres[i], move->centres[i1]);
   }
+}
+
+void megaminx_rotate(symmetries_t *syms, megaminx_t *conf1,
+                     megaminx_t *conf, unsigned int s)
+{
+  for (unsigned int i = 0; i < MEGAMINX_NUM_CORNERS; i++) {
+    conf1->corners[i] = smul(syms, conf->corners[i], s);
+  }
+  for (unsigned int i = 0; i < MEGAMINX_NUM_EDGES; i++) {
+    conf1->edges[i] = smul(syms, conf->edges[i], s);
+  }
+  for (unsigned int i = 0; i < MEGAMINX_NUM_CENTRES; i++) {
+    conf1->centres[i] = smul(syms, conf->centres[i], s);
+  }
+}
+
+void megaminx_rotate_(symmetries_t *syms, megaminx_t *conf, unsigned int s)
+{
+  megaminx_rotate(syms, conf, conf, s);
 }
 
 void megaminx_mul(symmetries_t *syms, megaminx_t *ret,

@@ -60,10 +60,15 @@ void megaminx_init(symmetries_t *syms, megaminx_t *mm);
 void megaminx_act_(symmetries_t *syms, megaminx_t *conf, megaminx_t *move);
 void megaminx_act(symmetries_t *syms, megaminx_t *conf1,
                   megaminx_t *conf, megaminx_t *move);
+void megaminx_rotate_(symmetries_t *syms, megaminx_t *conf, unsigned int s);
+void megaminx_rotate(symmetries_t *syms, megaminx_t *conf1,
+                     megaminx_t *conf, unsigned int s);
 
 /* generators */
 megaminx_t *megaminx_generators(symmetries_t *syms,
                                 abs_poly_t *dodec,
                                 unsigned int *num);
+
+void megaminx_debug(symmetries_t *syms, megaminx_t *mm);
 
 #endif /* MEGAMINX_H */
