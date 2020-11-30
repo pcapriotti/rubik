@@ -111,6 +111,7 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
   j-th face (in order from the lowest-numbered face) adjacent to i */
 
   quat *rots = malloc(megaminx_num_syms * sizeof(quat));
+  syms->by_face = malloc(megaminx_num_syms * sizeof(unsigned int));
   syms->by_vertex = malloc(megaminx_num_syms * sizeof(unsigned int));
   syms->by_edge = malloc(megaminx_num_syms * sizeof(unsigned int));
   syms->edges_by_face = malloc(dodec->abs.num_faces * 5 * sizeof(unsigned int));
@@ -156,6 +157,11 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
   int *edges = abs_poly_edges(&dodec->abs);
   int *v0 = abs_poly_first_vertex(&dodec->abs, edges);
   int *adj = abs_poly_adj(&dodec->abs);
+
+  /* by_face */
+  for (unsigned int i = 0; i < megaminx_num_syms; i++) {
+    syms->by_face[i] = i;
+  }
 
   /* by_vertex */
   {

@@ -2,6 +2,7 @@
 #define PUZZLE_H
 
 struct symmetries_t {
+  unsigned int *by_face;
   unsigned int *by_vertex;
   unsigned int *by_edge;
 

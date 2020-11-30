@@ -90,7 +90,8 @@ void megaminx_init(symmetries_t *syms, megaminx_t *mm)
     mm->pieces[i + MEGAMINX_NUM_CORNERS] = syms->by_edge[i * 2];
   }
   for (unsigned int i = 0; i < MEGAMINX_NUM_CENTRES; i++) {
-    mm->pieces[i + MEGAMINX_NUM_CORNERS + MEGAMINX_NUM_EDGES] = i * 5;
+    mm->pieces[i + MEGAMINX_NUM_CORNERS + MEGAMINX_NUM_EDGES] =
+      syms->by_face[i * 5];
   }
 }
 
