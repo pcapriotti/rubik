@@ -35,7 +35,7 @@ void cube_piece_poly(poly_t *cube, float edge, int *facelets)
   }
 
   for (unsigned int i = 0; i < 6; i++) {
-    facelets[i] = i;
+    facelets[i] = -1;
   }
 }
 
@@ -49,54 +49,55 @@ int gcd(int m, int n)
   return n;
 }
 
-void quat_cube_sym(quat q, uint8_t *perm, uint8_t s)
+void quat_from_transp(quat q, unsigned int a, unsigned int b)
 {
-  uint8_t visited = 0;
+  memset(q, 0, sizeof(quat));
+  if (a != b) {
+    q[a] = q[b] = 1;
+  }
+  else {
+    q[3] = 1;
+  }
+}
 
-  /* find positive cycle */
-  int found = 0;
+void quat_from_perm(quat q, uint8_t *perm)
+{
+  /* transpose 0 and perm[0] */
+  quat q0;
+  quat_from_transp(q0, 0, perm[0]);
+  printf("q0: (%f, %f, %f, %f)\n", q0[0], q0[1], q0[2], q0[3]);
 
-  vec3 axis;
-  int sign;
-  unsigned int length;
-  unsigned int order = 1;
+  uint8_t perm1[3];
+  perm_id(perm1, 3);
+  perm1[0] = perm[0];
+  perm1[perm[0]] = 0;
+  perm_mul(perm1, perm, 3);
 
+  printf("perm1: [%u %u %u]\n", perm1[0], perm1[1], perm1[2]);
+
+  /* transpose 1 and 2 */
+  quat q1;
+  quat_from_transp(q1, 1, perm1[1]);
+  printf("q1: (%f, %f, %f, %f)\n", q1[0], q1[1], q1[2], q1[3]);
+
+  quat_mul(q, q0, q1);
+  printf("q: (%f, %f, %f, %f)\n", q[0], q[1], q[2], q[3]);
+}
+
+void quat_cube_sym(quat q, uint8_t s)
+{
   for (unsigned int i = 0; i < 3; i++) {
-    length = 0;
-    sign = 1;
-    if (!found) memset(axis, 0, sizeof(vec3));
+    if (s & (1 << i)) {
+      quat q1;
+      memset(q1, 0, sizeof(quat));
+      q1[i] = 1;
 
-    while (1) {
-      uint8_t mask = 1 << i;
-      if (visited & mask) {
-        if (sign == 1 && length > 0) found = 1;
-
-        unsigned int order0 = length;
-        if (sign == -1) order0 *= 2;
-        if (length > 0)
-          order *= order0 / gcd(order0, order);
-
-        break;
-      }
-      visited |= mask;
-      sign *= (s & mask) ? -1 : 1;
-
-      if (!found) {
-        vec3 v = { 0, 0, 0 };
-        v[i] = 1;
-
-        vec3_scale(v, v, sign);
-        vec3_add(axis, axis, v);
-      }
-
-      i = perm[i];
-      length++;
+      quat tmp; memcpy(tmp, q, sizeof(quat));
+      quat_mul(q, tmp, q1);
     }
   }
-  assert(found);
-
-  vec3_norm(axis, axis);
-  quat_rotate(q, 2 * M_PI / order, axis);
+  quat_norm(q, q);
+  printf("q: (%f, %f, %f, %f)\n", q[0], q[1], q[2], q[3]);
 }
 
 unsigned int cube_act_face(unsigned int f, uint8_t *perm, unsigned int s)
@@ -138,37 +139,57 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
   const unsigned int num_edges = cube->abs.num_faces + cube->abs.num_vertices - 2;
   syms->edge_action = malloc(cube_num_syms * num_edges * sizeof(uint8_t));
 
-  unsigned int index = 0;
   for (unsigned int p = 0; p < 6; p++) {
+    uint8_t lehmer[3];
     uint8_t perm[3];
-    perm_from_index(perm, 3, p, 3);
-    uint8_t sign = perm_sign(perm, 3);
+
+    lehmer_from_index(lehmer, 3, p, 3);
+    perm_from_lehmer(perm, lehmer, 3);
+    uint8_t sign = lehmer_sign(lehmer, 3);
+
+    /* quaternion correponding to the element of Pin(3) determined by
+    this permutation */
+    quat q0;
+    quat_from_perm(q0, perm);
 
     for (unsigned int s = 0; s < 8; s++) {
-       if (__builtin_popcount(s) % 2 != sign) continue;
-
-      /* quaternions */
-      quat_cube_sym(rots[index], perm, s);
+      if (__builtin_popcount(s) % 2 != sign) continue;
 
       printf("[%u %u %u] %01x\n", perm[0], perm[1], perm[2], s);
+      printf("q0: (%f, %f, %f, %f)\n", q0[0], q0[1], q0[2], q0[3]);
+
+      unsigned int f0 = cube_act_face(0, perm, s);
+      unsigned int f1 = cube_act_face(2, perm, s);
+      if (f1 > f0) f1 -= 2;
+      unsigned int index = f0 * 4 + f1;
+
+      /* set quaternion */
+      memcpy(rots[index], q0, sizeof(quat));
+      quat_cube_sym(rots[index], s);
 
       /* actions */
       printf("faces: ");
       for (unsigned int i = 0; i < cube->abs.num_faces; i++) {
-        syms->face_action[i] = cube_act_face(i, perm, s);
+        syms->face_action[index * cube->abs.num_faces + i] =
+          cube_act_face(i, perm, s);
         printf("%u ", syms->face_action[i]);
       }
       printf("\nvertices: ");
       for (unsigned int i = 0; i < cube->abs.num_vertices; i++) {
-        syms->vertex_action[i] = cube_act_vertex(i, perm, s);
+        syms->vertex_action[index * cube->abs.num_vertices + i] =
+          cube_act_vertex(i, perm, s);
         printf("%u ", syms->vertex_action[i]);
       }
       printf("\nedges: ");
       for (unsigned int i = 0; i < num_edges; i++) {
-        syms->edge_action[i] = cube_act_edge(i, perm, s);
+        syms->edge_action[index * num_edges + i] =
+          cube_act_edge(i, perm, s);
         printf("%u ", syms->edge_action[i]);
       }
       printf("\n");
+
+      /* by vertex */
+      
     }
   }
 
@@ -187,10 +208,10 @@ void cube_scene_new(scene_t *scene, unsigned int n)
 
   /* cube_t conf; */
   /* cube_init(&syms, &conf, n); */
-  uint8_t pieces[] = { 0, 4, 8, 12 };
+  uint8_t pieces[] = { 0, 1 };
 
   piece_t *piece = malloc(sizeof(piece_t));
-  piece_init(piece, &cube, facelets, pieces, 1);
+  piece_init(piece, &cube, facelets, pieces, sizeof(pieces));
   scene_add_piece(scene, piece);
 
   /* symmetries */

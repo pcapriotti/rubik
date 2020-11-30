@@ -105,6 +105,15 @@ int perm_index(uint8_t *x, size_t len, size_t n)
   uint8_t *lehmer = malloc(len);
   perm_lehmer(lehmer, x, len);
 
+  int index = lehmer_index(lehmer, len, n);
+
+  free(lehmer);
+
+  return index;
+}
+
+int lehmer_index(uint8_t *lehmer, size_t len, size_t n)
+{
   int index = 0;
   int b = 1;
   for (size_t i = n - len + 1; i <= n; i++) {
@@ -112,8 +121,6 @@ int perm_index(uint8_t *x, size_t len, size_t n)
     index += l * b;
     b *= i;
   }
-
-  free(lehmer);
 
   return index;
 }
@@ -123,19 +130,33 @@ uint8_t perm_sign(uint8_t *x, size_t len)
   uint8_t *lehmer = malloc(len);
   perm_lehmer(lehmer, x, len);
 
+  uint8_t sign = lehmer_sign(lehmer, len);
+
+  free(lehmer);
+
+  return sign;
+}
+
+uint8_t lehmer_sign(uint8_t *lehmer, size_t len)
+{
   uint8_t sign = 0;
   for (unsigned int i = 0; i < len; i++) {
     sign += lehmer[i];
   }
-
-  free(lehmer);
-
   return sign % 2;
 }
 
 void perm_from_index(uint8_t *x, size_t len, int index, size_t n)
 {
-  uint8_t *lehmer = calloc(len, 1);
+  uint8_t *lehmer = malloc(len);
+  lehmer_from_index(lehmer, len, index, n);
+  perm_from_lehmer(x, lehmer, len);
+  free(lehmer);
+}
+
+void lehmer_from_index(uint8_t *lehmer, size_t len, int index, size_t n)
+{
+  memset(lehmer, 0, len);
 
   int b = n - len + 1;
   for (size_t i = n - len + 2; i <= n - 1; i++) {
@@ -147,9 +168,6 @@ void perm_from_index(uint8_t *x, size_t len, int index, size_t n)
     index = index % b;
     b /= (n - i - 1);
   }
-
-  perm_from_lehmer(x, lehmer, len);
-  free(lehmer);
 }
 
 void perm_conj(uint8_t *x, uint8_t *y, size_t len)

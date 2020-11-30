@@ -68,7 +68,7 @@ vec4 quat_normalize(vec4 q)
 vec4 quat_slerp(vec4 q1, vec4 q2, float t)
 {
   float d = dot(q1.xyz, q2.xyz) + q1.w * q2.w;
-  if (d < -SLERP_EPS) {
+  if (d < 0) {
     d = -d;
     q2 = -q2;
   }
@@ -87,18 +87,20 @@ vec4 quat_slerp(vec4 q1, vec4 q2, float t)
 void main()
 {
   vec4 q = syms[s];
-  mat4 tr = mat4(1);
   if (s1 != s) {
     q = quat_slerp(q, syms[s1], (time - tm0) / duration);
   }
 
-  pos = tr * model * vec4(quat_mul(q, p), 1);
+  pos = model * vec4(quat_mul(q, p), 1);
   gl_Position = proj * view * pos;
   norm = mat3(model) * quat_mul(q, n);
   if (f < 0)
     col = bcol;
   else
     col = colours[face_action[s0 * 12 + f]];
+
+  if (s == 0) col = vec3(0.5, 0, 0);
+  else col = vec3(0.7, 0.7, 0.7);
 
   bary = b;
 }

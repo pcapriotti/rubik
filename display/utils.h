@@ -1,5 +1,8 @@
-#ifndef _UTILS_H_
-#define _UTILS_H_
+#ifndef DISPLAY_UTILS_H_
+#define DISPLAY_UTILS_H_
+
+#include <memory.h>
+#include "linmath.h"
 
 void die(const char *msg);
 
@@ -12,4 +15,6 @@ enum {
 int category(char c);
 void skip_category(const char *s, int len, int cat, int direction, int *x);
 
-#endif /* _UTILS_H_ */
+void rot_by_vertices(quat q, vec3 v1, vec3 v2, vec3 w1, vec3 w2);
+
+#endif /* DISPLAY_UTILS_H_ */

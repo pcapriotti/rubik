@@ -31,8 +31,14 @@ void perm_lmul_inv(uint8_t *x, uint8_t *p, size_t len);
 /* replace x with x' */
 void perm_inv(uint8_t *x, size_t len);
 
+/* lehmer codes */
+void perm_lehmer(uint8_t *lehmer, uint8_t *x, size_t len);
+void perm_from_lehmer(uint8_t *x, uint8_t *lehmer, size_t len);
+
 int perm_index(uint8_t *x, size_t len, size_t n);
+int lehmer_index(uint8_t *lehmer, size_t len, size_t n);
 void perm_from_index(uint8_t *x, size_t len, int index, size_t n);
+void lehmer_from_index(uint8_t *lehmer, size_t len, int index, size_t n);
 
 /* apply permutation to a 16 bit word */
 uint16_t u16_conj(uint16_t word, uint8_t *p);
@@ -46,6 +52,7 @@ void shuffle(uint8_t *x, size_t len);
 
 /* sign as integer mod 2 */
 uint8_t perm_sign(uint8_t *x, size_t len);
+uint8_t lehmer_sign(uint8_t *lehmer, size_t len);
 
 void debug_perm(uint8_t *x, size_t len);
 

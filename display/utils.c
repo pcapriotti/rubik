@@ -23,3 +23,29 @@ void skip_category(const char *s, int len, int cat, int direction, int *x)
     *x += direction;
   }
 }
+
+/* return symmetry mapping a pair of adjacent vertices to another one */
+void rot_by_vertices(quat q, vec3 v1, vec3 v2, vec3 w1, vec3 w2)
+{
+  /* q1 maps v1 to w1 */
+  quat q1;
+  vec3 a1;
+  vec3_mul_cross(a1, v1, w1);
+  vec3_norm(a1, a1);
+  quat_rotate(q1, acos(vec3_mul_inner(v1, w1)), a1);
+
+  vec3 v2_;
+  quat_mul_vec3(v2_, q1, v2);
+
+  /* q2 maps v2_ to w2 and fixes w1 */
+  quat q2;
+  vec3 a2; vec3_mul_cross(a2, v2_, w2);
+  float p1 = vec3_mul_inner(v2_, w1);
+  float p2 = vec3_mul_inner(w2, w1);
+  float d = (vec3_mul_inner(v2_, w2) - p1 * p2) /
+    (sqrtf(1 - p1 * p1) * sqrtf(1 - p2 * p2));
+  float angle = vec3_mul_inner(a2, w1) > 0 ? acos(d) : -acos(d);
+  quat_rotate(q2, angle, w1);
+
+  quat_mul(q, q2, q1);
+}
