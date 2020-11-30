@@ -6,6 +6,7 @@
 #include <memory.h>
 
 #include "megaminx.h"
+#include "cube.h"
 #include "polyhedron.h"
 #include "piece.h"
 #include "scene.h"
@@ -144,7 +145,7 @@ void run(GLFWwindow *window)
   scene_t *scene = malloc(sizeof(scene_t));
   scene_init(scene, width, height, glfwGetTime());
 
-  megaminx_scene_t *ms = megaminx_scene_new(scene);
+  cube_scene_new(scene, 3);
 
   glfwSetWindowUserPointer(window, scene);
 
@@ -175,7 +176,6 @@ void run(GLFWwindow *window)
     glfwPollEvents();
   }
 
-  megaminx_scene_del(ms);
   free(scene);
 }
 

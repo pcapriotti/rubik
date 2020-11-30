@@ -1,5 +1,7 @@
 #include "abs_poly.h"
 
+#include "utils.h"
+
 #include <assert.h>
 #include <string.h>
 #include <stdint.h>
@@ -16,11 +18,6 @@ void abs_poly_debug(abs_poly_t *poly)
     }
     printf("\n");
   }
-}
-
-uint8_t rotr3(uint8_t x, unsigned int n)
-{
-  return ((x >> n) | (x << (3 - n))) & 0x7;
 }
 
 void abs_cube(abs_poly_t *cube)
@@ -42,7 +39,7 @@ void abs_cube(abs_poly_t *cube)
     /* vertices are laid out along opposite face pairs using a Grey code */
     for (unsigned int n = 0; n < 8; n++) {
       uint8_t code = n ^ (n >> 1);
-      cube->vertices[index++] = rotr3(~code & 0x7, i);
+      cube->vertices[index++] = rotl3(~code & 0x7, (i + 1) % 3);
     }
   }
 }

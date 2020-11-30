@@ -1,6 +1,7 @@
 #include "cube.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include "puzzle.h"
 
@@ -28,19 +29,23 @@ uint8_t *cube_centre(cube_t *cube, unsigned int f)
   return &cube->pieces[f + cube->shape.num_corners + cube->shape.num_edges];
 }
 
-void cube_init(symmetries_t *syms, cube_t *cube)
+void cube_init(symmetries_t *syms, cube_t *cube, unsigned int n)
 {
-  unsigned int n;
+  unsigned int num;
+  cube_shape_init(&cube->shape, n);
+  cube->pieces = malloc((cube->shape.num_corners +
+                         cube->shape.num_edges +
+                         cube->shape.num_centres) * sizeof(uint8_t));
 
   for (unsigned int i = 0; i < cube->shape.num_corners; i++) {
     *cube_corner(cube, i) = syms->by_vertex[i * 3];
   }
-  n = cube->shape.n - 2;
+  num = n - 2;
   for (unsigned int i = 0; i < cube->shape.num_edges; i++) {
-    *cube_edge(cube, i) = syms->by_edge[i / n * 2];
+    *cube_edge(cube, i) = syms->by_edge[i / num * 2];
   }
-  n *= n;
+  num *= num;
   for (unsigned int i = 0; i < cube->shape.num_edges; i++) {
-    *cube_centre(cube, i) = i / n * 4;
+    *cube_centre(cube, i) = i / num * 4;
   }
 }
