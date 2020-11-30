@@ -157,7 +157,7 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
     dodec->abs.num_vertices - 2;
   syms->face_action = malloc(megaminx_num_syms *
                              dodec->abs.num_faces *
-                             sizeof(uint32_t));
+                             sizeof(uint8_t));
   syms->vertex_action = malloc(megaminx_num_syms *
                                dodec->abs.num_vertices *
                                sizeof(uint8_t));
@@ -540,9 +540,13 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
     glGenBuffers(1, &b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
 
+    uint32_t *buf = malloc(megaminx_num_syms * 12 * sizeof(uint32_t));
+    for (unsigned int i = 0; i < megaminx_num_syms * 12; i++) {
+      buf[i] = ms->syms.face_action[i];
+    }
     glBufferData(GL_SHADER_STORAGE_BUFFER,
                  sizeof(uint32_t) * megaminx_num_syms * 12,
-                 ms->syms.face_action, GL_STATIC_DRAW);
+                 buf, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }

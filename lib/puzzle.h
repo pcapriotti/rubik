@@ -5,7 +5,7 @@ struct symmetries_t {
   unsigned int *by_vertex;
   unsigned int *by_edge;
 
-  uint32_t *face_action;
+  uint8_t *face_action;
   uint8_t *vertex_action;
   uint8_t *edge_action;
 
