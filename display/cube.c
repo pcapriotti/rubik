@@ -124,10 +124,10 @@ unsigned int cube_act_edge(unsigned int e, uint8_t *perm, unsigned int s)
   unsigned int a = e >> 2;
   unsigned int a1 = perm[a];
 
-  unsigned int v = rotr3(e & 3, a);
+  unsigned int v = rotl3(e & 3, (a + 1) % 3);
   unsigned int v1 = cube_act_vertex(v, perm, s);
 
-  return (a1 << 2) | (rotl3(v1, a) & 3);
+  return (a1 << 2) | (rotr3(v1, (a1 + 1) % 3) & 3);
 }
 
 void cube_mul_table(uint8_t *table, uint8_t *perm1, unsigned int s1)
@@ -135,24 +135,25 @@ void cube_mul_table(uint8_t *table, uint8_t *perm1, unsigned int s1)
   unsigned int index = 0;
   uint8_t perm2[3];
   for (unsigned int p1 = 0; p1 < 6; p1++) {
+    perm_from_index(perm2, 3, p1, 3);
     unsigned int sign = perm_sign(perm2, 3);
+
     for (unsigned int j = 0; j < 4; j++) {
-      perm_from_index(perm2, 3, p1, 3);
       unsigned int s2 = j | ((sign ^ (__builtin_popcount(j) & 1)) << 2);
 
-      printf("perm1: [%u %u %u], perm2: [%u %u %u] ",
-             perm1[0], perm1[1], perm1[2],
-             perm2[0], perm2[1], perm2[2]);
+      uint8_t perm[3];
+      perm_composed(perm, perm1, perm2, 3);
 
-      perm_mul(perm2, perm1, 3);
+      table[index++] = (perm_index(perm, 3, 3) << 2) |
+        ((s2 ^ u16_conj(s1, perm2, 3)) & 0x3);
 
-      table[index++] = (perm_index(perm2, 3, 3) << 2) |
-        ((s1 ^ u16_conj(s2, perm1, 3)) & 0x3);
-
-      printf("s1: %01x s2: %01x s2': %01x, index: %u, res: %u\n",
-             s1, s2, u16_conj(s2, perm1, 3),
-             perm_index(perm2, 3, 3),
-             table[index - 1]);
+      /* printf("perm1: [%u %u %u], perm2: [%u %u %u] ", */
+      /*        perm1[0], perm1[1], perm1[2], */
+      /*        perm2[0], perm2[1], perm2[2]); */
+      /* printf("s1: %01x s2: %01x s2': %01x, index: %u, res: %u\n", */
+      /*        s1, s2, u16_conj(s2, perm1, 3), */
+      /*        perm_index(perm2, 3, 3), */
+      /*        table[index - 1]); */
     }
   }
 }
@@ -168,6 +169,9 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
   syms->edge_action = malloc(cube_num_syms * num_edges * sizeof(uint8_t));
   syms->mul = malloc(cube_num_syms * cube_num_syms * sizeof(uint8_t));
   syms->inv_mul = malloc(cube_num_syms * cube_num_syms * sizeof(uint8_t));
+  syms->by_face = malloc(cube_num_syms * sizeof(unsigned int));
+  syms->by_vertex = malloc(cube_num_syms * sizeof(unsigned int));
+  syms->by_edge = malloc(cube_num_syms * sizeof(unsigned int));
 
   unsigned int index = 0;
   for (unsigned int p = 0; p < 6; p++) {
@@ -198,19 +202,19 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
       for (unsigned int i = 0; i < cube->abs.num_faces; i++) {
         syms->face_action[index * cube->abs.num_faces + i] =
           cube_act_face(i, perm, s);
-        printf("%u ", syms->face_action[i]);
+        printf("%u ", syms->face_action[index * cube->abs.num_faces + i]);
       }
       printf("\nvertices: ");
       for (unsigned int i = 0; i < cube->abs.num_vertices; i++) {
         syms->vertex_action[index * cube->abs.num_vertices + i] =
           cube_act_vertex(i, perm, s);
-        printf("%u ", syms->vertex_action[i]);
+        printf("%u ", syms->vertex_action[index * cube->abs.num_vertices + i]);
       }
       printf("\nedges: ");
       for (unsigned int i = 0; i < num_edges; i++) {
         syms->edge_action[index * num_edges + i] =
           cube_act_edge(i, perm, s);
-        printf("%u ", syms->edge_action[i]);
+        printf("%u ", syms->edge_action[index * num_edges + i]);
       }
       printf("\n");
 
@@ -222,6 +226,47 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
   }
 
   group_inv_table(syms->inv_mul, syms->mul, cube_num_syms);
+
+  /* by face */
+  static const int face_stab = 4;
+  for (unsigned int f = 0; f < 6; f++) {
+    uint8_t sign = (f >> 1) & 1;
+    unsigned int s = f & 1;
+    s = s | ((sign ^ s) << 2);
+    unsigned int index = ((f & ~1) << 2) | s;
+
+    syms->by_face[f * 4] = index;
+    for (unsigned int i = 1; i < 4; i++) {
+      syms->by_face[f * 4 + i] = syms->mul
+        [syms->by_face[f * 4 + i - 1] * cube_num_syms + face_stab];
+    }
+  }
+
+  /* by vertex */
+  static const int vertex_stab = 12;
+  for (unsigned int v = 0; v < 8; v++) {
+    unsigned int p = __builtin_popcount(v) & 1;
+    unsigned int s = (v & 1) | ((v >> p) & 2);
+    unsigned int index = (p << 2) | s;
+    syms->by_vertex[v * 3] = index;
+    for (unsigned int i = 1; i < 3; i++) {
+      syms->by_vertex[v * 3 + i] = syms->mul
+        [syms->by_vertex[v * 3 + i - 1] * cube_num_syms + vertex_stab];
+    }
+  }
+
+  /* by edge */
+  static const int edge_stab = 5;
+  for (unsigned int e = 0; e < 12; e++) {
+    unsigned int a = e >> 2;
+    unsigned int p = a & 1;
+    unsigned int s = ((e & 1) << p) | ((e & 2) >> p);
+    s = ((s & 1) << 1) | ((__builtin_popcount(s) & 1) ^ p);
+    unsigned int index = (a << 3) | s;
+    syms->by_edge[e * 2] = index;
+    syms->by_edge[e * 2 + 1] = syms->mul
+      [syms->by_edge[e * 2] * cube_num_syms + edge_stab];
+  }
 
   return rots;
 }
