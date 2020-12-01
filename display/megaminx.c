@@ -4,6 +4,7 @@
 #include "scene.h"
 #include "utils.h"
 
+#include "lib/group.h"
 #include "lib/megaminx.h"
 #include "lib/puzzle.h"
 
@@ -254,12 +255,7 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
 
   /* inverse multiplication table */
   syms->inv_mul = malloc(megaminx_num_syms * megaminx_num_syms * sizeof(uint8_t));
-  for (unsigned int a = 0; a < megaminx_num_syms; a++) {
-    for (unsigned int b = 0; b < megaminx_num_syms; b++) {
-      unsigned int c = syms->mul[megaminx_num_syms * b + a];
-      syms->inv_mul[megaminx_num_syms * c + a] = b;
-    }
-  }
+  group_inv_table(syms->inv_mul, syms->mul, megaminx_num_syms);
 
   /* face action */
   for (unsigned int s = 0; s < megaminx_num_syms; s++) {

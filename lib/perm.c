@@ -21,7 +21,7 @@ void perm_inverted(uint8_t *y, uint8_t *x, size_t len)
 
 void perm_composed(uint8_t *r, uint8_t *x, uint8_t *y, size_t len)
 {
-  for (size_t i = 0; i < len; i++) {
+  for (unsigned int i = 0; i < len; i++) {
     r[i] = x[y[i]];
   }
 }
@@ -176,19 +176,19 @@ void perm_conj(uint8_t *x, uint8_t *y, size_t len)
   perm_lmul_inv(x, y, len);
 }
 
-uint16_t u16_conj(uint16_t word, uint8_t *p)
+uint16_t u16_conj(uint16_t word, uint8_t *p, size_t len)
 {
   uint16_t ret = 0;
-  for (int i = 0; i < 12; i++) {
+  for (unsigned int i = 0; i < len; i++) {
     ret |= (word & (1 << p[i])) >> p[i] << i;
   }
   return ret;
 }
 
-uint16_t u16_conj_inv(uint16_t word, uint8_t *p)
+uint16_t u16_conj_inv(uint16_t word, uint8_t *p, size_t len)
 {
   uint16_t ret = 0;
-  for (int i = 0; i < 12; i++) {
+  for (unsigned int i = 0; i < len; i++) {
     ret |= (word & (1 << i)) >> i << p[i];
   }
   return ret;

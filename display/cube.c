@@ -13,6 +13,7 @@
 #include "scene.h"
 
 #include "lib/cube.h"
+#include "lib/group.h"
 #include "lib/perm.h"
 #include "lib/puzzle.h"
 #include "lib/utils.h"
@@ -129,6 +130,33 @@ unsigned int cube_act_edge(unsigned int e, uint8_t *perm, unsigned int s)
   return (a1 << 2) | (rotl3(v1, a) & 3);
 }
 
+void cube_mul_table(uint8_t *table, uint8_t *perm1, unsigned int s1)
+{
+  unsigned int index = 0;
+  uint8_t perm2[3];
+  for (unsigned int p1 = 0; p1 < 6; p1++) {
+    unsigned int sign = perm_sign(perm2, 3);
+    for (unsigned int j = 0; j < 4; j++) {
+      perm_from_index(perm2, 3, p1, 3);
+      unsigned int s2 = j | ((sign ^ (__builtin_popcount(j) & 1)) << 2);
+
+      printf("perm1: [%u %u %u], perm2: [%u %u %u] ",
+             perm1[0], perm1[1], perm1[2],
+             perm2[0], perm2[1], perm2[2]);
+
+      perm_mul(perm2, perm1, 3);
+
+      table[index++] = (perm_index(perm2, 3, 3) << 2) |
+        ((s1 ^ u16_conj(s2, perm1, 3)) & 0x3);
+
+      printf("s1: %01x s2: %01x s2': %01x, index: %u, res: %u\n",
+             s1, s2, u16_conj(s2, perm1, 3),
+             perm_index(perm2, 3, 3),
+             table[index - 1]);
+    }
+  }
+}
+
 quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
 {
   quat *rots = malloc(cube_num_syms * sizeof(quat));
@@ -138,7 +166,10 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
                                sizeof(uint8_t));
   const unsigned int num_edges = cube->abs.num_faces + cube->abs.num_vertices - 2;
   syms->edge_action = malloc(cube_num_syms * num_edges * sizeof(uint8_t));
+  syms->mul = malloc(cube_num_syms * cube_num_syms * sizeof(uint8_t));
+  syms->inv_mul = malloc(cube_num_syms * cube_num_syms * sizeof(uint8_t));
 
+  unsigned int index = 0;
   for (unsigned int p = 0; p < 6; p++) {
     uint8_t lehmer[3];
     uint8_t perm[3];
@@ -152,16 +183,11 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
     quat q0;
     quat_from_perm(q0, perm);
 
-    for (unsigned int s = 0; s < 8; s++) {
-      if (__builtin_popcount(s) % 2 != sign) continue;
+    for (unsigned int j = 0; j < 4; j++) {
+      unsigned int s = j | ((sign ^ (__builtin_popcount(j) & 1)) << 2);
 
       printf("[%u %u %u] %01x\n", perm[0], perm[1], perm[2], s);
       printf("q0: (%f, %f, %f, %f)\n", q0[0], q0[1], q0[2], q0[3]);
-
-      unsigned int f0 = cube_act_face(0, perm, s);
-      unsigned int f1 = cube_act_face(2, perm, s);
-      if (f1 > f0) f1 -= 2;
-      unsigned int index = f0 * 4 + f1;
 
       /* set quaternion */
       memcpy(rots[index], q0, sizeof(quat));
@@ -188,10 +214,14 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
       }
       printf("\n");
 
-      /* by vertex */
-      
+      /* multiplication table */
+      cube_mul_table(&syms->mul[index * cube_num_syms], perm, s);
+
+      index++;
     }
   }
+
+  group_inv_table(syms->inv_mul, syms->mul, cube_num_syms);
 
   return rots;
 }
@@ -239,7 +269,7 @@ void cube_scene_new(scene_t *scene, unsigned int n)
       buf[i] = syms.face_action[i];
     }
     glBufferData(GL_SHADER_STORAGE_BUFFER,
-                 sizeof(uint32_t) * cube_num_syms * 12,
+                 sizeof(uint32_t) * cube_num_syms * 6,
                  buf, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
