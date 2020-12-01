@@ -16,7 +16,8 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
   shape->num_pieces = shape->num_corners + shape->num_edges + shape->num_centres;
 
   unsigned int num_edge_orbits = (n - 1) / 2;
-  unsigned int num_centre_orbits = num_edge_orbits * (num_edge_orbits + 1) / 2;
+  unsigned int num_centre_orbits = (n - 2) * (n - 2) / 4;
+  if (n % 2 == 1) num_centre_orbits++;
   shape->num_orbits = 1 + num_edge_orbits + num_centre_orbits;
 
   unsigned int offset = 0;
@@ -26,6 +27,9 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
   shape->orbits[0].size = 8;
   shape->orbits[0].dim = 0;
   shape->orbits[0].offset = offset;
+  shape->orbits[0].x = 0;
+  shape->orbits[0].y = 0;
+  shape->orbits[0].z = 0;
   offset += shape->orbits[0].size;
 
   /* edge orbits have size 24, except the middle one when n is odd */
@@ -33,15 +37,27 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
     shape->orbits[i].size = (i * 2 == n - 1) ? 12 : 24;
     shape->orbits[i].dim = 1;
     shape->orbits[i].offset = offset;
+    shape->orbits[i].x = i;
+    shape->orbits[i].y = 0;
+    shape->orbits[i].z = 0;
     offset += shape->orbits[i].size;
   }
 
   /* centre orbits have size 24, except the central one when n is odd */
+  unsigned int y = 1; unsigned int z = 1;
   for (unsigned int i = num_edge_orbits + 1; i < shape->num_orbits; i++) {
     shape->orbits[i].size = 24;
     shape->orbits[i].dim = 1;
     shape->orbits[i].offset =  offset;
     offset += shape->orbits[i].size;
+    shape->orbits[i].x = n - 1;
+    shape->orbits[i].y = y++;
+    shape->orbits[i].z = z;
+
+    if (y > num_edge_orbits) {
+      z++;
+      y = 1;
+    }
   }
   if (n % 2 == 1) shape->orbits[shape->num_orbits - 1].size = 6;
 }
@@ -58,8 +74,6 @@ void cube_init(symmetries_t *syms, cube_t *cube, unsigned int n)
     for (unsigned int j = 0; j < orbit->size; j++) {
       cube->pieces[index++] = symmetries_by_cell(syms, orbit->dim,
                                                  j * 24 / orbit->size);
-      printf("orbit %u, piece %u, index %u, sym %u\n",
-             i, j, j * 24 / orbit->size, cube->pieces[index - 1]);
     }
   }
 }

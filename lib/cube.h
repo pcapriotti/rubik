@@ -11,6 +11,7 @@ struct orbit_t {
   unsigned int size;
   size_t offset;
   int dim;
+  int x, y, z;
 };
 typedef struct orbit_t orbit_t;
 

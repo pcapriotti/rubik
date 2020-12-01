@@ -18,14 +18,25 @@
 #include "lib/puzzle.h"
 #include "lib/utils.h"
 
-void cube_piece_poly(poly_t *cube, float edge, int *facelets)
+void cube_piece_poly(poly_t *cube, unsigned int n,
+                     unsigned int x, unsigned int y, unsigned int z,
+                     int *facelets)
 {
   std_cube(cube);
   mat4x4 m;
-  mat4x4_identity(m);
+
+  float side = -2.0 * cube->vertices[0][0];
+  float edge = 1 / (float) n;
+  float gap = 0.03;
+  float edge1 = (1 + gap) * edge;
+
+  vec3 offset = {
+    side * edge1 * (x - ((float) n - 1) / 2),
+    side * edge1 * (y - ((float) n - 1) / 2),
+    side * edge1 * (z - ((float) n - 1) / 2),
+  };
+  mat4x4_translate(m, offset[0], offset[1], offset[2]);
   mat4x4_scale_aniso(m, m, edge, edge, edge);
-  memcpy(m[3], cube->vertices[0], sizeof(vec3));
-  vec3_scale(m[3], m[3], 1 - edge);
 
   for (unsigned int i = 0; i < cube->abs.num_vertices; i++) {
     vec4 v, w;
@@ -35,12 +46,10 @@ void cube_piece_poly(poly_t *cube, float edge, int *facelets)
     memcpy(cube->vertices[i], w, sizeof(vec3));
   }
 
+  unsigned int coords[3] = {x, y, z};
   for (unsigned int i = 0; i < 6; i++) {
-    facelets[i] = -1;
+    facelets[i] = (coords[i / 2] == (~i & 1) * (n - 1)) ? (int) i : -1;
   }
-  facelets[1] = 1;
-  facelets[3] = 3;
-  facelets[5] = 5;
 }
 
 int gcd(int m, int n)
@@ -162,14 +171,14 @@ void cube_mul_table(uint8_t *table, uint8_t *perm1, unsigned int s1)
   }
 }
 
-quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
+quat *cube_syms_init(symmetries_t *syms)
 {
+  const unsigned int num_faces = 6;
+  const unsigned int num_vertices = 8;
+  const unsigned int num_edges = 12;
   quat *rots = malloc(cube_num_syms * sizeof(quat));
-  syms->face_action = malloc(cube_num_syms * cube->abs.num_faces *
-                             sizeof(uint8_t));
-  syms->vertex_action = malloc(cube_num_syms * cube->abs.num_vertices *
-                               sizeof(uint8_t));
-  const unsigned int num_edges = cube->abs.num_faces + cube->abs.num_vertices - 2;
+  syms->face_action = malloc(cube_num_syms * num_faces * sizeof(uint8_t));
+  syms->vertex_action = malloc(cube_num_syms * num_vertices * sizeof(uint8_t));
   syms->edge_action = malloc(cube_num_syms * num_edges * sizeof(uint8_t));
   syms->mul = malloc(cube_num_syms * cube_num_syms * sizeof(uint8_t));
   syms->inv_mul = malloc(cube_num_syms * cube_num_syms * sizeof(uint8_t));
@@ -202,18 +211,18 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
       quat_cube_sym(rots[index], s);
 
       /* actions */
-      printf("faces: ");
-      for (unsigned int i = 0; i < cube->abs.num_faces; i++) {
-        syms->face_action[index * cube->abs.num_faces + i] =
+      /* printf("faces: "); */
+      for (unsigned int i = 0; i < num_faces; i++) {
+        syms->face_action[index * num_faces + i] =
           cube_act_face(i, perm, s);
-        printf("%u ", syms->face_action[index * cube->abs.num_faces + i]);
+        /* printf("%u ", syms->face_action[index * num_faces + i]); */
       }
-      printf("\n");
-      /* printf("\nvertices: "); */
-      for (unsigned int i = 0; i < cube->abs.num_vertices; i++) {
-        syms->vertex_action[index * cube->abs.num_vertices + i] =
+      /* printf("\n"); */
+      /* printf("vertices: "); */
+      for (unsigned int i = 0; i < num_vertices; i++) {
+        syms->vertex_action[index * num_vertices + i] =
           cube_act_vertex(i, perm, s);
-        /* printf("%u ", syms->vertex_action[index * cube->abs.num_vertices + i]); */
+        /* printf("%u ", syms->vertex_action[index * num_vertices + i]); */
       }
       /* printf("\nedges: "); */
       for (unsigned int i = 0; i < num_edges; i++) {
@@ -253,7 +262,6 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
     unsigned int p = __builtin_popcount(v) & 1;
     unsigned int s = (v & 1) | ((v >> p) & 2);
     unsigned int index = (p << 2) | s;
-    printf("vertex %u sym %u\n", v, index);
     syms->by_vertex[v * 3] = index;
     for (unsigned int i = 1; i < 3; i++) {
       syms->by_vertex[v * 3 + i] = syms->mul
@@ -279,24 +287,22 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
 
 void cube_scene_new(scene_t *scene, unsigned int n)
 {
-  int facelets[6];
-  poly_t cube;
-  cube_piece_poly(&cube, 1.0 / (float) n, facelets);
-  poly_debug(&cube);
-
   symmetries_t syms;
-  quat *rots = cube_syms_init(&syms, &cube);
+  quat *rots = cube_syms_init(&syms);
 
   cube_t conf;
   cube_init(&syms, &conf, n);
 
-  for (unsigned int i = 0; i < 8; i++) {
-    printf("conf[%u]: %u\n", i, cube_orbit(&conf, 0)[i]);
-  }
+  for (unsigned int i = 0; i < conf.shape.num_orbits; i++) {
+    int facelets[6];
+    poly_t cube;
+    orbit_t *orbit = &conf.shape.orbits[i];
+    cube_piece_poly(&cube, n, orbit->x, orbit->y, orbit->z, facelets);
 
-  piece_t *piece = malloc(sizeof(piece_t));
-  piece_init(piece, &cube, facelets, cube_orbit(&conf, 0), 8);
-  scene_add_piece(scene, piece);
+    piece_t *piece = malloc(sizeof(piece_t));
+    piece_init(piece, &cube, facelets, &conf.pieces[orbit->offset], orbit->size);
+    scene_add_piece(scene, piece);
+  }
 
   /* symmetries */
   {
@@ -321,7 +327,7 @@ void cube_scene_new(scene_t *scene, unsigned int n)
     const unsigned int size = sizeof(face_action_t) +
       cube_num_syms * 6 * sizeof(uint32_t);
     face_action_t *fa = malloc(size);
-    fa->num_faces = cube.abs.num_faces;
+    fa->num_faces = 6;
     for (unsigned int i = 0; i < cube_num_syms * 6; i++) {
       fa->action[i] = syms.face_action[i];
     }

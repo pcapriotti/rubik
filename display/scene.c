@@ -21,7 +21,7 @@ void scene_init(scene_t *scene,
 
   quat_identity(scene->rot);
   memcpy(scene->data.lpos, (vec3) { 3, 4, 10 }, sizeof(vec3));
-  mat4x4_translate(scene->data.view, 0.0, 0.0, -6.0);
+  mat4x4_translate(scene->data.view, 0.0, 0.0, -3.0);
 
   {
     glGenBuffers(1, &scene->data_ubo);
