@@ -283,10 +283,10 @@ void cube_scene_new(scene_t *scene, unsigned int n)
 
   /* cube_t conf; */
   /* cube_init(&syms, &conf, n); */
-  uint8_t pieces[] = { 0, 1 };
+  uint8_t conf[2] = {0, 4};
 
   piece_t *piece = malloc(sizeof(piece_t));
-  piece_init(piece, &cube, facelets, pieces, sizeof(pieces));
+  piece_init(piece, &cube, facelets, conf, 2);
   scene_add_piece(scene, piece);
 
   /* symmetries */
