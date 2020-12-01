@@ -2,12 +2,14 @@
 #define CUBE_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 struct symmetries_t;
 typedef struct symmetries_t symmetries_t;
 
 struct orbit_t {
   unsigned int size;
+  size_t offset;
   int dim;
 };
 typedef struct orbit_t orbit_t;
@@ -34,8 +36,7 @@ struct cube_t
 typedef struct cube_t cube_t;
 
 void cube_init(symmetries_t *syms, cube_t *cube, unsigned int n);
-uint8_t *cube_centre(cube_t *cube, unsigned int f);
-uint8_t *cube_edge(cube_t *cube, unsigned int e);
-uint8_t *cube_corner(cube_t *cube, unsigned int c);
+
+uint8_t *cube_orbit(cube_t *cube, unsigned int k);
 
 #endif /* CUBE_H */

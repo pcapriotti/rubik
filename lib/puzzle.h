@@ -1,6 +1,8 @@
 #ifndef PUZZLE_H
 #define PUZZLE_H
 
+#include <stdint.h>
+
 struct symmetries_t {
   unsigned int *by_face;
   unsigned int *by_vertex;
@@ -19,5 +21,7 @@ struct symmetries_t {
 };
 
 typedef struct symmetries_t symmetries_t;
+
+unsigned int symmetries_by_cell(symmetries_t *syms, unsigned int dim, unsigned int i);
 
 #endif /* PUZZLE_H */

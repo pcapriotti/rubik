@@ -494,8 +494,7 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
                  sizeof(quat) * megaminx_num_syms,
                  ms->rots, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SYMS, b);
-
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
   }
 
   /* face action */
@@ -512,7 +511,32 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
                  sizeof(uint32_t) * megaminx_num_syms * 12,
                  buf, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+  }
+
+  /* colours */
+  {
+    vec4 colours[12] = {
+      { 1.0, 1.0, 1.0, 1.0 }, // white
+      { 0.4, 0.4, 0.4, 1.0 }, // grey
+      { 1.0, 1.0, 0.0, 1.0 }, // yellow
+      { 0.91, 0.85, 0.68, 1.0 }, // pale yellow
+      { 0.5, 0.0, 0.5, 1.0 }, // purple
+      { 1.0, 0.75, 0.8, 1.0 }, // pink
+      { 0.0, 0.6, 0.0, 1.0 }, // green
+      { 0.2, 0.8, 0.2, 1.0 }, // lime
+      { 1.0, 0.0, 0.0, 1.0 }, // red
+      { 1.0, 0.65, 0.0, 1.0 }, // orange
+      { 0.0, 0.0, 1.0, 1.0 }, // blue
+      { 0.0, 0.5, 0.5, 1.0 }, // teal
+    };
+
+    unsigned int b;
+    glGenBuffers(1, &b);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(vec4) * 12, colours, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_COLOURS, b);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
   }
 
   megaminx_init(&ms->syms, &ms->mm);

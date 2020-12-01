@@ -38,6 +38,9 @@ void cube_piece_poly(poly_t *cube, float edge, int *facelets)
   for (unsigned int i = 0; i < 6; i++) {
     facelets[i] = -1;
   }
+  facelets[1] = 1;
+  facelets[3] = 3;
+  facelets[5] = 5;
 }
 
 int gcd(int m, int n)
@@ -54,7 +57,8 @@ void quat_from_transp(quat q, unsigned int a, unsigned int b)
 {
   memset(q, 0, sizeof(quat));
   if (a != b) {
-    q[a] = q[b] = 1;
+    q[a] = 1;
+    q[b] = -1;
   }
   else {
     q[3] = 1;
@@ -191,7 +195,7 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
       unsigned int s = j | ((sign ^ (__builtin_popcount(j) & 1)) << 2);
 
       printf("[%u %u %u] %01x\n", perm[0], perm[1], perm[2], s);
-      printf("q0: (%f, %f, %f, %f)\n", q0[0], q0[1], q0[2], q0[3]);
+      printf("perm: (%f, %f, %f, %f)\n", q0[0], q0[1], q0[2], q0[3]);
 
       /* set quaternion */
       memcpy(rots[index], q0, sizeof(quat));
@@ -204,19 +208,20 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
           cube_act_face(i, perm, s);
         printf("%u ", syms->face_action[index * cube->abs.num_faces + i]);
       }
-      printf("\nvertices: ");
+      printf("\n");
+      /* printf("\nvertices: "); */
       for (unsigned int i = 0; i < cube->abs.num_vertices; i++) {
         syms->vertex_action[index * cube->abs.num_vertices + i] =
           cube_act_vertex(i, perm, s);
-        printf("%u ", syms->vertex_action[index * cube->abs.num_vertices + i]);
+        /* printf("%u ", syms->vertex_action[index * cube->abs.num_vertices + i]); */
       }
-      printf("\nedges: ");
+      /* printf("\nedges: "); */
       for (unsigned int i = 0; i < num_edges; i++) {
         syms->edge_action[index * num_edges + i] =
           cube_act_edge(i, perm, s);
-        printf("%u ", syms->edge_action[index * num_edges + i]);
+        /* printf("%u ", syms->edge_action[index * num_edges + i]); */
       }
-      printf("\n");
+      /* printf("\n"); */
 
       /* multiplication table */
       cube_mul_table(&syms->mul[index * cube_num_syms], perm, s);
@@ -248,6 +253,7 @@ quat *cube_syms_init(symmetries_t *syms, poly_t *cube)
     unsigned int p = __builtin_popcount(v) & 1;
     unsigned int s = (v & 1) | ((v >> p) & 2);
     unsigned int index = (p << 2) | s;
+    printf("vertex %u sym %u\n", v, index);
     syms->by_vertex[v * 3] = index;
     for (unsigned int i = 1; i < 3; i++) {
       syms->by_vertex[v * 3 + i] = syms->mul
@@ -281,12 +287,15 @@ void cube_scene_new(scene_t *scene, unsigned int n)
   symmetries_t syms;
   quat *rots = cube_syms_init(&syms, &cube);
 
-  /* cube_t conf; */
-  /* cube_init(&syms, &conf, n); */
-  uint8_t conf[2] = {0, 4};
+  cube_t conf;
+  cube_init(&syms, &conf, n);
+
+  for (unsigned int i = 0; i < 8; i++) {
+    printf("conf[%u]: %u\n", i, cube_orbit(&conf, 0)[i]);
+  }
 
   piece_t *piece = malloc(sizeof(piece_t));
-  piece_init(piece, &cube, facelets, conf, 2);
+  piece_init(piece, &cube, facelets, cube_orbit(&conf, 0), 8);
   scene_add_piece(scene, piece);
 
   /* symmetries */
@@ -309,14 +318,34 @@ void cube_scene_new(scene_t *scene, unsigned int n)
     glGenBuffers(1, &b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
 
-    uint32_t *buf = malloc(cube_num_syms * 6 * sizeof(uint32_t));
+    const unsigned int size = sizeof(face_action_t) +
+      cube_num_syms * 6 * sizeof(uint32_t);
+    face_action_t *fa = malloc(size);
+    fa->num_faces = cube.abs.num_faces;
     for (unsigned int i = 0; i < cube_num_syms * 6; i++) {
-      buf[i] = syms.face_action[i];
+      fa->action[i] = syms.face_action[i];
     }
-    glBufferData(GL_SHADER_STORAGE_BUFFER,
-                 sizeof(uint32_t) * cube_num_syms * 6,
-                 buf, GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, size, fa, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  }
+
+  /* colours */
+  {
+    vec4 colours[] = {
+      { 1.0, 1.0, 1.0, 1.0 }, // white
+      { 1.0, 1.0, 0.0, 1.0 }, // yellow
+      { 0.0, 0.6, 0.0, 1.0 }, // green
+      { 0.0, 0.0, 1.0, 1.0 }, // blue
+      { 1.0, 0.0, 0.0, 1.0 }, // red
+      { 1.0, 0.65, 0.0, 1.0 }, // orange
+    };
+
+    unsigned int b;
+    glGenBuffers(1, &b);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_COLOURS, b);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
   }
 }
