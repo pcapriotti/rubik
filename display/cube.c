@@ -285,23 +285,94 @@ quat *cube_syms_init(symmetries_t *syms)
   return rots;
 }
 
-void cube_scene_new(scene_t *scene, unsigned int n)
+struct action_t
 {
+  void (*run)(cube_scene_t *ms, void *data);
+  void *data;
+};
+typedef struct action_t action_t;
+
+struct cube_scene_t
+{
+  action_t *key_bindings;
   symmetries_t syms;
-  quat *rots = cube_syms_init(&syms);
-
   cube_t conf;
-  cube_init(&syms, &conf, n);
+  cube_t *gen;
+  piece_t *piece;
+};
 
-  for (unsigned int i = 0; i < conf.shape.num_orbits; i++) {
+struct move_face_data_t
+{
+  unsigned int face;
+  int count;
+};
+
+static struct move_face_data_t *move_face_data_new(unsigned int face, int count)
+{
+  struct move_face_data_t *data = malloc(sizeof(struct move_face_data_t));
+  data->face = face;
+  data->count = count;
+  return data;
+}
+
+void cube_action_move_face(cube_scene_t *s, void *data_)
+{
+  struct move_face_data_t *data = data_;
+  cube_t *move = &s->gen[data->face];
+
+  for (int i = 0; i < data->count; i++) {
+    cube_act_(&s->syms, &s->conf, &s->gen[data->face]);
+  }
+
+  for (unsigned int k = 0; k < s->conf.shape.num_orbits; k++) {
+    piece_set_conf(&s->piece[k], cube_orbit(&s->conf, k));
+  }
+}
+
+
+void cube_scene_set_up_key_bindings(cube_scene_t *s)
+{
+  s->key_bindings = calloc(256, sizeof(action_t));
+
+  static const unsigned char face_keys[] = "jfkdls;amc,x";
+  static const unsigned char rot_keys[] = "JFKDLS:AMC<X";
+  for (unsigned int i = 0; i < 12; i++) {
+    s->key_bindings[face_keys[i]] = (action_t) {
+      .run = cube_action_move_face,
+      .data = move_face_data_new(i >> 1, (i & 1) ? 3 : 1)
+    };
+  }
+}
+
+static void cube_on_keypress(void *data, unsigned int c)
+{
+  cube_scene_t *s = data;
+  if (c >= 256) return;
+
+  action_t *a = &s->key_bindings[c];
+  if (a->run == 0) return;
+
+  a->run(s, a->data);
+}
+
+cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
+{
+  cube_scene_t *s = malloc(sizeof(cube_scene_t));
+  quat *rots = cube_syms_init(&s->syms);
+
+  cube_init(&s->syms, &s->conf, n);
+
+  s->piece = malloc(s->conf.shape.num_orbits * sizeof(piece_t));
+  for (unsigned int i = 0; i < s->conf.shape.num_orbits; i++) {
     int facelets[6];
     poly_t cube;
-    orbit_t *orbit = &conf.shape.orbits[i];
+    orbit_t *orbit = &s->conf.shape.orbits[i];
     cube_piece_poly(&cube, n, orbit->x, orbit->y, orbit->z, facelets);
 
-    piece_t *piece = malloc(sizeof(piece_t));
-    piece_init(piece, &cube, facelets, &conf.pieces[orbit->offset], orbit->size);
-    scene_add_piece(scene, piece);
+    piece_init(&s->piece[i], &cube, facelets,
+               &s->conf.pieces[orbit->offset], orbit->size);
+    scene_add_piece(scene, &s->piece[i]);
+    printf("added orbit %u, dim: %u, size: %u\n", i, orbit->dim, orbit->size);
   }
 
   /* symmetries */
@@ -329,7 +400,7 @@ void cube_scene_new(scene_t *scene, unsigned int n)
     face_action_t *fa = malloc(size);
     fa->num_faces = 6;
     for (unsigned int i = 0; i < cube_num_syms * 6; i++) {
-      fa->action[i] = syms.face_action[i];
+      fa->action[i] = s->syms.face_action[i];
     }
     glBufferData(GL_SHADER_STORAGE_BUFFER, size, fa, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
@@ -354,4 +425,12 @@ void cube_scene_new(scene_t *scene, unsigned int n)
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_COLOURS, b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
   }
+
+  cube_scene_set_up_key_bindings(s);
+  s->gen = cube_generators(&s->conf, &s->syms);
+
+  scene->on_keypress_data = s;
+  scene->on_keypress = cube_on_keypress;
+
+  return s;
 }

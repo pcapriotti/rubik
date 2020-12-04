@@ -23,6 +23,9 @@ typedef struct
   unsigned int num_centres;
   unsigned int num_pieces;
 
+  unsigned int num_corner_orbits;
+  unsigned int num_edge_orbits;
+  unsigned int num_centre_orbits;
   unsigned int num_orbits;
   orbit_t *orbits;
 } cube_shape_t;
@@ -39,5 +42,8 @@ typedef struct cube_t cube_t;
 void cube_init(symmetries_t *syms, cube_t *cube, unsigned int n);
 
 uint8_t *cube_orbit(cube_t *cube, unsigned int k);
+cube_t *cube_generators(cube_t *cube, symmetries_t *syms);
+void cube_act_(symmetries_t *syms, cube_t *cube, cube_t *move);
+void cube_act(symmetries_t *syms, cube_t *cube1, cube_t *cube, cube_t *move);
 
 #endif /* CUBE_H */

@@ -7,8 +7,11 @@ typedef struct poly_t poly_t;
 struct scene_t;
 typedef struct scene_t scene_t;
 
+struct cube_scene_t;
+typedef struct cube_scene_t cube_scene_t;
+
 static const unsigned int cube_num_syms = 24;
 
-void cube_scene_new(scene_t *scene, unsigned int n);
+cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n);
 
 #endif /* DISPLAY_CUBE_H */

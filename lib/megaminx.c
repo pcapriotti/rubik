@@ -9,18 +9,18 @@
 #include "perm.h"
 #include "puzzle.h"
 
-unsigned int smul(symmetries_t *syms, unsigned int a, unsigned int b)
+static unsigned int smul(symmetries_t *syms, unsigned int a, unsigned int b)
 {
   return syms->mul[a + b * megaminx_num_syms];
 }
 
-unsigned int sconj(symmetries_t *syms, unsigned int a, unsigned int b)
+static unsigned int sconj(symmetries_t *syms, unsigned int a, unsigned int b)
 {
   unsigned int b_inv_a = syms->inv_mul[b + a * megaminx_num_syms];
   return smul(syms, b_inv_a, b);
 }
 
-unsigned int act(symmetries_t *syms, unsigned int x, unsigned int s)
+static unsigned int act(symmetries_t *syms, unsigned int x, unsigned int s)
 {
   if (x < MEGAMINX_NUM_CORNERS) {
     return syms->vertex_action[MEGAMINX_NUM_CORNERS * s + x];
@@ -38,7 +38,7 @@ unsigned int act(symmetries_t *syms, unsigned int x, unsigned int s)
     syms->face_action[MEGAMINX_NUM_CENTRES * s + x];
 }
 
-unsigned int repr(unsigned int x)
+static unsigned int repr(unsigned int x)
 {
   if (x < MEGAMINX_NUM_CORNERS) return 0;
   if (x < MEGAMINX_NUM_CORNERS + MEGAMINX_NUM_EDGES) return MEGAMINX_NUM_CORNERS;

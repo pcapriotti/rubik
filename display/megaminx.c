@@ -394,7 +394,7 @@ struct move_face_data_t
   unsigned int count;
 };
 
-struct move_face_data_t *move_face_data_new(unsigned int face, unsigned int count)
+static struct move_face_data_t *move_face_data_new(unsigned int face, unsigned int count)
 {
   struct move_face_data_t *data = malloc(sizeof(struct move_face_data_t));
   data->face = face;

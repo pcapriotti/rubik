@@ -4,9 +4,15 @@
 #include <stdint.h>
 
 struct symmetries_t {
-  unsigned int *by_face;
+  unsigned int num;
+
+  unsigned int num_vertices;
+  unsigned int num_edges;
+  unsigned int num_faces;
+
   unsigned int *by_vertex;
   unsigned int *by_edge;
+  unsigned int *by_face;
 
   uint8_t *face_action;
   uint8_t *vertex_action;
