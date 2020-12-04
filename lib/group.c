@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "perm.h"
+
 unsigned int group_mul(group_t *group, unsigned int x, unsigned int y)
 {
   return group->mul(group->data, x, y);
@@ -25,19 +27,19 @@ struct group_memo_data_t
   uint8_t *inv_mul;
 };
 
-unsigned int group_memo_mul(void *data_, unsigned int x, unsigned int y)
+static unsigned int group_memo_mul(void *data_, unsigned int x, unsigned int y)
 {
   struct group_memo_data_t *data = data_;
   return data->mul[x + y * data->num];
 }
 
-unsigned int group_memo_inv_mul(void *data_, unsigned int x, unsigned int y)
+static unsigned int group_memo_inv_mul(void *data_, unsigned int x, unsigned int y)
 {
   struct group_memo_data_t *data = data_;
   return data->inv_mul[x + y * data->num];
 }
 
-void group_memo_cleanup(void *data_)
+static void group_memo_cleanup(void *data_)
 {
   struct group_memo_data_t *data = data_;
   free(data->mul);
@@ -70,6 +72,54 @@ void group_memo(group_t *memo, group_t *group)
   memo->cleanup = group_memo_cleanup;
 }
 
+static unsigned int group_perm_mul(void *data_, unsigned int x, unsigned int y)
+{
+  unsigned int *data = data_;
+  unsigned int n = *data;
+
+  uint8_t *perm1 = malloc(n);
+  uint8_t *perm2 = malloc(n);
+
+  perm_from_index(perm1, n, x, n);
+  perm_from_index(perm2, n, y, n);
+
+  perm_mul(perm1, perm2, n);
+
+  unsigned int z = perm_index(perm1, n, n);
+
+  free(perm1);
+  free(perm2);
+
+  return z;
+}
+
+void group_perm(group_t *group, unsigned int n)
+{
+  group->num = 1;
+  for (unsigned int i = 2; i < n; i++) group->num *= i;
+
+  unsigned int *data = malloc(sizeof(unsigned int));
+  *data = n;
+  group->data = data;
+  group->cleanup = free;
+  group->mul = group_perm_mul;
+  group->inv_mul = 0;
+}
+
+static unsigned int group_u16_mul(void *data, unsigned int x, unsigned int y)
+{
+  return x ^ y;
+}
+
+void group_u16(group_t *group, unsigned int n)
+{
+  group->num = 1 << n;
+  group->data = 0;
+  group->cleanup = free;
+  group->mul = group_u16_mul;
+  group->inv_mul = group_u16_mul;
+}
+
 void group_inv_table(uint8_t *inv_mul, uint8_t *mul, unsigned int n)
 {
   for (unsigned int a = 0; a < n; a++) {
@@ -78,4 +128,27 @@ void group_inv_table(uint8_t *inv_mul, uint8_t *mul, unsigned int n)
       inv_mul[n * c + a] = b;
     }
   }
+}
+
+unsigned int action_perm_u16_act(void *data_, unsigned int a, unsigned int p)
+{
+  unsigned int *data = data_;
+  unsigned int n = *data;
+  uint8_t *perm = malloc(n);
+  perm_from_index(perm, n, p, n);
+
+  unsigned int a1 = u16_conj(a, perm, n);
+
+  free(perm);
+
+  return a1;
+}
+
+void action_perm_u16(action_t *action, group_t *perm)
+{
+  unsigned int *data = malloc(sizeof(unsigned int));
+
+  action->act = action_perm_u16_act;
+  action->cleanup = free;
+  action->data = data;
 }

@@ -24,6 +24,7 @@ unsigned int group_mul(group_t *group, unsigned int x, unsigned int y);
 struct action_t
 {
   unsigned int (*act)(void *data, unsigned int a, unsigned int g);
+  void (*cleanup)(void *data);
   void *data;
 };
 typedef struct action_t action_t;
