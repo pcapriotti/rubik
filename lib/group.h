@@ -10,10 +10,15 @@ struct group_t
 {
   unsigned int num;
   unsigned int (*mul)(void *data, unsigned int x, unsigned int y);
-  unsigned int (*inv)(void *data, unsigned int x);
+  unsigned int (*inv_mul)(void *data, unsigned int x, unsigned int y);
+  void (*cleanup)(void *data);
   void *data;
 };
 typedef struct group_t group_t;
+
+unsigned int group_inv(group_t *group, unsigned int x, unsigned int y);
+unsigned int group_inv_mul(group_t *group, unsigned int x, unsigned int y);
+unsigned int group_mul(group_t *group, unsigned int x, unsigned int y);
 
 /* An action of a group on a finite set of natural numbers. */
 struct action_t
