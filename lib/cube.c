@@ -50,7 +50,7 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
   for (unsigned int i = shape->num_edge_orbits + 1;
        i < shape->num_orbits; i++) {
     shape->orbits[i].size = 24;
-    shape->orbits[i].dim = 1;
+    shape->orbits[i].dim = 2;
     shape->orbits[i].offset =  offset;
     offset += shape->orbits[i].size;
     shape->orbits[i].x = n - 1;

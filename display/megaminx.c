@@ -329,12 +329,12 @@ void megaminx_piece_init(piece_t *piece, poly_t *poly, int *facelets,
   free(s);
 }
 
-struct action_t
+struct key_action_t
 {
   void (*run)(megaminx_scene_t *ms, void *data);
   void *data;
 };
-typedef struct action_t action_t;
+typedef struct key_action_t key_action_t;
 
 struct megaminx_scene_t
 {
@@ -358,7 +358,7 @@ struct megaminx_scene_t
   megaminx_t *gen;
   unsigned int num_gens;
 
-  action_t *key_bindings;
+  key_action_t *key_bindings;
 
   symmetries_t syms;
   quat *rots;
@@ -382,7 +382,7 @@ void megaminx_on_keypress(void *data, unsigned int c)
   megaminx_scene_t *ms = data;
   if (c >= 256) return;
 
-  action_t *a = &ms->key_bindings[c];
+  key_action_t *a = &ms->key_bindings[c];
   if (a->run == 0) return;
 
   a->run(ms, a->data);
@@ -444,12 +444,12 @@ void megaminx_action_scramble(megaminx_scene_t *ms, void *data_)
 
 void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
 {
-  ms->key_bindings = calloc(256, sizeof(action_t));
+  ms->key_bindings = calloc(256, sizeof(key_action_t));
 
   static const unsigned char face_keys[] = "jfkdmv,c;als";
   static const unsigned char rot_keys[] = "JFKDMV<C/ALS";
   for (unsigned int i = 0; i < 12; i++) {
-    ms->key_bindings[face_keys[i]] = (action_t) {
+    ms->key_bindings[face_keys[i]] = (key_action_t) {
       .run = megaminx_action_move_face,
       .data = move_face_data_new(i & ~1, i & 1 ? 4 : 1)
     };
@@ -457,13 +457,13 @@ void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
   for (unsigned int i = 0; i < 12; i++) {
     unsigned int s = *megaminx_centre(&ms->gen[i & ~1], (i & ~1));
     if (i & 1) s = ms->syms.inv_mul[s];
-    ms->key_bindings[rot_keys[i]] = (action_t) {
+    ms->key_bindings[rot_keys[i]] = (key_action_t) {
       .run = megaminx_action_rotate,
       .data = rotate_data_new(s)
     };
   }
 
-  ms->key_bindings['s' - 'a' + 1] = (action_t) {
+  ms->key_bindings['s' - 'a' + 1] = (key_action_t) {
     .run = megaminx_action_scramble,
     .data = 0
   };

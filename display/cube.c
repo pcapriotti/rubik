@@ -285,16 +285,16 @@ quat *cube_syms_init(symmetries_t *syms)
   return rots;
 }
 
-struct action_t
+struct key_action_t
 {
   void (*run)(cube_scene_t *ms, void *data);
   void *data;
 };
-typedef struct action_t action_t;
+typedef struct key_action_t key_action_t;
 
 struct cube_scene_t
 {
-  action_t *key_bindings;
+  key_action_t *key_bindings;
   symmetries_t syms;
   cube_t conf;
   cube_t *gen;
@@ -332,12 +332,12 @@ void cube_action_move_face(cube_scene_t *s, void *data_)
 
 void cube_scene_set_up_key_bindings(cube_scene_t *s)
 {
-  s->key_bindings = calloc(256, sizeof(action_t));
+  s->key_bindings = calloc(256, sizeof(key_action_t));
 
   static const unsigned char face_keys[] = "jfkdls;amc,x";
   static const unsigned char rot_keys[] = "JFKDLS:AMC<X";
   for (unsigned int i = 0; i < 12; i++) {
-    s->key_bindings[face_keys[i]] = (action_t) {
+    s->key_bindings[face_keys[i]] = (key_action_t) {
       .run = cube_action_move_face,
       .data = move_face_data_new(i >> 1, (i & 1) ? 3 : 1)
     };
@@ -349,7 +349,7 @@ static void cube_on_keypress(void *data, unsigned int c)
   cube_scene_t *s = data;
   if (c >= 256) return;
 
-  action_t *a = &s->key_bindings[c];
+  key_action_t *a = &s->key_bindings[c];
   if (a->run == 0) return;
 
   a->run(s, a->data);
