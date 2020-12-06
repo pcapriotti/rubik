@@ -185,3 +185,13 @@ void action_perm_u16(action_t *action, group_t *perm)
   action->cleanup = free;
   action->data = data;
 }
+
+void group_cyclic_subgroup(group_t *group,
+                           uint8_t *elems, unsigned int num,
+                           unsigned int gen)
+{
+  elems[0] = 0;
+  for (unsigned int i = 1; i < num; i++) {
+    elems[i] = group_mul(group, elems[i - 1], gen);
+  }
+}

@@ -67,19 +67,22 @@ struct puzzle_t
      representative of the orbit of x to x itself.
 
      Such a choice determines, for each orbit i, a set isomorphism
-     phi_i between the product Orb(r_i) x Stab(r_i) and G itself.
+     phi_i between the product Stab(r_i) x X_i and G itself.
 
-     At index (i, j, k) the matrix contains phi_i(x_j, u_k), where x_j
-     is the j-th element of X_i, and u_k is the k-th element of
+     At index (i, j, k) the matrix contains phi_i(u_j, x_k), where x_k
+     is the k-th element of X_i, and u_j is the j-th element of
      Stab(r_i) in some enumeration.
    */
-  uint8_t *by_stab;
+  uint8_t **by_stab;
 
   /* The inverse of the above isomorphism family. */
-  uint8_t *inv_by_stab;
+  uint8_t **inv_by_stab;
 };
 typedef struct puzzle_t puzzle_t;
 
 unsigned int puzzle_orbit_of(puzzle_t *puzzle, unsigned int x);
+void puzzle_init(puzzle_t *puzzle,
+                 unsigned int num_orbits, unsigned int *orbit_size,
+                 group_t *group, uint8_t **orbit, uint8_t **stab);
 
 #endif /* PUZZLE_H */

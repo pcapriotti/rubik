@@ -33,8 +33,9 @@ typedef struct action_t action_t;
 void action_cleanup(action_t *action);
 
 void group_inv_table(uint8_t *inv_mul, uint8_t *mul, unsigned int n);
-void group_from_table(group_t *memo,
-                      unsigned int num,
-                      uint8_t *mul);
+void group_from_table(group_t *memo, unsigned int num, uint8_t *mul);
+void group_cyclic_subgroup(group_t *group,
+                           uint8_t *elems, unsigned int num,
+                           unsigned int gen);
 
 #endif /* GROUP_H */

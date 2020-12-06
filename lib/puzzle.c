@@ -89,17 +89,16 @@ unsigned int puzzle_act(void *data, unsigned int x, unsigned int g)
 {
   puzzle_t *puzzle = data;
   unsigned int i = puzzle_orbit_of(puzzle, x);
-  unsigned int stab = puzzle->group->num / puzzle->orbit_size[i];
-  unsigned int j = x * stab;
-  unsigned int g0 = puzzle->by_stab[i * puzzle->group->num + j];
+  unsigned int g0 = puzzle->by_stab[i][x];
   unsigned int g1 = group_mul(puzzle->group, g0, g);
-  unsigned int j1 = puzzle->inv_by_stab[i * puzzle->group->num + g1];
-  return j1 / stab;
+  unsigned int stab = puzzle->group->num / puzzle->orbit_size[i];
+  unsigned int j = puzzle->inv_by_stab[i][g1];
+  return j % stab;
 }
 
 void puzzle_init(puzzle_t *puzzle,
                  unsigned int num_orbits, unsigned int *orbit_size,
-                 group_t *group, uint8_t *by_stab)
+                 group_t *group, uint8_t **orbit, uint8_t **stab)
 {
   puzzle->num_orbits = num_orbits;
   puzzle->orbit_size = malloc(puzzle->num_orbits * sizeof(unsigned int));
@@ -114,12 +113,18 @@ void puzzle_init(puzzle_t *puzzle,
   puzzle->num_pieces = puzzle->orbit_offset[num_orbits];
   puzzle->group = group;
 
-  puzzle->by_stab = by_stab;
-  puzzle->inv_by_stab = malloc(num_orbits * group->num);
+  puzzle->by_stab = malloc(num_orbits * sizeof(uint8_t *));
+  puzzle->inv_by_stab = malloc(num_orbits * sizeof(uint8_t *));
   for (unsigned int i = 0; i < num_orbits; i++) {
-    for (unsigned int j = 0; j < group->num; i++) {
-      unsigned int g = by_stab[i * group->num + j];
-      puzzle->inv_by_stab[i * group->num + g] = j;
+    puzzle->by_stab[i] = malloc(group->num);
+    puzzle->inv_by_stab[i] = malloc(group->num);
+    for (unsigned int j = 0; j < group->num; j++) {
+      unsigned int g =
+        group_mul(puzzle->group,
+                  stab[i][j / puzzle->orbit_size[i]],
+                  orbit[i][j % puzzle->orbit_size[i]]);
+      puzzle->by_stab[i][j] = g;
+      puzzle->inv_by_stab[i][g] = j;
     }
   }
 

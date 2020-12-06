@@ -288,7 +288,6 @@ quat *cube_syms_init(symmetries_t *syms)
 void cube_puzzle_init(puzzle_t *puzzle)
 {
   group_t *group = malloc(sizeof(group_t));
-  action_t *action = malloc(sizeof(action_t));
 
   static const unsigned int num_syms = 24;
 
@@ -311,18 +310,50 @@ void cube_puzzle_init(puzzle_t *puzzle)
 
   group_from_table(group, num_syms, mul);
 
-  puzzle->num_pieces = 26;
-  puzzle->num_orbits = 3;
-  puzzle->orbit_size = malloc(puzzle->num_orbits * sizeof(unsigned int));
-  puzzle->orbit_size[0] = 8;
-  puzzle->orbit_size[1] = 12;
-  puzzle->orbit_size[2] = 6;
-  puzzle->orbit_offset = malloc(puzzle->num_orbits * sizeof(unsigned int));
-  puzzle->orbit_offset[0] = 0;
-  puzzle->orbit_offset[1] = 8;
-  puzzle->orbit_offset[2] = 20;
-  puzzle->group = group;
-  puzzle->action = action;
+  unsigned int orbit_size[3] = { 8, 12, 6 };
+  unsigned int stab_gen[3] = { 12, 5, 4 };
+
+  uint8_t *stab[3];
+  uint8_t *orbit[3];
+
+  for (unsigned int k = 0; k < 3; k++) {
+    orbit[k] = malloc(orbit_size[k]);
+    stab[k] = malloc(group->num / orbit_size[k]);
+    group_cyclic_subgroup(group, stab[k],
+                          group->num / orbit_size[k],
+                          stab_gen[k]);
+  }
+
+  /* vertices */
+  for (unsigned int v = 0; v < 8; v++) {
+    unsigned int p = __builtin_popcount(v) & 1;
+    unsigned int s = (v & 1) | ((v >> p)& 2);
+    orbit[0][v] = (p << 2) | s;
+  }
+
+  /* edges */
+  for (unsigned int e = 0; e < 12; e++) {
+    unsigned int a = e >> 2;
+    unsigned int p = a & 1;
+    unsigned int s = ((e & 1) << p) | ((e & 2) >> p);
+    s = ((s & 1) << 1) | ((__builtin_popcount(s) & 1) ^ p);
+    orbit[1][e] = (a << 3) | s;
+  }
+
+  /* faces */
+  for (unsigned int f = 0; f < 6; f++) {
+    uint8_t sign = (f >> 1) & 1;
+    unsigned int s = f & 1;
+    s = s | ((sign ^ s) << 2);
+    orbit[2][f] = ((f & ~1) << 2) | s;
+  }
+
+  puzzle_init(puzzle, 3, orbit_size, group, orbit, stab);
+
+  for (unsigned int k = 0; k < 3; k++) {
+    free(stab[k]);
+    free(orbit[k]);
+  }
 }
 
 struct key_action_t
