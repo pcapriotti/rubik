@@ -5,6 +5,11 @@
 
 #include "perm.h"
 
+void group_cleanup(group_t *group)
+{
+  if (group->cleanup) group->cleanup(group->data);
+}
+
 unsigned int group_mul(group_t *group, unsigned int x, unsigned int y)
 {
   return group->mul(group->data, x, y);
@@ -18,6 +23,11 @@ unsigned int group_inv_mul(group_t *group, unsigned int x, unsigned int y)
 unsigned int group_inv(group_t *group, unsigned int x, unsigned int y)
 {
   return group->inv_mul(group->data, x, 0);
+}
+
+void action_cleanup(action_t *action)
+{
+  if (action->cleanup) action->cleanup(action->data);
 }
 
 struct group_memo_data_t
@@ -47,6 +57,38 @@ static void group_memo_cleanup(void *data_)
   free(data);
 }
 
+void group_from_tables(group_t *memo,
+                       unsigned int num,
+                       uint8_t *mul,
+                       uint8_t *inv_mul)
+{
+  struct group_memo_data_t *data = malloc(sizeof(struct group_memo_data_t));
+  data->mul = mul;
+  data->inv_mul = inv_mul;
+  data->num = num;
+
+  memo->num = num;
+  memo->data = data;
+  memo->mul = group_memo_mul;
+  memo->inv_mul = group_memo_inv_mul;
+  memo->cleanup = group_memo_cleanup;
+}
+
+void group_from_table(group_t *memo,
+                      unsigned int num,
+                      uint8_t *mul)
+{
+  uint8_t *inv_mul = malloc(num * num);
+  for (unsigned int x = 0; x < num; x++) {
+    for (unsigned int y = 0; y < num; y++) {
+      unsigned int z = mul[x + y * num];
+      inv_mul[x + z * num] = y;
+    }
+  }
+
+  group_from_tables(memo, num, mul, inv_mul);
+}
+
 void group_memo(group_t *memo, group_t *group)
 {
   uint8_t *table = malloc(group->num * group->num * sizeof(uint8_t));
@@ -60,16 +102,7 @@ void group_memo(group_t *memo, group_t *group)
     }
   }
 
-  struct group_memo_data_t *data = malloc(sizeof(struct group_memo_data_t));
-  data->mul = table;
-  data->inv_mul = inv_table;
-  data->num = group->num;
-
-  memo->num = group->num;
-  memo->data = data;
-  memo->mul = group_memo_mul;
-  memo->inv_mul = group_memo_inv_mul;
-  memo->cleanup = group_memo_cleanup;
+  group_from_tables(memo, group->num, table, inv_table);
 }
 
 static unsigned int group_perm_mul(void *data_, unsigned int x, unsigned int y)

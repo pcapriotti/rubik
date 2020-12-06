@@ -285,6 +285,46 @@ quat *cube_syms_init(symmetries_t *syms)
   return rots;
 }
 
+void cube_puzzle_init(puzzle_t *puzzle)
+{
+  group_t *group = malloc(sizeof(group_t));
+  action_t *action = malloc(sizeof(action_t));
+
+  static const unsigned int num_syms = 24;
+
+  uint8_t *mul = malloc(num_syms * num_syms);
+  unsigned int index = 0;
+  for (unsigned int p = 0; p < 6; p++) {
+    uint8_t lehmer[3];
+    uint8_t perm[3];
+
+    lehmer_from_index(lehmer, 3, p, 3);
+    perm_from_lehmer(perm, lehmer, 3);
+    uint8_t sign = lehmer_sign(lehmer, 3);
+
+    for (unsigned int j = 0; j < 4; j++) {
+      unsigned int s = j | ((sign ^ (__builtin_popcount(j) & 1)) << 2);
+
+      cube_mul_table(&mul[index * num_syms], perm, s);
+    }
+  }
+
+  group_from_table(group, num_syms, mul);
+
+  puzzle->num_pieces = 26;
+  puzzle->num_orbits = 3;
+  puzzle->orbit_size = malloc(puzzle->num_orbits * sizeof(unsigned int));
+  puzzle->orbit_size[0] = 8;
+  puzzle->orbit_size[1] = 12;
+  puzzle->orbit_size[2] = 6;
+  puzzle->orbit_offset = malloc(puzzle->num_orbits * sizeof(unsigned int));
+  puzzle->orbit_offset[0] = 0;
+  puzzle->orbit_offset[1] = 8;
+  puzzle->orbit_offset[2] = 20;
+  puzzle->group = group;
+  puzzle->action = action;
+}
+
 struct key_action_t
 {
   void (*run)(cube_scene_t *ms, void *data);

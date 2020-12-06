@@ -19,6 +19,7 @@ typedef struct group_t group_t;
 unsigned int group_inv(group_t *group, unsigned int x, unsigned int y);
 unsigned int group_inv_mul(group_t *group, unsigned int x, unsigned int y);
 unsigned int group_mul(group_t *group, unsigned int x, unsigned int y);
+void group_cleanup(group_t *group);
 
 /* An action of a group on a finite set of natural numbers. */
 struct action_t
@@ -29,6 +30,11 @@ struct action_t
 };
 typedef struct action_t action_t;
 
+void action_cleanup(action_t *action);
+
 void group_inv_table(uint8_t *inv_mul, uint8_t *mul, unsigned int n);
+void group_from_table(group_t *memo,
+                      unsigned int num,
+                      uint8_t *mul);
 
 #endif /* GROUP_H */
