@@ -285,13 +285,50 @@ quat *cube_syms_init(symmetries_t *syms)
   return rots;
 }
 
-void cube_puzzle_init(puzzle_t *puzzle)
+quat *cube_puzzle_init(puzzle_t *puzzle)
 {
-  group_t *group = malloc(sizeof(group_t));
-
   static const unsigned int num_syms = 24;
 
+  /* The group G' of symmetries of a cube is the wreath product G' of
+  Sigma_3 and O(1). G' acts linearly on the cube by permuting
+  coordinates and changing signs. Explicitly, a pair (sigma, u) of a
+  permutation and a choice of signs acts on the basis elements as
+  follows:
+
+    e_i (sigma, u) = u_i e_(sigma i).
+
+  The determinant of (sigma, u) is sign(sigma) * sum(u). We are
+  interested in the subgroup G of G' consisting of those elements that
+  have determinant 1.
+
+  They can be enumerated by enumerating the permutation sigma first,
+  then choosing all possible signs for the first two axes, and setting
+  the third sign to the only value that makes the determinant
+  positive.
+
+  To generate quaternions for all possible elements of G, we regard a
+  quaternion as an element of Spin(3), and observe that Pin(3) is the
+  direct product Spin(3) x O(1). Therefore, an element of Pin(3) can
+  be represented by a pair of a quaternion and a sign. The strategy is
+  then to write every element of G as a product of Pin(3) elements
+  corresponding to reflections (i.e. tensors of rank 1 in the Clifford
+  algebra).
+
+  Since we know that this product is ultimately going to be
+  a rotation, we can ignore the sign component, and simply use a
+  quaternion to represent a reflection, namely the reflection
+  corresponding to the composition of the usual rotation with scaling
+  by -1 (i.e. reflection with respect to the origin).
+
+  With these conventions, a reflection along a vector v corresponds to
+  v itself regarded as a tensor, i.e. the purely imaginary quaternion
+  associated to v.
+ */
+
+  group_t *group = malloc(sizeof(group_t));
   uint8_t *mul = malloc(num_syms * num_syms);
+  quat *rots = malloc(num_syms * sizeof(quat));
+
   unsigned int index = 0;
   for (unsigned int p = 0; p < 6; p++) {
     uint8_t lehmer[3];
@@ -301,10 +338,18 @@ void cube_puzzle_init(puzzle_t *puzzle)
     perm_from_lehmer(perm, lehmer, 3);
     uint8_t sign = lehmer_sign(lehmer, 3);
 
+    /* quaternion correponding to the element of Pin(3) determined by
+    this permutation */
+    quat q0;
+    quat_from_perm(q0, perm);
+
     for (unsigned int j = 0; j < 4; j++) {
       unsigned int s = j | ((sign ^ (__builtin_popcount(j) & 1)) << 2);
 
       cube_mul_table(&mul[index * num_syms], perm, s);
+
+      memcpy(rots[index], q0, sizeof(quat));
+      quat_cube_sym(rots[index], s);
     }
   }
 
@@ -318,9 +363,9 @@ void cube_puzzle_init(puzzle_t *puzzle)
 
   for (unsigned int k = 0; k < 3; k++) {
     orbit[k] = malloc(orbit_size[k]);
-    stab[k] = malloc(group->num / orbit_size[k]);
+    stab[k] = malloc(num_syms / orbit_size[k]);
     group_cyclic_subgroup(group, stab[k],
-                          group->num / orbit_size[k],
+                          num_syms / orbit_size[k],
                           stab_gen[k]);
   }
 
@@ -354,6 +399,8 @@ void cube_puzzle_init(puzzle_t *puzzle)
     free(stab[k]);
     free(orbit[k]);
   }
+
+  return 0;
 }
 
 struct key_action_t
