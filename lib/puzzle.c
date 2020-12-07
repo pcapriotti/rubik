@@ -2,6 +2,7 @@
 #include "group.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
 
@@ -85,15 +86,28 @@ unsigned int puzzle_orbit_of(puzzle_t *puzzle, unsigned int x)
   return lo;
 }
 
-unsigned int puzzle_act(void *data, unsigned int x, unsigned int g)
+/* global piece index from orbit and local index */
+unsigned int puzzle_global(puzzle_t *puzzle, unsigned int i, unsigned int j)
+{
+  return puzzle->orbit_offset[i] + j;
+}
+
+/* local piece index */
+unsigned int puzzle_local(puzzle_t *puzzle, unsigned int j)
+{
+  unsigned int i = puzzle_orbit_of(puzzle, j);
+  return j - puzzle->orbit_offset[i];
+}
+
+static unsigned int puzzle_act(void *data, unsigned int x, unsigned int g)
 {
   puzzle_t *puzzle = data;
   unsigned int i = puzzle_orbit_of(puzzle, x);
+  x -= puzzle->orbit_offset[i];
   unsigned int g0 = puzzle->by_stab[i][x];
   unsigned int g1 = group_mul(puzzle->group, g0, g);
-  unsigned int stab = puzzle->group->num / puzzle->orbit_size[i];
   unsigned int j = puzzle->inv_by_stab[i][g1];
-  return j % stab;
+  return puzzle->orbit_offset[i] + j % puzzle->orbit_size[i];
 }
 
 void puzzle_init(puzzle_t *puzzle,

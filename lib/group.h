@@ -30,6 +30,7 @@ struct action_t
 };
 typedef struct action_t action_t;
 
+unsigned int action_act(action_t *action, unsigned int a, unsigned int g);
 void action_cleanup(action_t *action);
 
 void group_inv_table(uint8_t *inv_mul, uint8_t *mul, unsigned int n);

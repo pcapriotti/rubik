@@ -78,9 +78,9 @@ vec4 quat_slerp(vec4 q1, vec4 q2, float t)
 void main()
 {
   vec4 q = syms[s];
-  if (s1 != s) {
-    q = quat_slerp(q, syms[s1], (time - tm0) / duration);
-  }
+  // if (s1 != s) {
+  //   q = quat_slerp(q, syms[s1], (time - tm0) / duration);
+  // }
 
   pos = model * vec4(quat_mul(q, p), 1);
   gl_Position = proj * view * pos;

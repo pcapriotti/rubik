@@ -59,13 +59,13 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
 
     if (y > shape->num_edge_orbits) {
       z++;
-      y = 1;
+      y = (z > (n - 2) / 2) ? z : 1;
     }
   }
   if (n % 2 == 1) shape->orbits[shape->num_orbits - 1].size = 6;
 }
 
-void cube_init(symmetries_t *syms, cube_t *cube, unsigned int n)
+void cube_init(puzzle_t *puzzle, cube_t *cube, unsigned int n)
 {
   unsigned int num;
   cube_shape_init(&cube->shape, n);
@@ -75,8 +75,7 @@ void cube_init(symmetries_t *syms, cube_t *cube, unsigned int n)
   for (unsigned int i = 0; i < cube->shape.num_orbits; i++) {
     orbit_t *orbit = &cube->shape.orbits[i];
     for (unsigned int j = 0; j < orbit->size; j++) {
-      cube->pieces[index++] = symmetries_by_cell(syms, orbit->dim,
-                                                 j * 24 / orbit->size);
+      cube->pieces[index++] = puzzle->by_stab[orbit->dim][j];
     }
   }
 }
@@ -97,17 +96,16 @@ int piece_in_layer(cube_shape_t *shape,
   if (k < shape->num_corner_orbits) {
     return i == 0 && ((n >> (f >> 1)) == (f & 1));
   }
+  /* TODO: edges and centres */
   return 0;
 }
 
-cube_t *cube_generators(cube_t *cube, symmetries_t *syms)
+cube_t *cube_generators(cube_t *cube, puzzle_t *puzzle)
 {
   cube_t *gen = calloc(6 * (cube->shape.n / 2), sizeof(cube_t));
   for (unsigned int f = 0; f < 6; f++) {
-    unsigned int s = syms->by_face[f * 4];
+    unsigned int s = puzzle->by_stab[2][f];
     for (unsigned int i = 0; i < cube->shape.n / 2; i++) {
-
-
       for (unsigned int k = 0; k < cube->shape.num_orbits; k++) {
         for (unsigned int j = 0; j < cube->shape.orbits[k].size; j++) {
           if (piece_in_layer(&cube->shape, k, j, f, i))
@@ -119,7 +117,7 @@ cube_t *cube_generators(cube_t *cube, symmetries_t *syms)
   return gen;
 }
 
-void cube_act(symmetries_t *syms, cube_t *cube1, cube_t *cube, cube_t *move)
+void cube_act(puzzle_t *puzzle, cube_t *cube1, cube_t *cube, cube_t *move)
 {
   for (unsigned int k = 0; k < cube->shape.num_orbits; k++) {
     for (unsigned int i = 0; i < cube->shape.orbits[k].size; i++) {
@@ -128,7 +126,7 @@ void cube_act(symmetries_t *syms, cube_t *cube1, cube_t *cube, cube_t *move)
   }
 }
 
-void cube_act_(symmetries_t *syms, cube_t *cube, cube_t *move)
+void cube_act_(puzzle_t *syms, cube_t *cube, cube_t *move)
 {
   cube_act(syms, cube, cube, move);
 }

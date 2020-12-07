@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-struct symmetries_t;
-typedef struct symmetries_t symmetries_t;
+struct puzzle_t;
+typedef struct puzzle_t puzzle_t;
 
 struct orbit_t {
   unsigned int size;
@@ -39,11 +39,11 @@ struct cube_t
 };
 typedef struct cube_t cube_t;
 
-void cube_init(symmetries_t *syms, cube_t *cube, unsigned int n);
+void cube_init(puzzle_t *puzzle, cube_t *cube, unsigned int n);
 
 uint8_t *cube_orbit(cube_t *cube, unsigned int k);
-cube_t *cube_generators(cube_t *cube, symmetries_t *syms);
-void cube_act_(symmetries_t *syms, cube_t *cube, cube_t *move);
-void cube_act(symmetries_t *syms, cube_t *cube1, cube_t *cube, cube_t *move);
+cube_t *cube_generators(cube_t *cube, puzzle_t *puzzle);
+void cube_act(puzzle_t *puzzle, cube_t *cube1, cube_t *cube, cube_t *move);
+void cube_act_(puzzle_t *syms, cube_t *cube, cube_t *move);
 
 #endif /* CUBE_H */

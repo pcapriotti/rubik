@@ -30,6 +30,11 @@ void action_cleanup(action_t *action)
   if (action->cleanup) action->cleanup(action->data);
 }
 
+unsigned int action_act(action_t *action, unsigned int a, unsigned int g)
+{
+  return action->act(action->data, a, g);
+}
+
 struct group_memo_data_t
 {
   unsigned int num;
