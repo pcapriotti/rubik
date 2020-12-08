@@ -148,7 +148,7 @@ void megaminx_scramble(puzzle_t *puzzle, megaminx_t *mm)
         o = rand() % stab_size;
         total += o;
       }
-      mm->pieces[puzzle_global(puzzle, 0, i)] =
+      mm->pieces[puzzle_global(puzzle, k, i)] =
         puzzle->by_stab[k][o * puzzle->orbit_size[k] + perm[i]];
     }
 

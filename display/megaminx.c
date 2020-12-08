@@ -111,7 +111,7 @@ quat *megaminx_rotations(poly_t *dodec)
 {
   quat *rots = malloc(60 * sizeof(quat));
 
-  /* symmetry i * 5 + j maps face 0 to i, and face 1 to the
+  /* symmetry i * 5 + j maps face 0 to i, and face 2 to the
   j-th face (in order from the lowest-numbered face) adjacent to i */
 
   quat rho;
@@ -185,7 +185,7 @@ void megaminx_puzzle_init(puzzle_t *puzzle, abs_poly_t *dodec, poly_data_t *data
 {
   const unsigned int num_syms = 60;
   unsigned int orbit_size[] = { 20, 30, 12 };
-  unsigned int stab_gen[] = { 10, 5, 1};
+  unsigned int stab_gen[] = { 50, 10, 1};
 
   group_t *group = malloc(sizeof(group_t));
   dodecahedron_group_init(group, dodec, data);
