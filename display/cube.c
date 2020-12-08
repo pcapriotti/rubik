@@ -385,25 +385,12 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
     orbit_t *orbit = &s->conf.shape.orbits[i];
     cube_piece_poly(&cube, n, orbit->x, orbit->y, orbit->z, facelets);
 
-    piece_init(&s->piece[i], &cube, facelets,
+    piece_init(&s->piece[i], &cube, facelets, rots,
                &s->conf.pieces[orbit->offset], orbit->size);
     scene_add_piece(scene, &s->piece[i]);
+
     printf("added orbit %u, dim: %u, size: %u, pos: (%u, %u, %u)\n",
            i, orbit->dim, orbit->size, orbit->x, orbit->y, orbit->z);
-  }
-
-  /* symmetries */
-  {
-    unsigned int b;
-    glGenBuffers(1, &b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
-
-    glBufferData(GL_SHADER_STORAGE_BUFFER,
-                 sizeof(quat) * s->puzzle.group->num,
-                 rots, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SYMS, b);
-
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
   /* face action */

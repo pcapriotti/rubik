@@ -246,18 +246,6 @@ void megaminx_puzzle_init(puzzle_t *puzzle, abs_poly_t *dodec, poly_data_t *data
   }
 }
 
-void megaminx_piece_init(piece_t *piece, poly_t *poly, int *facelets,
-                         unsigned int *sym_indices, unsigned int sym_stride,
-                         unsigned int num)
-{
-  uint8_t *s = malloc(num * sizeof(uint8_t));
-  for (unsigned int i = 0; i < num; i++) {
-    s[i] = sym_indices[i * sym_stride];
-  }
-  piece_init(piece, poly, facelets, s, num);
-  free(s);
-}
-
 struct key_action_t
 {
   void (*run)(megaminx_scene_t *ms, void *data);
@@ -424,19 +412,6 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
   ms->rots = megaminx_rotations(&ms->dodec);
   megaminx_puzzle_init(&ms->puzzle, &ms->dodec.abs, &data);
 
-  /* symmetries */
-  {
-    unsigned int b;
-    glGenBuffers(1, &b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
-
-    glBufferData(GL_SHADER_STORAGE_BUFFER,
-                 sizeof(quat) * ms->puzzle.group->num,
-                 ms->rots, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SYMS, b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-  }
-
   /* face action */
   {
     unsigned int b;
@@ -493,13 +468,13 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
 
   const unsigned int num_edges = ms->dodec.abs.num_faces +
     ms->dodec.abs.num_vertices - 2;
-  piece_init(&ms->piece[0], &ms->corner.poly, ms->corner.facelets,
+  piece_init(&ms->piece[0], &ms->corner.poly, ms->corner.facelets, ms->rots,
              megaminx_orbit(&ms->puzzle, &ms->mm, 0),
              ms->dodec.abs.num_vertices);
-  piece_init(&ms->piece[1], &ms->edge.poly, ms->edge.facelets,
+  piece_init(&ms->piece[1], &ms->edge.poly, ms->edge.facelets, ms->rots,
              megaminx_orbit(&ms->puzzle, &ms->mm, 1),
              num_edges);
-  piece_init(&ms->piece[2], &ms->centre.poly, ms->centre.facelets,
+  piece_init(&ms->piece[2], &ms->centre.poly, ms->centre.facelets, ms->rots,
              megaminx_orbit(&ms->puzzle, &ms->mm, 2),
              ms->dodec.abs.num_faces);
 

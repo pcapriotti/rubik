@@ -29,7 +29,7 @@ typedef struct piece_t piece_t;
 
 void piece_render(piece_t *piece, float time);
 void piece_init(piece_t *piece, poly_t *poly, int *facelets,
-                uint8_t *conf, unsigned int instances);
+                quat *rots, uint8_t *conf, unsigned int instances);
 void piece_cleanup(piece_t *piece);
 void piece_set_conf(piece_t *piece, uint8_t *conf);
 void piece_set_conf_instant(piece_t *piece, uint8_t *conf);

@@ -25,7 +25,6 @@ typedef struct {
 
 enum {
   BINDING_SCENE_DATA,
-  BINDING_SYMS,
   BINDING_FACE_ACTION,
   BINDING_COLOURS,
 };

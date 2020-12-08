@@ -3,10 +3,8 @@ layout (location = 0) in vec3 p;
 layout (location = 1) in vec3 n;
 layout (location = 2) in int f;
 layout (location = 3) in vec3 b;
-layout (location = 4) in uint s;
-layout (location = 5) in uint s0;
-layout (location = 6) in uint s1;
-layout (location = 7) in float tm0;
+layout (location = 4) in uint s0;
+layout (location = 5) in vec4 q;
 
 uniform float duration;
 
@@ -20,18 +18,13 @@ layout (std140, binding = 0) uniform scene_data
   float time;
 };
 
-layout (std430, binding = 1) buffer _syms
-{
-  vec4 syms[];
-};
-
-layout (std430, binding = 2) buffer _face_action
+layout (std430, binding = 1) buffer _face_action
 {
   uint num_faces;
   uint face_action[];
 };
 
-layout (std430, binding = 3) buffer _colours
+layout (std430, binding = 2) buffer _colours
 {
   vec3 colours[];
 };
@@ -77,11 +70,6 @@ vec4 quat_slerp(vec4 q1, vec4 q2, float t)
 
 void main()
 {
-  vec4 q = syms[s];
-  // if (s1 != s) {
-  //   q = quat_slerp(q, syms[s1], (time - tm0) / duration);
-  // }
-
   pos = model * vec4(quat_mul(q, p), 1);
   gl_Position = proj * view * pos;
   norm = mat3(model) * quat_mul(q, n);
