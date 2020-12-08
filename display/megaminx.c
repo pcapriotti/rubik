@@ -185,7 +185,7 @@ void megaminx_puzzle_init(puzzle_t *puzzle, abs_poly_t *dodec, poly_data_t *data
 {
   const unsigned int num_syms = 60;
   unsigned int orbit_size[] = { 20, 30, 12 };
-  unsigned int stab_gen[] = {};
+  unsigned int stab_gen[] = { 10, 5, 1};
 
   group_t *group = malloc(sizeof(group_t));
   dodecahedron_group_init(group, dodec, data);
