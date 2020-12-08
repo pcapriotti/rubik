@@ -99,6 +99,12 @@ unsigned int puzzle_local(puzzle_t *puzzle, unsigned int j)
   return j - puzzle->orbit_offset[i];
 }
 
+/* representative (i.e. first element) of an orbit */
+unsigned int puzzle_repr(puzzle_t *puzzle, unsigned int i)
+{
+  return puzzle->orbit_offset[puzzle_orbit_of(puzzle, i)];
+}
+
 static unsigned int puzzle_act(void *data, unsigned int x, unsigned int g)
 {
   puzzle_t *puzzle = data;

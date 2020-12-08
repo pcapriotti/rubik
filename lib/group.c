@@ -20,7 +20,7 @@ unsigned int group_inv_mul(group_t *group, unsigned int x, unsigned int y)
   return group->inv_mul(group->data, x, y);
 }
 
-unsigned int group_inv(group_t *group, unsigned int x, unsigned int y)
+unsigned int group_inv(group_t *group, unsigned int x)
 {
   return group->inv_mul(group->data, x, 0);
 }

@@ -65,6 +65,11 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
   if (n % 2 == 1) shape->orbits[shape->num_orbits - 1].size = 6;
 }
 
+void cube_shape_cleanup(cube_shape_t *shape)
+{
+  free(shape->orbits);
+}
+
 void cube_init(puzzle_t *puzzle, cube_t *cube, unsigned int n)
 {
   unsigned int num;
@@ -78,6 +83,12 @@ void cube_init(puzzle_t *puzzle, cube_t *cube, unsigned int n)
       cube->pieces[index++] = puzzle->by_stab[orbit->dim][j];
     }
   }
+}
+
+void cube_cleanup(cube_t *cube)
+{
+  cube_shape_cleanup(&cube->shape);
+  free(cube->pieces);
 }
 
 uint8_t *cube_orbit(cube_t *cube, unsigned int k)
@@ -100,9 +111,10 @@ int piece_in_layer(cube_shape_t *shape,
   return 0;
 }
 
-cube_t *cube_generators(cube_t *cube, puzzle_t *puzzle)
+cube_t *cube_generators(cube_t *cube, puzzle_t *puzzle, unsigned int *num_gen)
 {
-  cube_t *gen = calloc(6 * (cube->shape.n / 2), sizeof(cube_t));
+  *num_gen = 6 * (cube->shape.n / 2);
+  cube_t *gen = calloc(*num_gen, sizeof(cube_t));
   for (unsigned int f = 0; f < 6; f++) {
     unsigned int s = puzzle->by_stab[2][f];
     for (unsigned int i = 0; i < cube->shape.n / 2; i++) {
@@ -121,7 +133,6 @@ void cube_act(puzzle_t *puzzle, cube_t *cube1, cube_t *cube, cube_t *move)
 {
   for (unsigned int k = 0; k < cube->shape.num_orbits; k++) {
     for (unsigned int i = 0; i < cube->shape.orbits[k].size; i++) {
-
     }
   }
 }

@@ -83,8 +83,10 @@ typedef struct puzzle_t puzzle_t;
 unsigned int puzzle_orbit_of(puzzle_t *puzzle, unsigned int x);
 unsigned int puzzle_global(puzzle_t *puzzle, unsigned int i, unsigned int j);
 unsigned int puzzle_local(puzzle_t *puzzle, unsigned int j);
+unsigned int puzzle_repr(puzzle_t *puzzle, unsigned int i);
 void puzzle_init(puzzle_t *puzzle,
                  unsigned int num_orbits, unsigned int *orbit_size,
                  group_t *group, uint8_t **orbit, uint8_t **stab);
+void puzzle_cleanup(puzzle_t *puzzle);
 
 #endif /* PUZZLE_H */

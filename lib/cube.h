@@ -31,6 +31,7 @@ typedef struct
 } cube_shape_t;
 
 void cube_shape_init(cube_shape_t *shape, unsigned int n);
+void cube_shape_cleanup(cube_shape_t *shape);
 
 struct cube_t
 {
@@ -40,9 +41,10 @@ struct cube_t
 typedef struct cube_t cube_t;
 
 void cube_init(puzzle_t *puzzle, cube_t *cube, unsigned int n);
+void cube_cleanup(cube_t *cube);
 
 uint8_t *cube_orbit(cube_t *cube, unsigned int k);
-cube_t *cube_generators(cube_t *cube, puzzle_t *puzzle);
+cube_t *cube_generators(cube_t *cube, puzzle_t *puzzle, unsigned int *num_gen);
 void cube_act(puzzle_t *puzzle, cube_t *cube1, cube_t *cube, cube_t *move);
 void cube_act_(puzzle_t *syms, cube_t *cube, cube_t *move);
 

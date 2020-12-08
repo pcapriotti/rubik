@@ -302,8 +302,20 @@ struct cube_scene_t
   puzzle_t puzzle;
   cube_t conf;
   cube_t *gen;
+  unsigned int num_gen;
   piece_t *piece;
 };
+
+void cube_scene_cleanup(cube_scene_t *s)
+{
+  free(s->key_bindings);
+  puzzle_cleanup(&s->puzzle);
+  cube_cleanup(&s->conf);
+  for (unsigned int i = 0; i < s->num_gen; i++) {
+    cube_cleanup(&s->gen[i]);
+  }
+  free(s->gen);
+}
 
 struct move_face_data_t
 {
@@ -380,14 +392,6 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
            i, orbit->dim, orbit->size, orbit->x, orbit->y, orbit->z);
   }
 
-  /* piece_t *corner = malloc(sizeof(piece_t)); */
-  /* poly_t cube; */
-  /* int facelets[6]; */
-  /* cube_piece_poly(&cube, n, 0, 0, 0, facelets); */
-  /* uint8_t conf[] = { 0, 1, 2, 3 }; */
-  /* piece_init(corner, &cube, facelets, conf, 4); */
-  /* scene_add_piece(scene, corner); */
-
   /* symmetries */
   {
     unsigned int b;
@@ -448,7 +452,7 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   }
 
   cube_scene_set_up_key_bindings(s);
-  s->gen = cube_generators(&s->conf, &s->puzzle);
+  s->gen = cube_generators(&s->conf, &s->puzzle, &s->num_gen);
 
   scene->on_keypress_data = s;
   scene->on_keypress = cube_on_keypress;

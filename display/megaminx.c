@@ -4,6 +4,7 @@
 #include "scene.h"
 #include "utils.h"
 
+#include "lib/abs_poly.h"
 #include "lib/group.h"
 #include "lib/megaminx.h"
 #include "lib/puzzle.h"
@@ -106,28 +107,12 @@ void megaminx_centre_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
   facelets[6] = 0;
 }
 
-quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
+quat *megaminx_rotations(poly_t *dodec)
 {
+  quat *rots = malloc(60 * sizeof(quat));
+
   /* symmetry i * 5 + j maps face 0 to i, and face 1 to the
   j-th face (in order from the lowest-numbered face) adjacent to i */
-
-  quat *rots = malloc(megaminx_num_syms * sizeof(quat));
-  syms->by_face = malloc(megaminx_num_syms * sizeof(unsigned int));
-  syms->by_vertex = malloc(megaminx_num_syms * sizeof(unsigned int));
-  syms->by_edge = malloc(megaminx_num_syms * sizeof(unsigned int));
-  syms->edges_by_face = malloc(dodec->abs.num_faces * 5 * sizeof(unsigned int));
-
-  const unsigned int num_edges = dodec->abs.num_faces +
-    dodec->abs.num_vertices - 2;
-  syms->face_action = malloc(megaminx_num_syms *
-                             dodec->abs.num_faces *
-                             sizeof(uint8_t));
-  syms->vertex_action = malloc(megaminx_num_syms *
-                               dodec->abs.num_vertices *
-                               sizeof(uint8_t));
-  syms->edge_action = malloc(megaminx_num_syms *
-                             num_edges *
-                             sizeof(uint8_t));
 
   quat rho;
   quat_rotate(rho, 2 * M_PI / 5, (vec3) { 0, 0, 1 });
@@ -155,76 +140,16 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
     }
   }
 
-  int *edges = abs_poly_edges(&dodec->abs);
-  int *v0 = abs_poly_first_vertex(&dodec->abs, edges);
-  int *adj = abs_poly_adj(&dodec->abs);
+  return rots;
+}
 
-  /* by_face */
-  for (unsigned int i = 0; i < megaminx_num_syms; i++) {
-    syms->by_face[i] = i;
-  }
+static void dodecahedron_group_init(group_t *group, abs_poly_t *dodec, poly_data_t *data)
+{
+  static const unsigned int num = 60;
+  uint8_t *mul = malloc(num * num);
 
-  /* by_vertex */
-  {
-    for (unsigned int i = 0; i < megaminx_num_syms; i++) {
-      syms->by_vertex[i] = megaminx_num_syms;
-    }
-    for (unsigned int j = 0; j < dodec->abs.num_faces; j++) {
-      unsigned int n = dodec->abs.faces[j].num_vertices;
-      for (unsigned int i = 0; i < n; i++) {
-        unsigned int v = dodec->abs.faces[j].vertices[i];
-        unsigned int f = j;
-        int vi = i;
-        if (syms->by_vertex[v * 3] != megaminx_num_syms) continue;
-
-        for (unsigned int k = 0; k < 3; k++) {
-          int vi0 = adj[f * dodec->abs.num_vertices + v0[f]];
-          assert(vi0 != -1);
-          unsigned int s = f * 5 + (vi - vi0 + 5) % 5;
-          syms->by_vertex[v * 3 + k] = s;
-
-          f = abs_poly_get_adj_face(&dodec->abs, f, vi - 1, edges);
-          assert(f < dodec->abs.num_faces);
-          vi = adj[f * dodec->abs.num_vertices + v];
-        }
-      }
-    }
-  }
-
-  /* by_edge */
-  {
-    for (unsigned int i = 0; i < megaminx_num_syms; i++) {
-      syms->by_edge[i] = megaminx_num_syms;
-    }
-    unsigned int index = 0;
-    unsigned int *edge_index = calloc(sizeof(unsigned int),
-                                      dodec->abs.num_faces * 5);
-    for (unsigned int f = 0; f < dodec->abs.num_faces; f++) {
-      unsigned int n = dodec->abs.faces[f].num_vertices;
-      int vi0 = adj[f * dodec->abs.num_vertices + v0[f]];
-      for (unsigned int i = 0; i < n; i++) {
-        unsigned int v = dodec->abs.faces[f].vertices[i];
-        unsigned int f1 = abs_poly_get_adj_face(&dodec->abs, f, i, edges);
-        if (f1 < f) continue;
-        int i1 = adj[f1 * dodec->abs.num_vertices + v];
-        assert(i1 != -1);
-        i1 -= 1;
-        int vi1 = adj[f1 * dodec->abs.num_vertices + v0[f1]];
-
-        syms->edges_by_face[f * 5 + edge_index[f]++] = index / 2;
-        syms->edges_by_face[f1 * 5 + edge_index[f1]++] = index / 2;
-        syms->by_edge[index++] = f * 5 + (i - vi0 + 5) % 5;
-        syms->by_edge[index++] = f1 * 5 + (i1 - vi1 + 5) % 5;
-      }
-    }
-
-    free(edge_index);
-  }
-
-  /* construct multiplication table */
-  syms->mul = malloc(megaminx_num_syms * megaminx_num_syms * sizeof(uint8_t));
-  for (unsigned int s = 0; s < megaminx_num_syms; s++) {
-    uint8_t *table = &syms->mul[megaminx_num_syms * s];
+  for (unsigned int s = 0; s < num; s++) {
+    uint8_t *table = &mul[num * s];
 
     unsigned int f0 = s / 5;
     unsigned int vi = s % 5;
@@ -234,16 +159,16 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
       table[5 + j] = (f0 ^ 1) * 5 + (5 - vi + j) % 5;
     }
 
-    int vi0 = adj[f0 * dodec->abs.num_vertices + v0[f0]];
+    int vi0 = data->adj[f0 * dodec->num_vertices + data->first_vertex[f0]];
     assert(vi0 != -1);
     for (unsigned int i = 0; i < 5; i++) {
-      unsigned int v = dodec->abs.faces[f0].vertices[(vi0 + vi + i) % 5];
-      unsigned int w = dodec->abs.faces[f0].vertices[(vi0 + vi + i + 1) % 5];
-      unsigned int f1 = edges[w * dodec->abs.num_vertices + v];
+      unsigned int v = dodec->faces[f0].vertices[(vi0 + vi + i) % 5];
+      unsigned int w = dodec->faces[f0].vertices[(vi0 + vi + i + 1) % 5];
+      unsigned int f1 = data->edges[w * dodec->num_vertices + v];
 
-      int wi0 = adj[f1 * dodec->abs.num_vertices + v0[f1]];
+      int wi0 = data->adj[f1 * dodec->num_vertices + data->first_vertex[f1]];
       assert(wi0 != -1);
-      int wi = adj[f1 * dodec->abs.num_vertices + w];
+      int wi = data->adj[f1 * dodec->num_vertices + w];
       assert(wi != -1);
 
       for (unsigned int j = 0; j < 5; j++) {
@@ -253,68 +178,72 @@ quat *megaminx_syms_init(symmetries_t *syms, poly_t *dodec)
     }
   }
 
-  /* inverse multiplication table */
-  syms->inv_mul = malloc(megaminx_num_syms * megaminx_num_syms * sizeof(uint8_t));
-  group_inv_table(syms->inv_mul, syms->mul, megaminx_num_syms);
-
-  /* face action */
-  for (unsigned int s = 0; s < megaminx_num_syms; s++) {
-    for (unsigned int i = 0; i < dodec->abs.num_faces; i++) {
-      syms->face_action[dodec->abs.num_faces * s + i] =
-        syms->mul[megaminx_num_syms * s + i * 5] / 5;
-    }
-  }
-  /* action on vertex 0 */
-  for (unsigned int i = 0; i < dodec->abs.num_vertices; i++) {
-    for (unsigned int j = 0; j < 3; j++) {
-      unsigned int s = syms->by_vertex[i * 3 + j];
-      syms->vertex_action[dodec->abs.num_vertices * s] = i;
-    }
-  }
-  /* vertex action */
-  for (unsigned int s = 0; s < megaminx_num_syms; s++) {
-    for (unsigned int i = 1; i < dodec->abs.num_vertices; i++) {
-      syms->vertex_action[dodec->abs.num_vertices * s + i] =
-        syms->vertex_action[dodec->abs.num_vertices *
-                            syms->mul[megaminx_num_syms * s +
-                                      syms->by_vertex[i * 3]]];
-    }
-  }
-  /* action on edge 0 */
-  for (unsigned int i = 0; i < num_edges; i++) {
-    for (unsigned int j = 0; j < 2; j++) {
-      unsigned int s = syms->by_edge[i * 2 + j];
-      syms->edge_action[num_edges * s] = i;
-    }
-  }
-  /* edge action */
-  for (unsigned int s = 0; s < megaminx_num_syms; s++) {
-    for (unsigned int i = 1; i < num_edges; i++) {
-      syms->edge_action[num_edges * s + i] =
-        syms->edge_action[num_edges *
-                          syms->mul[megaminx_num_syms * s +
-                                    syms->by_edge[i * 2]]];
-    }
-  }
-
-
-  free(adj);
-  free(v0);
-  free(edges);
-
-  return rots;
+  group_from_table(group, num, mul);
 }
 
-void megaminx_syms_cleanup(symmetries_t *syms)
+void megaminx_puzzle_init(puzzle_t *puzzle, abs_poly_t *dodec, poly_data_t *data)
 {
-  free(syms->by_vertex);
-  free(syms->by_edge);
-  free(syms->edges_by_face);
-  free(syms->face_action);
-  free(syms->vertex_action);
-  free(syms->edge_action);
-  free(syms->mul);
-  free(syms->inv_mul);
+  const unsigned int num_syms = 60;
+  unsigned int orbit_size[] = { 20, 30, 12 };
+  unsigned int stab_gen[] = {};
+
+  group_t *group = malloc(sizeof(group_t));
+  dodecahedron_group_init(group, dodec, data);
+
+  uint8_t *orbit[3];
+  uint8_t *stab[3];
+
+  for (unsigned int k = 0; k < 3; k++) {
+    orbit[k] = malloc(orbit_size[k]);
+    memset(orbit[k], num_syms, orbit_size[k]);
+
+    stab[k] = malloc(num_syms / orbit_size[k]);
+    group_cyclic_subgroup(group, stab[k],
+                          num_syms / orbit_size[k],
+                          stab_gen[k]);
+  }
+
+  /* faces */
+  for (unsigned int i = 0; i < orbit_size[2]; i++) {
+    orbit[2][i] = i * 5;
+  }
+
+  /* vertices */
+  {
+    for (unsigned int j = 0; j < orbit_size[2]; j++) {
+      unsigned int n = dodec->faces[j].num_vertices;
+      for (unsigned int i = 0; i < n; i++) {
+        unsigned int v = dodec->faces[j].vertices[i];
+        unsigned int f = j;
+        if (orbit[0][v] != num_syms) continue;
+        int i0 = data->adj[f * dodec->num_vertices + data->first_vertex[f]];
+        assert(i0 != -1);
+        unsigned int s = f * 5 + (i - i0 + 5) % 5;
+        orbit[0][v] = s;
+      }
+    }
+  }
+
+  /* edges */
+  {
+    unsigned int index = 0;
+    for (unsigned int f = 0; f < dodec->num_faces; f++) {
+      unsigned int n = dodec->faces[f].num_vertices;
+      int vi0 = data->adj[f * dodec->num_vertices + data->first_vertex[f]];
+      for (unsigned int i = 0; i < n; i++) {
+        unsigned int f1 = abs_poly_get_adj_face(dodec, f, i, data->edges);
+        if (f1 < f) continue;
+        orbit[1][data->edges_by_face[f][i]] = f * 5 + (i - vi0 + 5) % 5;
+      }
+    }
+  }
+
+  puzzle_init(puzzle, 3, orbit_size, group, orbit, stab);
+
+  for (unsigned int k = 0; k < 3; k++) {
+    free(stab[k]);
+    free(orbit[k]);
+  }
 }
 
 void megaminx_piece_init(piece_t *piece, poly_t *poly, int *facelets,
@@ -360,14 +289,20 @@ struct megaminx_scene_t
 
   key_action_t *key_bindings;
 
-  symmetries_t syms;
+  puzzle_t puzzle;
   quat *rots;
   piece_t piece[3];
 };
 
 void megaminx_scene_del(megaminx_scene_t *ms)
 {
-  megaminx_syms_cleanup(&ms->syms);
+  puzzle_cleanup(&ms->puzzle);
+  for (unsigned int i = 0; i < ms->num_gens; i++) {
+    megaminx_cleanup(&ms->gen[i]);
+  }
+  free(ms->gen);
+  megaminx_cleanup(&ms->mm);
+
   for (int i = 0; i < 3; i++) piece_cleanup(&ms->piece[i]);
   for (unsigned int i = 0; i < 256; i++) {
     free(ms->key_bindings[i].data);
@@ -407,12 +342,12 @@ void megaminx_action_move_face(megaminx_scene_t *ms, void *data_)
   struct move_face_data_t *data = data_;
 
   for (unsigned int i = 0; i < data->count; i++) {
-    megaminx_act_(&ms->syms, &ms->mm, &ms->gen[data->face]);
+    megaminx_act_(&ms->puzzle, &ms->mm, &ms->gen[data->face]);
   }
 
-  piece_set_conf(&ms->piece[0], megaminx_corner(&ms->mm, 0));
-  piece_set_conf(&ms->piece[1], megaminx_edge(&ms->mm, 0));
-  piece_set_conf(&ms->piece[2], megaminx_centre(&ms->mm, 0));
+  for (unsigned int k = 0; k < 3; k++) {
+    piece_set_conf(&ms->piece[k], megaminx_orbit(&ms->puzzle, &ms->mm, k));
+  }
 }
 
 unsigned int *rotate_data_new(unsigned int s)
@@ -426,20 +361,20 @@ void megaminx_action_rotate(megaminx_scene_t *ms, void *data_)
 {
   unsigned int *data = data_;
 
-  megaminx_rotate_(&ms->syms, &ms->mm, *data);
+  megaminx_rotate_(&ms->puzzle, &ms->mm, *data);
 
-  piece_set_conf(&ms->piece[0], megaminx_corner(&ms->mm, 0));
-  piece_set_conf(&ms->piece[1], megaminx_edge(&ms->mm, 0));
-  piece_set_conf(&ms->piece[2], megaminx_centre(&ms->mm, 0));
+  for (unsigned int k = 0; k < 3; k++) {
+    piece_set_conf(&ms->piece[k], megaminx_orbit(&ms->puzzle, &ms->mm, k));
+  }
 }
 
 void megaminx_action_scramble(megaminx_scene_t *ms, void *data_)
 {
-  megaminx_scramble(&ms->syms, &ms->mm);
+  megaminx_scramble(&ms->puzzle, &ms->mm);
 
-  piece_set_conf_instant(&ms->piece[0], megaminx_corner(&ms->mm, 0));
-  piece_set_conf_instant(&ms->piece[1], megaminx_edge(&ms->mm, 0));
-  piece_set_conf_instant(&ms->piece[2], megaminx_centre(&ms->mm, 0));
+  for (unsigned int k = 0; k < 3; k++) {
+    piece_set_conf_instant(&ms->piece[k], megaminx_orbit(&ms->puzzle, &ms->mm, k));
+  }
 }
 
 void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
@@ -455,8 +390,8 @@ void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
     };
   }
   for (unsigned int i = 0; i < 12; i++) {
-    unsigned int s = *megaminx_centre(&ms->gen[i & ~1], (i & ~1));
-    if (i & 1) s = ms->syms.inv_mul[s];
+    unsigned int s = megaminx_orbit(&ms->puzzle, &ms->gen[i & ~1], 2)[i & ~1];
+    if (i & 1) s = group_inv(ms->puzzle.group, s);
     ms->key_bindings[rot_keys[i]] = (key_action_t) {
       .run = megaminx_action_rotate,
       .data = rotate_data_new(s)
@@ -479,10 +414,15 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
   scene->on_keypress = megaminx_on_keypress;
 
   std_dodec(&ms->dodec);
+
+  poly_data_t data;
+  poly_data_init(&data, &ms->dodec.abs);
+
   megaminx_corner_poly(&ms->corner.poly, &ms->dodec, edge_size, ms->corner.facelets);
   megaminx_edge_poly(&ms->edge.poly, &ms->dodec, edge_size, ms->edge.facelets);
   megaminx_centre_poly(&ms->centre.poly, &ms->dodec, edge_size, ms->centre.facelets);
-  ms->rots = megaminx_syms_init(&ms->syms, &ms->dodec);
+  ms->rots = megaminx_rotations(&ms->dodec);
+  megaminx_puzzle_init(&ms->puzzle, &ms->dodec.abs, &data);
 
   /* symmetries */
   {
@@ -491,7 +431,7 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
 
     glBufferData(GL_SHADER_STORAGE_BUFFER,
-                 sizeof(quat) * megaminx_num_syms,
+                 sizeof(quat) * ms->puzzle.group->num,
                  ms->rots, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SYMS, b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -503,15 +443,24 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
     glGenBuffers(1, &b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
 
-    uint32_t *buf = malloc(megaminx_num_syms * 12 * sizeof(uint32_t));
-    for (unsigned int i = 0; i < megaminx_num_syms * 12; i++) {
-      buf[i] = ms->syms.face_action[i];
+    const unsigned int size = sizeof(face_action_t) +
+      ms->puzzle.group->num * 12 * sizeof(uint32_t);
+    face_action_t *fa = malloc(size);
+    fa->num_faces = 12;
+    unsigned int index = 0;
+    for (unsigned int g = 0; g < ms->puzzle.group->num; g++) {
+      for (unsigned int f = 0; f < fa->num_faces; f++) {
+        fa->action[index++] = puzzle_local
+          (&ms->puzzle,
+           action_act(ms->puzzle.action,
+                      puzzle_global(&ms->puzzle, 2, f),
+                      g));
+      }
     }
-    glBufferData(GL_SHADER_STORAGE_BUFFER,
-                 sizeof(uint32_t) * megaminx_num_syms * 12,
-                 buf, GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, size, fa, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    free(fa);
   }
 
   /* colours */
@@ -539,19 +488,19 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
   }
 
-  megaminx_init(&ms->syms, &ms->mm);
-  ms->gen = megaminx_generators(&ms->syms, &ms->dodec.abs, &ms->num_gens);
+  megaminx_init(&ms->puzzle, &ms->mm);
+  ms->gen = megaminx_generators(&ms->puzzle, &ms->dodec.abs, &data, &ms->num_gens);
 
   const unsigned int num_edges = ms->dodec.abs.num_faces +
     ms->dodec.abs.num_vertices - 2;
   piece_init(&ms->piece[0], &ms->corner.poly, ms->corner.facelets,
-             megaminx_corner(&ms->mm, 0),
+             megaminx_orbit(&ms->puzzle, &ms->mm, 0),
              ms->dodec.abs.num_vertices);
   piece_init(&ms->piece[1], &ms->edge.poly, ms->edge.facelets,
-             megaminx_edge(&ms->mm, 0),
+             megaminx_orbit(&ms->puzzle, &ms->mm, 1),
              num_edges);
   piece_init(&ms->piece[2], &ms->centre.poly, ms->centre.facelets,
-             megaminx_centre(&ms->mm, 0),
+             megaminx_orbit(&ms->puzzle, &ms->mm, 2),
              ms->dodec.abs.num_faces);
 
   scene_add_piece(scene, &ms->piece[0]);
@@ -559,6 +508,8 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
   scene_add_piece(scene, &ms->piece[2]);
 
   megaminx_scene_set_up_key_bindings(ms);
+
+  poly_data_cleanup(&data);
 
   return ms;
 }

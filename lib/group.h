@@ -16,7 +16,7 @@ struct group_t
 };
 typedef struct group_t group_t;
 
-unsigned int group_inv(group_t *group, unsigned int x, unsigned int y);
+unsigned int group_inv(group_t *group, unsigned int x);
 unsigned int group_inv_mul(group_t *group, unsigned int x, unsigned int y);
 unsigned int group_mul(group_t *group, unsigned int x, unsigned int y);
 void group_cleanup(group_t *group);

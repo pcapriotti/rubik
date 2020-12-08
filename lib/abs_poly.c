@@ -8,6 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+unsigned int abs_poly_num_edges(abs_poly_t *poly)
+{
+  unsigned total = 0;
+  for (unsigned int f = 0; f < poly->num_faces; f++) {
+    total += poly->faces[f].num_vertices;
+  }
+  return total / 2;
+}
+
 void abs_poly_debug(abs_poly_t *poly)
 {
   printf("num_vertices: %u\n", poly->num_vertices);
@@ -44,38 +53,38 @@ void abs_cube(abs_poly_t *cube)
   }
 }
 
-void abs_dodec(abs_poly_t *dodec)
+void abs_dodec(abs_poly_t *poly)
 {
-  dodec->num_vertices = 20;
-  dodec->num_faces = 12;
-  dodec->faces = malloc(dodec->num_faces * sizeof(face_t));
-  dodec->len = dodec->num_faces * 5;
-  dodec->vertices = malloc(dodec->len * sizeof(unsigned int));
+  poly->num_vertices = 20;
+  poly->num_faces = 12;
+  poly->faces = malloc(poly->num_faces * sizeof(face_t));
+  poly->len = poly->num_faces * 5;
+  poly->vertices = malloc(poly->len * sizeof(unsigned int));
 
-  for (unsigned int i = 0; i < dodec->num_faces; i++) {
-    dodec->faces[i].num_vertices = 5;
-    dodec->faces[i].vertices = dodec->vertices + 5 * i;
+  for (unsigned int i = 0; i < poly->num_faces; i++) {
+    poly->faces[i].num_vertices = 5;
+    poly->faces[i].vertices = poly->vertices + 5 * i;
   }
 
   /* vertices 0-4 belong to face 0, vertex 5+i is radially connected
   to vertex i for i=0..4, and vertex 19-i is opposite to vertex i */
   for (unsigned int i = 0; i < 5; i++) {
-    dodec->faces[0].vertices[i] = i;
-    dodec->faces[1].vertices[i] = 15 + i;
+    poly->faces[0].vertices[i] = i;
+    poly->faces[1].vertices[i] = 15 + i;
   }
 
   for (unsigned int j = 0; j < 5; j++) {
-    dodec->faces[j * 2 + 2].vertices[0] = (j + 1) % 5;
-    dodec->faces[j * 2 + 2].vertices[1] = j;
-    dodec->faces[j * 2 + 2].vertices[2] = j + 5;
-    dodec->faces[j * 2 + 2].vertices[3] = 14 - (j + 3) % 5;
-    dodec->faces[j * 2 + 2].vertices[4] = (j + 1) % 5 + 5;
+    poly->faces[j * 2 + 2].vertices[0] = (j + 1) % 5;
+    poly->faces[j * 2 + 2].vertices[1] = j;
+    poly->faces[j * 2 + 2].vertices[2] = j + 5;
+    poly->faces[j * 2 + 2].vertices[3] = 14 - (j + 3) % 5;
+    poly->faces[j * 2 + 2].vertices[4] = (j + 1) % 5 + 5;
 
-    dodec->faces[j * 2 + 3].vertices[4] = 19 - (j + 1) % 5;
-    dodec->faces[j * 2 + 3].vertices[3] = 19 - j;
-    dodec->faces[j * 2 + 3].vertices[2] = 14 - j;
-    dodec->faces[j * 2 + 3].vertices[1] = (j + 3) % 5 + 5;
-    dodec->faces[j * 2 + 3].vertices[0] = 14 - (j + 1) % 5;
+    poly->faces[j * 2 + 3].vertices[4] = 19 - (j + 1) % 5;
+    poly->faces[j * 2 + 3].vertices[3] = 19 - j;
+    poly->faces[j * 2 + 3].vertices[2] = 14 - j;
+    poly->faces[j * 2 + 3].vertices[1] = (j + 3) % 5 + 5;
+    poly->faces[j * 2 + 3].vertices[0] = 14 - (j + 1) % 5;
   }
 }
 
@@ -107,9 +116,6 @@ void abs_prism(abs_poly_t *prism, unsigned int num)
   }
 }
 
-/* generate adjacency face/vertex adjacency matrix: for every face,
-and every vertex, the index of that vertex in the face, or -1 if not
-contained */
 int *abs_poly_adj(abs_poly_t *poly)
 {
   int *table = malloc(poly->num_vertices * poly->num_faces * sizeof(int));
@@ -126,8 +132,6 @@ int *abs_poly_adj(abs_poly_t *poly)
   return table;
 }
 
-/* for each pair of vertices connected by an edge, the face to the
-left of the vector from the first to the second vertex */
 int *abs_poly_edges(abs_poly_t *poly)
 {
   int *table = malloc(poly->num_vertices * poly->num_vertices * sizeof(int));
@@ -149,7 +153,6 @@ int *abs_poly_edges(abs_poly_t *poly)
   return table;
 }
 
-/* map every face to the vertex before its first adjacent face */
 int *abs_poly_first_vertex(abs_poly_t *poly, int *edges)
 {
   int *table = malloc(poly->num_faces * sizeof(unsigned int));
@@ -175,6 +178,34 @@ int *abs_poly_first_vertex(abs_poly_t *poly, int *edges)
   return table;
 }
 
+unsigned int **abs_poly_edges_by_face(abs_poly_t *poly, int *edges, int *adj)
+{
+  unsigned int num_edges = abs_poly_num_edges(poly);
+  unsigned int **table = malloc(poly->num_faces * sizeof(unsigned int *));
+
+  unsigned int index = 0;
+
+  for (unsigned int f = 0; f < poly->num_faces; f++) {
+    table[f] = malloc(poly->faces[f].num_vertices * sizeof(unsigned int));
+  }
+
+  for (unsigned int f = 0; f < poly->num_faces; f++) {
+    unsigned int n = poly->faces[f].num_vertices;
+    for (unsigned int i = 0; i < n; i++) {
+      unsigned int f1 = abs_poly_get_adj_face(poly, f, i, edges);
+      if (f1 < f) continue;
+      unsigned int v1 = poly->faces[f].vertices[(i + 1) % n];
+      int i1 = adj[f1 * poly->num_vertices + v1];
+      assert(i1 >= 0);
+      table[f1][i1] = index;
+      table[f][i] = index;
+      index++;
+    }
+  }
+
+  return table;
+}
+
 int abs_poly_get_adj_face(abs_poly_t *poly,
                           unsigned int f, int i,
                           int *edges)
@@ -184,4 +215,24 @@ int abs_poly_get_adj_face(abs_poly_t *poly,
   unsigned int v0 = poly->faces[f].vertices[i];
   unsigned int v1 = poly->faces[f].vertices[(i + 1) % n];
   return edges[v1 * poly->num_vertices + v0];
+}
+
+void poly_data_init(poly_data_t *data, abs_poly_t *poly)
+{
+  data->num_faces = poly->num_faces;
+  data->edges = abs_poly_edges(poly);
+  data->first_vertex = abs_poly_first_vertex(poly, data->edges);
+  data->adj = abs_poly_adj(poly);
+  data->edges_by_face = abs_poly_edges_by_face(poly, data->edges, data->adj);
+}
+
+void poly_data_cleanup(poly_data_t *data)
+{
+  free(data->edges);
+  free(data->first_vertex);
+  free(data->adj);
+  for (unsigned int f = 0; f < data->num_faces; f++) {
+    free(data->edges_by_face[f]);
+  }
+  free(data->edges_by_face);
 }
