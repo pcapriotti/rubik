@@ -104,11 +104,10 @@ megaminx_t *megaminx_generators(puzzle_t *puzzle,
   *num = 12;
   megaminx_t *gen = malloc(*num * sizeof(megaminx_t));
 
-  memset(gen, 0, sizeof(megaminx_t) * *num);
   for (unsigned int f = 0; f < *num; f++) {
     /* cw rotation around face f */
     unsigned int s = sconj(puzzle, 4, f * 5);
-    gen[f].pieces = malloc(puzzle->num_pieces * sizeof(unsigned int));
+    gen[f].pieces = calloc(puzzle->num_pieces, sizeof(unsigned int));
     gen[f].pieces[puzzle_global(puzzle, 2, f)] = s;
     for (unsigned int i = 0; i < 5; i++) {
       gen[f].pieces[puzzle_global(puzzle, 0, dodec->faces[f].vertices[i])] = s;
