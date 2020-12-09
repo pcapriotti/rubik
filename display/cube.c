@@ -303,6 +303,8 @@ struct cube_scene_t
   cube_t *gen;
   unsigned int num_gen;
   piece_t *piece;
+
+  unsigned int count;
 };
 
 void cube_scene_cleanup(cube_scene_t *s)
@@ -352,8 +354,8 @@ void cube_scene_set_up_key_bindings(cube_scene_t *s)
 {
   s->key_bindings = calloc(256, sizeof(key_action_t));
 
-  static const unsigned char face_keys[] = "jfkdls;amc,x";
-  static const unsigned char rot_keys[] = "JFKDLS:AMC<X";
+  static const unsigned char face_keys[] = "jfmvkd,cls;a";
+  static const unsigned char rot_keys[] = "JFMVKD<CLS:A";
   for (unsigned int i = 0; i < 12; i++) {
     s->key_bindings[face_keys[i]] = (key_action_t) {
       .run = cube_action_move_face,
@@ -366,6 +368,15 @@ static void cube_on_keypress(void *data, unsigned int c)
 {
   cube_scene_t *s = data;
   if (c >= 256) return;
+
+  if (c >= '0' && c <= '9') {
+    unsigned int count = c - '0';
+    s->count *= 10;
+    s->count += count;
+  }
+  else {
+    s->count = 0;
+  }
 
   key_action_t *a = &s->key_bindings[c];
   if (a->run == 0) return;
