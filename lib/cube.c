@@ -115,15 +115,18 @@ cube_t *cube_generators(cube_t *cube, puzzle_t *puzzle, unsigned int *num_gen)
 {
   *num_gen = 6 * (cube->shape.n / 2);
   cube_t *gen = calloc(*num_gen, sizeof(cube_t));
+  unsigned int index = 0;
   for (unsigned int f = 0; f < 6; f++) {
     unsigned int s = puzzle->by_stab[2][f];
     for (unsigned int i = 0; i < cube->shape.n / 2; i++) {
+      gen[index].pieces = malloc(cube->shape.num_pieces);
       for (unsigned int k = 0; k < cube->shape.num_orbits; k++) {
         for (unsigned int j = 0; j < cube->shape.orbits[k].size; j++) {
           if (piece_in_layer(&cube->shape, k, j, f, i))
-            cube->pieces[k] = s;
+            gen[index].pieces[k] = s;
         }
       }
+      index++;
     }
   }
   return gen;

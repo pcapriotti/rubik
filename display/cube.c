@@ -377,7 +377,6 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   quat *rots = cube_puzzle_init(&s->puzzle);
 
   cube_init(&s->puzzle, &s->conf, n);
-
   s->piece = malloc(s->conf.shape.num_orbits * sizeof(piece_t));
   for (unsigned int i = 0; i < s->conf.shape.num_orbits; i++) {
     int facelets[6];
@@ -439,10 +438,17 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   }
 
   cube_scene_set_up_key_bindings(s);
+
   s->gen = cube_generators(&s->conf, &s->puzzle, &s->num_gen);
 
   scene->on_keypress_data = s;
   scene->on_keypress = cube_on_keypress;
+
+  for (unsigned int i = 0; i < 8; i++) {
+    printf("%u ", s->conf.pieces[i]);
+  }
+  printf("\n");
+
 
   return s;
 }
