@@ -11,19 +11,20 @@ typedef struct poly_t poly_t;
 struct piece_t
 {
   unsigned int vao;
-  unsigned int sym_vbo;
-  unsigned int sym1_vbo;
-  unsigned int time_vbo;
   unsigned int num_elements;
   unsigned int instances;
+  unsigned int rot_vbo;
 
   float time;
   float duration;
+
+  quat *rot_buf;
 
   /* per instance data */
   unsigned int *conf;
   unsigned int *conf1;
   float *start_time;
+  quat *rots;
 };
 typedef struct piece_t piece_t;
 

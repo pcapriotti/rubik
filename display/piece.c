@@ -124,6 +124,7 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
   piece->conf1 = malloc(instances * sizeof(unsigned int));
   piece->start_time = malloc(instances * sizeof(float));
   piece->duration = 1.0;
+  piece->rots = rots;
 
   glGenVertexArrays(1, &piece->vao);
   glBindVertexArray(piece->vao);
@@ -174,21 +175,19 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
   }
   /* rotation */
   {
-    glGenBuffers(1, &piece->sym1_vbo);
+    glGenBuffers(1, &piece->rot_vbo);
 
-    quat* buf = malloc(instances * sizeof(quat));
+    piece->rot_buf = malloc(instances * sizeof(quat));
     for (unsigned int i = 0; i < instances; i++) {
-      memcpy(&buf[i], rots[conf[i]], sizeof(quat));
+      memcpy(&piece->rot_buf[i], rots[conf[i]], sizeof(quat));
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, piece->sym1_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, piece->rot_vbo);
     glBufferData(GL_ARRAY_BUFFER, instances * sizeof(quat),
-                 buf, GL_DYNAMIC_DRAW);
+                 piece->rot_buf, GL_DYNAMIC_DRAW);
     glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(5);
     glVertexAttribDivisor(5, 1);
-
-    free(buf);
   }
 
   /* set up shaders and uniforms */
@@ -201,31 +200,18 @@ void piece_cleanup(piece_t *piece)
 {
   free(piece->conf);
   free(piece->start_time);
+  free(piece->rot_buf);
 }
 
 void piece_set_conf_(piece_t *piece, uint8_t *conf, int animate)
 {
   for (unsigned int i = 0; i < piece->instances; i++) {
-    if (!animate) {
-      piece->conf[i] = conf[i];
-      piece->conf1[i] = conf[i];
-      piece->start_time[i] = -1;
-    }
-    else if (conf[i] != piece->conf1[i]) {
-      piece->conf[i] = piece->conf1[i];
-      piece->conf1[i] = conf[i];
-      piece->start_time[i] = -1;
-    }
+    memcpy(&piece->rot_buf[i], piece->rots[conf[i]], sizeof(quat));
   }
-  glBindBuffer(GL_ARRAY_BUFFER, piece->sym_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, piece->rot_vbo);
   glBufferSubData(GL_ARRAY_BUFFER, 0,
-                  piece->instances * sizeof(unsigned int), piece->conf);
-  glBindBuffer(GL_ARRAY_BUFFER, piece->sym1_vbo);
-  glBufferSubData(GL_ARRAY_BUFFER, 0,
-                  piece->instances * sizeof(unsigned int), piece->conf1);
-  glBindBuffer(GL_ARRAY_BUFFER, piece->time_vbo);
-  glBufferSubData(GL_ARRAY_BUFFER, 0,
-                  piece->instances * sizeof(float), piece->start_time);
+                  piece->instances * sizeof(quat), piece->rot_buf);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void piece_render(piece_t *piece, float time)
