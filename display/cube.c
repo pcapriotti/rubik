@@ -333,6 +333,8 @@ void cube_action_move_face(cube_scene_t *s, void *data_)
 {
   struct move_face_data_t *data = data_;
 
+  printf("moving face: %u layer: %u count: %d\n",
+         data->face, s->count, data->count);
   turn_t *turn = cube_move_(&s->puzzle, &s->conf, data->face, s->count, data->count);
   free(turn);
 
@@ -365,20 +367,21 @@ static void cube_on_keypress(void *data, unsigned int c)
     unsigned int count = c - '0';
     s->count *= 10;
     s->count += count;
-  }
-  else {
-    s->count = 0;
+    return;
   }
 
   key_action_t *a = &s->key_bindings[c];
   if (a->run == 0) return;
 
   a->run(s, a->data);
+  s->count = 0;
 }
 
 cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
 {
   cube_scene_t *s = malloc(sizeof(cube_scene_t));
+  s->count = 0;
+
   quat *rots = cube_puzzle_init(&s->puzzle);
 
   cube_shape_t *shape = malloc(sizeof(cube_shape_t));

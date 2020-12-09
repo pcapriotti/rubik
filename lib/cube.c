@@ -111,36 +111,41 @@ static inline int vertex_in_face(unsigned int v, unsigned int f)
   return ((v >> (f >> 1)) & 1) != (f & 1);
 }
 
-/* k: orbit index
-   n: index of piece in orbit
-   f: face index
-   i: layer index */
-int piece_in_layer(cube_shape_t *shape,
-                   unsigned int k, unsigned int n,
-                   unsigned int f, unsigned int i)
+int in_layer(puzzle_t *puzzle, cube_shape_t *shape, orbit_t *orbit,
+             unsigned int f, unsigned int l, unsigned int g)
 {
-  if (k < shape->num_corner_orbits) {
-    return i == 0 && vertex_in_face(n, f);
-  }
-  k--;
-
-  if (k < shape->num_edge_orbits) {
-    unsigned int e = n % 12;
-    unsigned int a = e >> 2;
-    unsigned int v1 = rotl3(e & 3, (a + 1) % 3);
-    unsigned int v2 = rotl3(4 | (e & 3), (a + 1) % 3);
-
-    /* printf("k: %u, n: %u, f: %u, i: %u, " */
-    /*        "e: %u, a: %u, v1: %u, v2: %u\n", */
-    /*        k, n, f, i, e, a, v1, v2); */
-
-    /* outer layer */
-    if (i == 0) {
-      return vertex_in_face(v1, f) && vertex_in_face(v2, f);
+  unsigned int f1 =
+    puzzle_local(puzzle,
+                 action_act(puzzle->action,
+                            puzzle_global(puzzle, 2, f),
+                            group_inv(puzzle->group, g)));
+  switch (orbit->dim) {
+  case 0:
+    return l == 0 && (f1 & 1);
+    break;
+  case 1:
+    if (l == 0) {
+      return f1 == 3 || f1 == 5;
     }
+    else if (f1 / 2 == 0) {
+      unsigned int x = orbit->x;
+      if ((f1 & 1) == 0) x = shape->n - x - 1;
+      return l == x;
+    }
+    break;
+  case 2:
+    if (l == 0) {
+      return f1 == 0;
+    }
+    else if (f1 / 2 != 0) {
+      unsigned int a = f1 / 2;
+      unsigned int x = a == 1 ? orbit->y : orbit->z;
+      if ((f1 & 1) == 0) x = shape->n - x - 1;
+      return l == x;
+    }
+    break;
   }
 
-  /* TODO: edges and centres */
   return 0;
 }
 
@@ -161,16 +166,13 @@ turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
   unsigned int s = puzzle->by_stab[2][puzzle->orbit_size[2] * c];
   s = group_conj(puzzle->group, s, puzzle->by_stab[2][f]);
 
+  conf1->shape = conf->shape;
   for (unsigned int k = 0; k < conf->shape->num_orbits; k++) {
     orbit_t *orbit = &conf->shape->orbits[k];
     for (unsigned int i = 0; i < orbit->size; i++) {
       unsigned int i0 = orbit->offset + i;
-      unsigned int j0 = act(puzzle, orbit, 0, conf->pieces[i0]);
-      unsigned int j = j0 - orbit->offset;
-
-      if (piece_in_layer(conf->shape, k, j, f, l)) {
+      if (in_layer(puzzle, conf->shape, orbit, f, l, conf->pieces[i0])) {
         conf1->pieces[i0] = group_mul(puzzle->group, conf->pieces[i0], s);
-
         turn->pieces[turn->num_pieces++] = i0;
       }
     }
