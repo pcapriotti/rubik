@@ -25,6 +25,12 @@ unsigned int group_inv(group_t *group, unsigned int x)
   return group->inv_mul(group->data, x, 0);
 }
 
+unsigned int group_conj(group_t *group, unsigned int x, unsigned int y)
+{
+  unsigned int y_inv_x = group_inv_mul(group, y, x);
+  return group_mul(group, y_inv_x, y);
+}
+
 void action_cleanup(action_t *action)
 {
   if (action->cleanup) action->cleanup(action->data);

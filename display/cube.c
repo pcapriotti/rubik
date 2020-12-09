@@ -107,7 +107,7 @@ void quat_cube_sym(quat q, uint8_t s)
     }
   }
   quat_norm(q, q);
-  printf("q: (%f, %f, %f, %f)\n", q[0], q[1], q[2], q[3]);
+  /* printf("q: (%f, %f, %f, %f)\n", q[0], q[1], q[2], q[3]); */
 }
 
 unsigned int cube_act_face(unsigned int f, uint8_t *perm, unsigned int s)
@@ -230,8 +230,8 @@ quat *cube_puzzle_init(puzzle_t *puzzle)
 
       cube_mul_table(&mul[index * num_syms], perm, s);
 
-      printf("[%u %u %u] %01x\n", perm[0], perm[1], perm[2], s);
-      printf("perm: (%f, %f, %f, %f)\n", q0[0], q0[1], q0[2], q0[3]);
+      /* printf("[%u %u %u] %01x\n", perm[0], perm[1], perm[2], s); */
+      /* printf("perm: (%f, %f, %f, %f)\n", q0[0], q0[1], q0[2], q0[3]); */
 
       memcpy(rots[index], q0, sizeof(quat));
       quat_cube_sym(rots[index], s);
@@ -275,7 +275,6 @@ quat *cube_puzzle_init(puzzle_t *puzzle)
   for (unsigned int f = 0; f < 6; f++) {
     uint8_t sign = (f >> 1) & 1;
     unsigned int s = f & 1;
-    s = s | ((sign ^ s) << 2);
     orbit[2][f] = ((f & ~1) << 2) | s;
   }
 
@@ -394,8 +393,8 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
                &s->conf.pieces[orbit->offset], orbit->size);
     scene_add_piece(scene, &s->piece[i]);
 
-    printf("added orbit %u, dim: %u, size: %u, pos: (%u, %u, %u)\n",
-           i, orbit->dim, orbit->size, orbit->x, orbit->y, orbit->z);
+    /* printf("added orbit %u, dim: %u, size: %u, pos: (%u, %u, %u)\n", */
+    /*        i, orbit->dim, orbit->size, orbit->x, orbit->y, orbit->z); */
   }
 
   /* face action */
