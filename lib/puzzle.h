@@ -89,4 +89,14 @@ void puzzle_init(puzzle_t *puzzle,
                  group_t *group, uint8_t **orbit, uint8_t **stab);
 void puzzle_cleanup(puzzle_t *puzzle);
 
+struct turn_t
+{
+  unsigned int g;
+  unsigned int num_pieces;
+  uint8_t *pieces;
+};
+typedef struct turn_t turn_t;
+
+void turn_del(turn_t *turn);
+
 #endif /* PUZZLE_H */

@@ -7,6 +7,9 @@
 struct puzzle_t;
 typedef struct puzzle_t puzzle_t;
 
+struct turn_t;
+typedef struct turn_t turn_t;
+
 struct orbit_t {
   unsigned int size;
   size_t offset;
@@ -47,5 +50,9 @@ uint8_t *cube_orbit(cube_t *cube, unsigned int k);
 cube_t *cube_generators(cube_t *cube, puzzle_t *puzzle, unsigned int *num_gen);
 void cube_act(puzzle_t *puzzle, cube_t *cube1, cube_t *cube, cube_t *move);
 void cube_act_(puzzle_t *syms, cube_t *cube, cube_t *move);
+turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
+                  unsigned int f, unsigned int l, int c);
+turn_t *cube_move_(puzzle_t *puzzle, cube_t *conf,
+                   unsigned int f, unsigned int l, int c);
 
 #endif /* CUBE_H */

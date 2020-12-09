@@ -166,3 +166,9 @@ void puzzle_cleanup(puzzle_t *puzzle)
   free(puzzle->by_stab);
   free(puzzle->inv_by_stab);
 }
+
+void turn_del(turn_t *turn)
+{
+  free(turn->pieces);
+  free(turn);
+}

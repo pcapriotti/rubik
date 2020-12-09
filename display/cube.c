@@ -300,8 +300,6 @@ struct cube_scene_t
   key_action_t *key_bindings;
   puzzle_t puzzle;
   cube_t conf;
-  cube_t *gen;
-  unsigned int num_gen;
   piece_t *piece;
 
   unsigned int count;
@@ -314,11 +312,7 @@ void cube_scene_cleanup(cube_scene_t *s)
 
   cube_shape_t *shape = s->conf.shape;
   cube_cleanup(&s->conf);
-  for (unsigned int i = 0; i < s->num_gen; i++) {
-    cube_cleanup(&s->gen[i]);
-  }
   cube_shape_cleanup(shape);
-  free(s->gen);
 }
 
 struct move_face_data_t
@@ -338,17 +332,15 @@ static struct move_face_data_t *move_face_data_new(unsigned int face, int count)
 void cube_action_move_face(cube_scene_t *s, void *data_)
 {
   struct move_face_data_t *data = data_;
-  cube_t *move = &s->gen[data->face];
 
-  for (int i = 0; i < data->count; i++) {
-    cube_act_(&s->puzzle, &s->conf, &s->gen[data->face]);
-  }
+  turn_t *turn = cube_move_(&s->puzzle, &s->conf, data->face, s->count, data->count);
+  free(turn);
 
   for (unsigned int k = 0; k < s->conf.shape->num_orbits; k++) {
     piece_set_conf(&s->piece[k], cube_orbit(&s->conf, k));
   }
-}
 
+}
 
 void cube_scene_set_up_key_bindings(cube_scene_t *s)
 {
@@ -359,7 +351,7 @@ void cube_scene_set_up_key_bindings(cube_scene_t *s)
   for (unsigned int i = 0; i < 12; i++) {
     s->key_bindings[face_keys[i]] = (key_action_t) {
       .run = cube_action_move_face,
-      .data = move_face_data_new(i >> 1, (i & 1) ? 3 : 1)
+      .data = move_face_data_new(i >> 1, (i & 1) ? 1 : -1)
     };
   }
 }
@@ -454,8 +446,6 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   }
 
   cube_scene_set_up_key_bindings(s);
-
-  s->gen = cube_generators(&s->conf, &s->puzzle, &s->num_gen);
 
   scene->on_keypress_data = s;
   scene->on_keypress = cube_on_keypress;
