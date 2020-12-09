@@ -35,12 +35,12 @@ void cube_shape_cleanup(cube_shape_t *shape);
 
 struct cube_t
 {
-  cube_shape_t shape;
+  cube_shape_t *shape;
   uint8_t *pieces;
 };
 typedef struct cube_t cube_t;
 
-void cube_init(puzzle_t *puzzle, cube_t *cube, unsigned int n);
+void cube_init(puzzle_t *puzzle, cube_t *cube, cube_shape_t *shape);
 void cube_cleanup(cube_t *cube);
 
 uint8_t *cube_orbit(cube_t *cube, unsigned int k);

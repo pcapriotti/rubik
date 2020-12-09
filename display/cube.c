@@ -310,10 +310,13 @@ void cube_scene_cleanup(cube_scene_t *s)
 {
   free(s->key_bindings);
   puzzle_cleanup(&s->puzzle);
+
+  cube_shape_t *shape = s->conf.shape;
   cube_cleanup(&s->conf);
   for (unsigned int i = 0; i < s->num_gen; i++) {
     cube_cleanup(&s->gen[i]);
   }
+  cube_shape_cleanup(shape);
   free(s->gen);
 }
 
@@ -340,7 +343,7 @@ void cube_action_move_face(cube_scene_t *s, void *data_)
     cube_act_(&s->puzzle, &s->conf, &s->gen[data->face]);
   }
 
-  for (unsigned int k = 0; k < s->conf.shape.num_orbits; k++) {
+  for (unsigned int k = 0; k < s->conf.shape->num_orbits; k++) {
     piece_set_conf(&s->piece[k], cube_orbit(&s->conf, k));
   }
 }
@@ -376,12 +379,15 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   cube_scene_t *s = malloc(sizeof(cube_scene_t));
   quat *rots = cube_puzzle_init(&s->puzzle);
 
-  cube_init(&s->puzzle, &s->conf, n);
-  s->piece = malloc(s->conf.shape.num_orbits * sizeof(piece_t));
-  for (unsigned int i = 0; i < s->conf.shape.num_orbits; i++) {
+  cube_shape_t *shape = malloc(sizeof(cube_shape_t));
+  cube_shape_init(shape, n);
+  cube_init(&s->puzzle, &s->conf, shape);
+
+  s->piece = malloc(s->conf.shape->num_orbits * sizeof(piece_t));
+  for (unsigned int i = 0; i < s->conf.shape->num_orbits; i++) {
     int facelets[6];
     poly_t cube;
-    orbit_t *orbit = &s->conf.shape.orbits[i];
+    orbit_t *orbit = &s->conf.shape->orbits[i];
     cube_piece_poly(&cube, n, orbit->x, orbit->y, orbit->z, facelets);
 
     piece_init(&s->piece[i], &cube, facelets, rots,
@@ -443,12 +449,6 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
 
   scene->on_keypress_data = s;
   scene->on_keypress = cube_on_keypress;
-
-  for (unsigned int i = 0; i < 8; i++) {
-    printf("%u ", s->conf.pieces[i]);
-  }
-  printf("\n");
-
 
   return s;
 }
