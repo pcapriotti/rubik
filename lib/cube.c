@@ -6,6 +6,7 @@
 
 #include "group.h"
 #include "puzzle.h"
+#include "utils.h"
 
 void cube_shape_init(cube_shape_t *shape, unsigned int n)
 {
@@ -95,6 +96,11 @@ uint8_t *cube_orbit(cube_t *cube, unsigned int k)
   return &cube->pieces[cube->shape->orbits[k].offset];
 }
 
+static inline int vertex_in_face(unsigned int v, unsigned int f)
+{
+  return ((v >> (f >> 1)) & 1) != (f & 1);
+}
+
 /* k: orbit index
    n: index of piece in orbit
    f: face index
@@ -104,14 +110,39 @@ int piece_in_layer(cube_shape_t *shape,
                    unsigned int f, unsigned int i)
 {
   if (k < shape->num_corner_orbits) {
-    return i == 0 && (((n >> (f >> 1)) & 1) != (f & 1));
+    return i == 0 && vertex_in_face(n, f);
   }
+  k--;
+
+  if (k < shape->num_edge_orbits) {
+    unsigned int e = n % 12;
+    unsigned int a = e >> 2;
+    unsigned int v1 = rotl3(e & 3, (a + 1) % 3);
+    unsigned int v2 = rotl3(4 | (e & 3), (a + 1) % 3);
+
+    /* printf("k: %u, n: %u, f: %u, i: %u, " */
+    /*        "e: %u, a: %u, v1: %u, v2: %u\n", */
+    /*        k, n, f, i, e, a, v1, v2); */
+
+    /* outer layer */
+    if (i == 0) {
+      return vertex_in_face(v1, f) && vertex_in_face(v2, f);
+    }
+  }
+
   /* TODO: edges and centres */
   return 0;
 }
 
 cube_t *cube_generators(cube_t *cube, puzzle_t *puzzle, unsigned int *num_gen)
 {
+
+  printf("by edge stab: ");
+  for (unsigned int i = 0; i < 24; i++) {
+    printf("%u ", puzzle->by_stab[1][i]);
+  }
+  printf("\n");
+
   *num_gen = 6 * (cube->shape->n / 2);
   cube_t *gen = malloc(*num_gen * sizeof(cube_t));
   unsigned int index = 0;
@@ -141,6 +172,8 @@ static unsigned int act(puzzle_t *puzzle, orbit_t *orbit, unsigned int x, unsign
   unsigned int g0 = puzzle->by_stab[orbit->dim][x];
   unsigned int g1 = group_mul(puzzle->group, g0, g);
   unsigned int j = puzzle->inv_by_stab[orbit->dim][g1];
+  printf("act x: %u, g: %u, g0: %u, g1: %u, j: %u\n",
+         x, g, g0, g1, j);
   return orbit->offset + j % orbit->size;
 }
 
@@ -148,11 +181,19 @@ void cube_act(puzzle_t *puzzle, cube_t *conf1, cube_t *conf, cube_t *move)
 {
   conf1->shape = conf->shape;
   for (unsigned int k = 0; k < conf->shape->num_orbits; k++) {
-    for (unsigned int i = 0; i < conf->shape->orbits[k].size; i++) {
-      unsigned int i1 = act(puzzle, &conf->shape->orbits[k], 0, conf->pieces[i]);
-      conf1->pieces[i] = group_mul(puzzle->group,
-                                   conf->pieces[i],
-                                   move->pieces[i1]);
+    orbit_t *orbit = &conf->shape->orbits[k];
+    for (unsigned int i = 0; i < orbit->size; i++) {
+      unsigned int i0 = orbit->offset + i;
+      unsigned int i1 = act(puzzle, orbit, 0, conf->pieces[i0]);
+      printf("%u %u (i0: %u, i1: %u): %u =[ %u ]=> %u\n",
+             k, i, i0, i1, conf->pieces[i0],
+             move->pieces[i1],
+             group_mul(puzzle->group,
+                       conf->pieces[i0],
+                       move->pieces[i1]));
+      conf1->pieces[i0] = group_mul(puzzle->group,
+                                    conf->pieces[i0],
+                                    move->pieces[i1]);
     }
   }
 }
