@@ -416,10 +416,10 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
     unsigned int index = 0;
     for (unsigned int g = 0; g < s->puzzle.group->num; g++) {
       for (unsigned int f = 0; f < fa->num_faces; f++) {
-        fa->action[index++] = puzzle_local
-          (&s->puzzle,
+        fa->action[index++] = decomp_local
+          (&s->puzzle.decomp,
            puzzle_act(&s->puzzle,
-                      puzzle_global(&s->puzzle, 2, f),
+                      decomp_global(&s->puzzle.decomp, 2, f),
                       g));
       }
     }

@@ -68,16 +68,16 @@ unsigned int symmetries_act(symmetries_t *syms,
   return 0;
 }
 
-unsigned int puzzle_orbit_of(puzzle_t *puzzle, unsigned int x)
+unsigned int decomp_orbit_of(decomp_t *decomp, unsigned int x)
 {
-  assert(x < puzzle->num_pieces);
+  assert(x < decomp->num_pieces);
 
   unsigned int lo = 0;
-  unsigned int hi = puzzle->num_orbits;
+  unsigned int hi = decomp->num_orbits;
 
   while (lo + 1 < hi) {
     unsigned int i = (hi + lo) / 2;
-    if (puzzle->orbit_offset[i] > x)
+    if (decomp->orbit_offset[i] > x)
       hi = i;
     else
       lo = i;
@@ -87,49 +87,51 @@ unsigned int puzzle_orbit_of(puzzle_t *puzzle, unsigned int x)
 }
 
 /* global piece index from orbit and local index */
-unsigned int puzzle_global(puzzle_t *puzzle, unsigned int i, unsigned int j)
+unsigned int decomp_global(decomp_t *decomp, unsigned int i, unsigned int j)
 {
-  return puzzle->orbit_offset[i] + j;
+  return decomp->orbit_offset[i] + j;
 }
 
 /* local piece index */
-unsigned int puzzle_local(puzzle_t *puzzle, unsigned int j)
+unsigned int decomp_local(decomp_t *decomp, unsigned int j)
 {
-  unsigned int i = puzzle_orbit_of(puzzle, j);
-  return j - puzzle->orbit_offset[i];
+  unsigned int i = decomp_orbit_of(decomp, j);
+  return j - decomp->orbit_offset[i];
 }
 
 /* representative (i.e. first element) of an orbit */
-unsigned int puzzle_repr(puzzle_t *puzzle, unsigned int i)
+unsigned int decomp_repr(decomp_t *decomp, unsigned int i)
 {
-  return puzzle->orbit_offset[puzzle_orbit_of(puzzle, i)];
+  return decomp->orbit_offset[decomp_orbit_of(decomp, i)];
 }
 
 unsigned int puzzle_act(puzzle_t *puzzle, unsigned int x, unsigned int g)
 {
-  unsigned int i = puzzle_orbit_of(puzzle, x);
-  x -= puzzle->orbit_offset[i];
+  unsigned int i = decomp_orbit_of(&puzzle->decomp, x);
+  x -= puzzle->decomp.orbit_offset[i];
   unsigned int g0 = puzzle->by_stab[i][x];
   unsigned int g1 = group_mul(puzzle->group, g0, g);
   unsigned int j = puzzle->inv_by_stab[i][g1];
-  return puzzle->orbit_offset[i] + j % puzzle->orbit_size[i];
+  return puzzle->decomp.orbit_offset[i] + j % puzzle->decomp.orbit_size[i];
 }
 
 void puzzle_init(puzzle_t *puzzle,
                  unsigned int num_orbits, unsigned int *orbit_size,
                  group_t *group, uint8_t **orbit, uint8_t **stab)
 {
-  puzzle->num_orbits = num_orbits;
-  puzzle->orbit_size = malloc(puzzle->num_orbits * sizeof(unsigned int));
-  memcpy(puzzle->orbit_size, orbit_size,
-         puzzle->num_orbits * sizeof(unsigned int));
-  puzzle->orbit_offset = malloc((puzzle->num_orbits + 1) * sizeof(unsigned int));
-  puzzle->orbit_offset[0] = 0;
+  puzzle->decomp.num_orbits = num_orbits;
+  puzzle->decomp.orbit_size =
+    malloc(puzzle->decomp.num_orbits * sizeof(unsigned int));
+  memcpy(puzzle->decomp.orbit_size, orbit_size,
+         puzzle->decomp.num_orbits * sizeof(unsigned int));
+  puzzle->decomp.orbit_offset =
+    malloc((puzzle->decomp.num_orbits + 1) * sizeof(unsigned int));
+  puzzle->decomp.orbit_offset[0] = 0;
   for (unsigned int i = 1; i <= num_orbits; i++) {
-    puzzle->orbit_offset[i] =
-      puzzle->orbit_offset[i - 1] + puzzle->orbit_size[i - 1];
+    puzzle->decomp.orbit_offset[i] =
+      puzzle->decomp.orbit_offset[i - 1] + puzzle->decomp.orbit_size[i - 1];
   }
-  puzzle->num_pieces = puzzle->orbit_offset[num_orbits];
+  puzzle->decomp.num_pieces = puzzle->decomp.orbit_offset[num_orbits];
   puzzle->group = group;
 
   puzzle->by_stab = malloc(num_orbits * sizeof(uint8_t *));
@@ -140,8 +142,8 @@ void puzzle_init(puzzle_t *puzzle,
     for (unsigned int j = 0; j < group->num; j++) {
       unsigned int g =
         group_mul(puzzle->group,
-                  stab[i][j / puzzle->orbit_size[i]],
-                  orbit[i][j % puzzle->orbit_size[i]]);
+                  stab[i][j / puzzle->decomp.orbit_size[i]],
+                  orbit[i][j % puzzle->decomp.orbit_size[i]]);
       puzzle->by_stab[i][j] = g;
       puzzle->inv_by_stab[i][g] = j;
     }
@@ -153,8 +155,8 @@ void puzzle_cleanup(puzzle_t *puzzle)
   group_cleanup(puzzle->group);
 
   free(puzzle->group);
-  free(puzzle->orbit_size);
-  free(puzzle->orbit_offset);
+  free(puzzle->decomp.orbit_size);
+  free(puzzle->decomp.orbit_offset);
   free(puzzle->by_stab);
   free(puzzle->inv_by_stab);
 }

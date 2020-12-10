@@ -425,10 +425,10 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
     unsigned int index = 0;
     for (unsigned int g = 0; g < ms->puzzle.group->num; g++) {
       for (unsigned int f = 0; f < fa->num_faces; f++) {
-        fa->action[index++] = puzzle_local
-          (&ms->puzzle,
+        fa->action[index++] = decomp_local
+          (&ms->puzzle.decomp,
            puzzle_act(&ms->puzzle,
-                      puzzle_global(&ms->puzzle, 2, f),
+                      decomp_global(&ms->puzzle.decomp, 2, f),
                       g));
       }
     }

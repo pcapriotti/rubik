@@ -37,17 +37,13 @@ unsigned int symmetries_by_cell(symmetries_t *syms,
                                 unsigned int dim,
                                 unsigned int i);
 
-struct puzzle_t
+/* Orbit decomposition */
+struct decomp_t
 {
   /* The cardinality of the set X of pieces. */
   unsigned int num_pieces;
 
-  /* Symmetry group G of the puzzle. */
-  group_t *group;
-
-  /* Orbit decomposition.
-
-     We assume a choice of a representative for every orbit, and that
+  /* We assume a choice of a representative for every orbit, and that
      the pieces are enumerated by orbit, so that the representative
      has index 0 in its orbit.
 
@@ -56,6 +52,13 @@ struct puzzle_t
   unsigned int num_orbits;
   unsigned int *orbit_size;
   unsigned int *orbit_offset;
+};
+typedef struct decomp_t decomp_t;
+
+struct puzzle_t
+{
+  /* Symmetry group G of the puzzle. */
+  group_t *group;
 
   /* Symmetries by stabiliser coset.
 
@@ -74,13 +77,15 @@ struct puzzle_t
 
   /* The inverse of the above isomorphism family. */
   uint8_t **inv_by_stab;
+
+  decomp_t decomp;
 };
 typedef struct puzzle_t puzzle_t;
 
-unsigned int puzzle_orbit_of(puzzle_t *puzzle, unsigned int x);
-unsigned int puzzle_global(puzzle_t *puzzle, unsigned int i, unsigned int j);
-unsigned int puzzle_local(puzzle_t *puzzle, unsigned int j);
-unsigned int puzzle_repr(puzzle_t *puzzle, unsigned int i);
+unsigned int decomp_orbit_of(decomp_t *puzzle, unsigned int x);
+unsigned int decomp_global(decomp_t *puzzle, unsigned int i, unsigned int j);
+unsigned int decomp_local(decomp_t *puzzle, unsigned int j);
+unsigned int decomp_repr(decomp_t *puzzle, unsigned int i);
 void puzzle_init(puzzle_t *puzzle,
                  unsigned int num_orbits, unsigned int *orbit_size,
                  group_t *group, uint8_t **orbit, uint8_t **stab);

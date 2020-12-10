@@ -12,6 +12,7 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
 {
   assert(n >= 1);
   shape->n = n;
+
   unsigned int num_corners = n > 1 ? 8 : 0;
   unsigned int num_edges = 12 * (n - 2);
   unsigned int num_centres = n > 1 ? 6 * (n - 2) * (n - 2) : 1;
@@ -114,9 +115,9 @@ int in_layer(puzzle_t *puzzle, cube_shape_t *shape, orbit_t *orbit,
              unsigned int f, unsigned int l, unsigned int g)
 {
   unsigned int f1 =
-    puzzle_local(puzzle,
+    decomp_local(&puzzle->decomp,
                  puzzle_act(puzzle,
-                            puzzle_global(puzzle, 2, f),
+                            decomp_global(&puzzle->decomp, 2, f),
                             group_inv(puzzle->group, g)));
   switch (orbit->dim) {
   case 0:
@@ -162,7 +163,7 @@ turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
   turn->num_pieces = 0;
 
   c = ((c % 4) + 4) % 4;
-  unsigned int s = puzzle->by_stab[2][puzzle->orbit_size[2] * c];
+  unsigned int s = puzzle->by_stab[2][puzzle->decomp.orbit_size[2] * c];
   s = group_conj(puzzle->group, s, puzzle->by_stab[2][f]);
 
   conf1->shape = conf->shape;
