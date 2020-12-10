@@ -12,12 +12,12 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
 {
   assert(n >= 1);
   shape->n = n;
-  shape->num_corners = n > 1 ? 8 : 0;
-  shape->num_edges = 12 * (n - 2);
-  shape->num_centres = n > 1 ? 6 * (n - 2) * (n - 2) : 1;
-  shape->num_pieces = shape->num_corners + shape->num_edges + shape->num_centres;
+  unsigned int num_corners = n > 1 ? 8 : 0;
+  unsigned int num_edges = 12 * (n - 2);
+  unsigned int num_centres = n > 1 ? 6 * (n - 2) * (n - 2) : 1;
+  shape->num_pieces = num_corners + num_edges + num_centres;
 
-  unsigned int num_corner_orbits = shape->num_corners != 0;
+  unsigned int num_corner_orbits = num_corners != 0;
   unsigned int num_edge_orbits = (n - 1) / 2;
   unsigned int num_centre_orbits = (n - 2) * (n - 2) / 4;
   if (n % 2 == 1) num_centre_orbits++;
@@ -27,7 +27,7 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
 
   shape->orbits = malloc(shape->num_orbits * sizeof(orbit_t));
   /* only 1 corner orbit of size 8 */
-  shape->orbits[0].size = shape->num_corners;
+  shape->orbits[0].size = num_corners;
   shape->orbits[0].dim = 0;
   shape->orbits[0].offset = offset;
   shape->orbits[0].x = 0;
