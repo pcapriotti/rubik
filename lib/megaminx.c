@@ -26,7 +26,7 @@ void megaminx_debug(puzzle_t *puzzle, megaminx_t *mm)
   for (unsigned int i = 0; i < puzzle->num_pieces; i++) {
     printf("piece %u symmetry %u position %u\n",
            i, mm->pieces[i],
-           action_act(puzzle->action,
+           puzzle_act(puzzle,
                       puzzle_repr(puzzle, i),
                       mm->pieces[i]));
   }
@@ -57,7 +57,7 @@ void megaminx_act(puzzle_t *puzzle, megaminx_t *conf1,
                   megaminx_t *conf, megaminx_t *move)
 {
   for (unsigned int i = 0; i < puzzle->num_pieces; i++) {
-    unsigned int i1 = action_act(puzzle->action,
+    unsigned int i1 = puzzle_act(puzzle,
                                  puzzle_repr(puzzle, i),
                                  conf->pieces[i]);
     conf1->pieces[i] = group_mul(puzzle->group,
@@ -83,7 +83,7 @@ void megaminx_mul(puzzle_t *puzzle, megaminx_t *ret,
                   megaminx_t *move1, megaminx_t *move2)
 {
   for (unsigned int i = 0; i < puzzle->num_pieces; i++) {
-    unsigned int i1 = action_act(puzzle->action, i, move1->pieces[i]);
+    unsigned int i1 = puzzle_act(puzzle, i, move1->pieces[i]);
     ret->pieces[i] = group_mul(puzzle->group, move1->pieces[i], move2->pieces[i1]);
   }
 }
@@ -91,7 +91,7 @@ void megaminx_mul(puzzle_t *puzzle, megaminx_t *ret,
 void megaminx_inv(puzzle_t *puzzle, megaminx_t *ret, megaminx_t *move)
 {
   for (unsigned int i = 0; i < puzzle->num_pieces; i++) {
-    unsigned int i1 = action_act(puzzle->action, i, move->pieces[i]);
+    unsigned int i1 = puzzle_act(puzzle, i, move->pieces[i]);
     ret->pieces[i1] = group_inv(puzzle->group, move->pieces[i]);
   }
 }

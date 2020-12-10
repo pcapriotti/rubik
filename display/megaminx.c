@@ -427,7 +427,7 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
       for (unsigned int f = 0; f < fa->num_faces; f++) {
         fa->action[index++] = puzzle_local
           (&ms->puzzle,
-           action_act(ms->puzzle.action,
+           puzzle_act(&ms->puzzle,
                       puzzle_global(&ms->puzzle, 2, f),
                       g));
       }

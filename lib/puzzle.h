@@ -45,9 +45,6 @@ struct puzzle_t
   /* Symmetry group G of the puzzle. */
   group_t *group;
 
-  /* Action of G on the pieces. */
-  action_t *action;
-
   /* Orbit decomposition.
 
      We assume a choice of a representative for every orbit, and that
@@ -88,6 +85,7 @@ void puzzle_init(puzzle_t *puzzle,
                  unsigned int num_orbits, unsigned int *orbit_size,
                  group_t *group, uint8_t **orbit, uint8_t **stab);
 void puzzle_cleanup(puzzle_t *puzzle);
+unsigned int puzzle_act(puzzle_t *puzzle, unsigned int x, unsigned int g);
 
 struct turn_t
 {

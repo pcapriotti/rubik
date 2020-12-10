@@ -418,7 +418,7 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
       for (unsigned int f = 0; f < fa->num_faces; f++) {
         fa->action[index++] = puzzle_local
           (&s->puzzle,
-           action_act(s->puzzle.action,
+           puzzle_act(&s->puzzle,
                       puzzle_global(&s->puzzle, 2, f),
                       g));
       }

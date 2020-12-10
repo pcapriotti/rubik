@@ -105,9 +105,8 @@ unsigned int puzzle_repr(puzzle_t *puzzle, unsigned int i)
   return puzzle->orbit_offset[puzzle_orbit_of(puzzle, i)];
 }
 
-static unsigned int puzzle_act(void *data, unsigned int x, unsigned int g)
+unsigned int puzzle_act(puzzle_t *puzzle, unsigned int x, unsigned int g)
 {
-  puzzle_t *puzzle = data;
   unsigned int i = puzzle_orbit_of(puzzle, x);
   x -= puzzle->orbit_offset[i];
   unsigned int g0 = puzzle->by_stab[i][x];
@@ -147,20 +146,13 @@ void puzzle_init(puzzle_t *puzzle,
       puzzle->inv_by_stab[i][g] = j;
     }
   }
-
-  puzzle->action = malloc(sizeof(action_t));
-  puzzle->action->data = puzzle;
-  puzzle->action->cleanup = 0;
-  puzzle->action->act = puzzle_act;
 }
 
 void puzzle_cleanup(puzzle_t *puzzle)
 {
-  action_cleanup(puzzle->action);
   group_cleanup(puzzle->group);
 
   free(puzzle->group);
-  free(puzzle->action);
   free(puzzle->orbit_size);
   free(puzzle->orbit_offset);
   free(puzzle->by_stab);

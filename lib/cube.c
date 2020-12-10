@@ -115,7 +115,7 @@ int in_layer(puzzle_t *puzzle, cube_shape_t *shape, orbit_t *orbit,
 {
   unsigned int f1 =
     puzzle_local(puzzle,
-                 action_act(puzzle->action,
+                 puzzle_act(puzzle,
                             puzzle_global(puzzle, 2, f),
                             group_inv(puzzle->group, g)));
   switch (orbit->dim) {
