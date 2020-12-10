@@ -17,12 +17,11 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
   shape->num_centres = n > 1 ? 6 * (n - 2) * (n - 2) : 1;
   shape->num_pieces = shape->num_corners + shape->num_edges + shape->num_centres;
 
-  shape->num_corner_orbits = shape->num_corners != 0;
-  shape->num_edge_orbits = (n - 1) / 2;
-  shape->num_centre_orbits = (n - 2) * (n - 2) / 4;
-  if (n % 2 == 1) shape->num_centre_orbits++;
-  shape->num_orbits = shape->num_corner_orbits +
-    shape->num_edge_orbits + shape->num_centre_orbits;
+  unsigned int num_corner_orbits = shape->num_corners != 0;
+  unsigned int num_edge_orbits = (n - 1) / 2;
+  unsigned int num_centre_orbits = (n - 2) * (n - 2) / 4;
+  if (n % 2 == 1) num_centre_orbits++;
+  shape->num_orbits = num_corner_orbits + num_edge_orbits + num_centre_orbits;
 
   unsigned int offset = 0;
 
@@ -37,7 +36,7 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
   offset += shape->orbits[0].size;
 
   /* edge orbits have size 24, except the middle one when n is odd */
-  for (unsigned int i = 1; i <= shape->num_edge_orbits; i++) {
+  for (unsigned int i = 1; i <= num_edge_orbits; i++) {
     shape->orbits[i].size = (i * 2 == n - 1) ? 12 : 24;
     shape->orbits[i].dim = 1;
     shape->orbits[i].offset = offset;
@@ -49,7 +48,7 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
 
   /* centre orbits have size 24, except the central one when n is odd */
   unsigned int y = 1; unsigned int z = 1;
-  for (unsigned int i = shape->num_edge_orbits + 1;
+  for (unsigned int i = num_edge_orbits + 1;
        i < shape->num_orbits; i++) {
     shape->orbits[i].size = 24;
     shape->orbits[i].dim = 2;
@@ -59,7 +58,7 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
     shape->orbits[i].y = y++;
     shape->orbits[i].z = z;
 
-    if (y > shape->num_edge_orbits) {
+    if (y > num_edge_orbits) {
       z++;
       y = (z > (n - 2) / 2) ? z : 1;
     }
@@ -159,7 +158,7 @@ turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
                   unsigned int f, unsigned int l, int c)
 {
   turn_t *turn = malloc(sizeof(turn_t));
-  turn->pieces = malloc(conf->shape->num_pieces);
+  turn->pieces = malloc(conf->shape->num_pieces * sizeof(unsigned int));
   turn->num_pieces = 0;
 
   c = ((c % 4) + 4) % 4;

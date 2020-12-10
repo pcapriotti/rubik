@@ -26,9 +26,6 @@ typedef struct
   unsigned int num_centres;
   unsigned int num_pieces;
 
-  unsigned int num_corner_orbits;
-  unsigned int num_edge_orbits;
-  unsigned int num_centre_orbits;
   unsigned int num_orbits;
   orbit_t *orbits;
 } cube_shape_t;
