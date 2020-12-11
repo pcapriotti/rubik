@@ -2,6 +2,7 @@
 #include "piece.h"
 #include "polyhedron.h"
 #include "scene.h"
+#include "puzzle_scene.h"
 #include "utils.h"
 
 #include "lib/abs_poly.h"
@@ -17,7 +18,7 @@
 
 /* extract a megaminx corner from vertex 0 of a dodecahedron */
 /* edge is the ratio between the corner edge length and the full edge length */
-void megaminx_corner_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
+static void megaminx_corner_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
 {
   abs_prism(&mm->abs, 4);
 
@@ -45,7 +46,7 @@ void megaminx_corner_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
 }
 
 
-void megaminx_edge_poly(poly_t *mm, poly_t *dodec, float edge, int* facelets)
+static void megaminx_edge_poly(poly_t *mm, poly_t *dodec, float edge, int* facelets)
 {
   abs_prism(&mm->abs, 4);
   mm->vertices = malloc(mm->abs.num_vertices * sizeof(vec3));
@@ -82,7 +83,7 @@ void megaminx_edge_poly(poly_t *mm, poly_t *dodec, float edge, int* facelets)
   facelets[4] = 0;
 }
 
-void megaminx_centre_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
+static void megaminx_centre_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
 {
   abs_prism(&mm->abs, 5);
   mm->vertices = malloc(mm->abs.num_vertices * sizeof(vec3));
@@ -246,245 +247,83 @@ void megaminx_puzzle_action_init(puzzle_action_t *puzzle, abs_poly_t *dodec, pol
   }
 }
 
-struct key_action_t
-{
-  void (*run)(megaminx_scene_t *ms, void *data);
-  void *data;
-};
-typedef struct key_action_t key_action_t;
-
-struct megaminx_scene_t
-{
-  poly_t dodec;
-  struct {
-    poly_t poly;
-    int facelets[6];
-  } corner;
-
-  struct {
-    poly_t poly;
-    int facelets[6];
-  } edge;
-
-  struct {
-    poly_t poly;
-    int facelets[7];
-  } centre;
-
-  megaminx_t mm;
-  megaminx_t *gen;
-  unsigned int num_gens;
-
-  key_action_t *key_bindings;
-
-  puzzle_action_t puzzle;
-  quat *rots;
-  piece_t piece[3];
-};
-
-void megaminx_scene_del(megaminx_scene_t *ms)
-{
-  puzzle_action_cleanup(&ms->puzzle);
-  for (unsigned int i = 0; i < ms->num_gens; i++) {
-    megaminx_cleanup(&ms->gen[i]);
-  }
-  free(ms->gen);
-  megaminx_cleanup(&ms->mm);
-
-  for (int i = 0; i < 3; i++) piece_cleanup(&ms->piece[i]);
-  for (unsigned int i = 0; i < 256; i++) {
-    free(ms->key_bindings[i].data);
-  }
-  free(ms->key_bindings);
-  free(ms->rots);
-  free(ms);
-}
-
-void megaminx_on_keypress(void *data, unsigned int c)
-{
-  megaminx_scene_t *ms = data;
-  if (c >= 256) return;
-
-  key_action_t *a = &ms->key_bindings[c];
-  if (a->run == 0) return;
-
-  a->run(ms, a->data);
-}
-
-struct move_face_data_t
-{
-  unsigned int face;
-  unsigned int count;
-};
-
-static struct move_face_data_t *move_face_data_new(unsigned int face, unsigned int count)
-{
-  struct move_face_data_t *data = malloc(sizeof(struct move_face_data_t));
-  data->face = face;
-  data->count = count;
-  return data;
-}
-
-void megaminx_action_move_face(megaminx_scene_t *ms, void *data_)
-{
-  struct move_face_data_t *data = data_;
-
-  for (unsigned int i = 0; i < data->count; i++) {
-    megaminx_act_(&ms->puzzle, &ms->mm, &ms->gen[data->face]);
-  }
-
-  for (unsigned int k = 0; k < 3; k++) {
-    piece_set_conf(&ms->piece[k], megaminx_orbit(&ms->puzzle, &ms->mm, k));
-  }
-}
-
-unsigned int *rotate_data_new(unsigned int s)
-{
-  unsigned int *data = malloc(sizeof(unsigned int));
-  *data = s;
-  return data;
-}
-
-void megaminx_action_rotate(megaminx_scene_t *ms, void *data_)
-{
-  unsigned int *data = data_;
-
-  megaminx_rotate_(&ms->puzzle, &ms->mm, *data);
-
-  for (unsigned int k = 0; k < 3; k++) {
-    piece_set_conf(&ms->piece[k], megaminx_orbit(&ms->puzzle, &ms->mm, k));
-  }
-}
-
-void megaminx_action_scramble(megaminx_scene_t *ms, void *data_)
-{
-  megaminx_scramble(&ms->puzzle, &ms->mm);
-
-  for (unsigned int k = 0; k < 3; k++) {
-    piece_set_conf_instant(&ms->piece[k], megaminx_orbit(&ms->puzzle, &ms->mm, k));
-  }
-}
-
-void megaminx_scene_set_up_key_bindings(megaminx_scene_t *ms)
-{
-  ms->key_bindings = calloc(256, sizeof(key_action_t));
-
-  static const unsigned char face_keys[] = "jfkdmv,c;als";
-  static const unsigned char rot_keys[] = "JFKDMV<C/ALS";
-  for (unsigned int i = 0; i < 12; i++) {
-    ms->key_bindings[face_keys[i]] = (key_action_t) {
-      .run = megaminx_action_move_face,
-      .data = move_face_data_new(i & ~1, i & 1 ? 4 : 1)
-    };
-  }
-  for (unsigned int i = 0; i < 12; i++) {
-    unsigned int s = megaminx_orbit(&ms->puzzle, &ms->gen[i & ~1], 2)[i & ~1];
-    if (i & 1) s = group_inv(ms->puzzle.group, s);
-    ms->key_bindings[rot_keys[i]] = (key_action_t) {
-      .run = megaminx_action_rotate,
-      .data = rotate_data_new(s)
-    };
-  }
-
-  ms->key_bindings['s' - 'a' + 1] = (key_action_t) {
-    .run = megaminx_action_scramble,
-    .data = 0
-  };
-}
-
-megaminx_scene_t *megaminx_scene_new(scene_t *scene)
+void megaminx_model_init_piece(void *data, poly_t *poly,
+                               unsigned int k, void *orbit,
+                               int *facelets)
 {
   static const float edge_size = 0.4;
-
-  megaminx_scene_t *ms = malloc(sizeof(megaminx_scene_t));
-
-  scene->on_keypress_data = ms;
-  scene->on_keypress = megaminx_on_keypress;
-
-  std_dodec(&ms->dodec);
-
-  poly_data_t data;
-  poly_data_init(&data, &ms->dodec.abs);
-
-  megaminx_corner_poly(&ms->corner.poly, &ms->dodec, edge_size, ms->corner.facelets);
-  megaminx_edge_poly(&ms->edge.poly, &ms->dodec, edge_size, ms->edge.facelets);
-  megaminx_centre_poly(&ms->centre.poly, &ms->dodec, edge_size, ms->centre.facelets);
-  ms->rots = megaminx_rotations(&ms->dodec);
-  megaminx_puzzle_action_init(&ms->puzzle, &ms->dodec.abs, &data);
-
-  /* face action */
-  {
-    unsigned int b;
-    glGenBuffers(1, &b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
-
-    const unsigned int size = sizeof(face_action_t) +
-      ms->puzzle.group->num * 12 * sizeof(uint32_t);
-    face_action_t *fa = malloc(size);
-    fa->num_faces = 12;
-    unsigned int index = 0;
-    for (unsigned int g = 0; g < ms->puzzle.group->num; g++) {
-      for (unsigned int f = 0; f < fa->num_faces; f++) {
-        fa->action[index++] = decomp_local
-          (&ms->puzzle.decomp,
-           puzzle_action_act(&ms->puzzle,
-                      decomp_global(&ms->puzzle.decomp, 2, f),
-                      g));
-      }
-    }
-    glBufferData(GL_SHADER_STORAGE_BUFFER, size, fa, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    free(fa);
+  poly_t *dodec = data;
+  switch (k) {
+  case 0:
+    megaminx_corner_poly(poly, dodec, edge_size, facelets);
+    break;
+  case 1:
+    megaminx_edge_poly(poly, dodec, edge_size, facelets);
+    break;
+  case 2:
+    megaminx_centre_poly(poly, dodec, edge_size, facelets);
+    break;
   }
+}
 
-  /* colours */
-  {
-    vec4 colours[12] = {
-      { 1.0, 1.0, 1.0, 1.0 }, // white
-      { 0.4, 0.4, 0.4, 1.0 }, // grey
-      { 1.0, 1.0, 0.0, 1.0 }, // yellow
-      { 0.91, 0.85, 0.68, 1.0 }, // pale yellow
-      { 0.5, 0.0, 0.5, 1.0 }, // purple
-      { 1.0, 0.75, 0.8, 1.0 }, // pink
-      { 0.0, 0.6, 0.0, 1.0 }, // green
-      { 0.2, 0.8, 0.2, 1.0 }, // lime
-      { 1.0, 0.0, 0.0, 1.0 }, // red
-      { 1.0, 0.65, 0.0, 1.0 }, // orange
-      { 0.0, 0.0, 1.0, 1.0 }, // blue
-      { 0.0, 0.5, 0.5, 1.0 }, // teal
-    };
+void megaminx_model_cleanup(void *data, puzzle_model_t *model)
+{
+  free(model->rots);
+  free(model->colours);
 
-    unsigned int b;
-    glGenBuffers(1, &b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(vec4) * 12, colours, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_COLOURS, b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-  }
+  poly_t *dodec = model->init_piece_data;
+  poly_cleanup(dodec);
+  free(dodec);
+}
 
-  megaminx_init(&ms->puzzle, &ms->mm);
-  ms->gen = megaminx_generators(&ms->puzzle, &ms->dodec.abs, &data, &ms->num_gens);
+void megaminx_model_init(puzzle_model_t *model, poly_t* dodec)
+{
+  model->rots = megaminx_rotations(dodec);
+  vec4 colours[] = {
+    { 1.0, 1.0, 1.0, 1.0 }, // white
+    { 0.4, 0.4, 0.4, 1.0 }, // grey
+    { 1.0, 1.0, 0.0, 1.0 }, // yellow
+    { 0.91, 0.85, 0.68, 1.0 }, // pale yellow
+    { 0.5, 0.0, 0.5, 1.0 }, // purple
+    { 1.0, 0.75, 0.8, 1.0 }, // pink
+    { 0.0, 0.6, 0.0, 1.0 }, // green
+    { 0.2, 0.8, 0.2, 1.0 }, // lime
+    { 1.0, 0.0, 0.0, 1.0 }, // red
+    { 1.0, 0.65, 0.0, 1.0 }, // orange
+    { 0.0, 0.0, 1.0, 1.0 }, // blue
+    { 0.0, 0.5, 0.5, 1.0 }, // teal
+  };
+  model->colours = malloc(sizeof(colours));
+  memcpy(model->colours, colours, sizeof(colours));
 
-  const unsigned int num_edges = ms->dodec.abs.num_faces +
-    ms->dodec.abs.num_vertices - 2;
-  piece_init(&ms->piece[0], &ms->corner.poly, ms->corner.facelets, ms->rots,
-             megaminx_orbit(&ms->puzzle, &ms->mm, 0),
-             ms->dodec.abs.num_vertices);
-  piece_init(&ms->piece[1], &ms->edge.poly, ms->edge.facelets, ms->rots,
-             megaminx_orbit(&ms->puzzle, &ms->mm, 1),
-             num_edges);
-  piece_init(&ms->piece[2], &ms->centre.poly, ms->centre.facelets, ms->rots,
-             megaminx_orbit(&ms->puzzle, &ms->mm, 2),
-             ms->dodec.abs.num_faces);
+  model->init_piece = megaminx_model_init_piece;
+  model->init_piece_data = dodec;
+  model->cleanup = megaminx_model_cleanup;
+  model->cleanup_data = 0;
+}
 
-  scene_add_piece(scene, &ms->piece[0]);
-  scene_add_piece(scene, &ms->piece[1]);
-  scene_add_piece(scene, &ms->piece[2]);
+puzzle_scene_t *megaminx_scene_new(scene_t *scene)
+{
+  puzzle_scene_t *s = malloc(sizeof(puzzle_scene_t));
 
-  megaminx_scene_set_up_key_bindings(ms);
+  puzzle_action_t *action = malloc(sizeof(puzzle_action_t));
 
-  poly_data_cleanup(&data);
+  poly_t *dodec = malloc(sizeof(poly_t));
+  std_dodec(dodec);
 
-  return ms;
+  poly_data_t poly_data;
+  poly_data_init(&poly_data, &dodec->abs);
+  megaminx_puzzle_action_init(action, &dodec->abs, &poly_data);
+  poly_data_cleanup(&poly_data);
+
+  uint8_t *conf = megaminx_new(action);
+
+  puzzle_t *puzzle = malloc(sizeof(puzzle_t));
+  megaminx_puzzle_init(puzzle, action);
+  puzzle_model_t *model = malloc(sizeof(puzzle_model_t));
+  megaminx_model_init(model, dodec);
+
+  puzzle_scene_init(s, scene, conf, puzzle, model);
+
+  return s;
 }

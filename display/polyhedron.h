@@ -24,5 +24,6 @@ void std_dodec(poly_t *poly);
 void std_prism(poly_t *poly, unsigned int num);
 
 void poly_debug(poly_t *poly);
+void poly_cleanup(poly_t *poly);
 
 #endif /* POLYHEDRON_H */

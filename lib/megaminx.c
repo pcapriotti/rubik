@@ -10,114 +10,63 @@
 #include "perm.h"
 #include "puzzle.h"
 
-static unsigned int smul(puzzle_action_t *puzzle, unsigned int a, unsigned int b)
+uint8_t *megaminx_new(puzzle_action_t *action)
 {
-  return group_mul(puzzle->group, a, b);
-}
-
-static unsigned int sconj(puzzle_action_t *puzzle, unsigned int a, unsigned int b)
-{
-  unsigned int b_inv_a = group_inv_mul(puzzle->group, b, a);
-  return smul(puzzle, b_inv_a, b);
-}
-
-void megaminx_debug(puzzle_action_t *puzzle, megaminx_t *mm)
-{
-  for (unsigned int i = 0; i < puzzle->decomp.num_pieces; i++) {
-    printf("piece %u symmetry %u position %u\n",
-           i, mm->pieces[i],
-           puzzle_action_act(puzzle,
-                      decomp_repr(&puzzle->decomp, i),
-                      mm->pieces[i]));
-  }
-}
-
-void megaminx_init(puzzle_action_t *puzzle, megaminx_t *mm)
-{
-  mm->pieces = malloc(puzzle->decomp.num_pieces);
+  uint8_t *conf = malloc(action->decomp.num_pieces);
   unsigned int index = 0;
-  for (unsigned int k = 0; k < puzzle->decomp.num_orbits; k++) {
-    for (unsigned int i = 0; i < puzzle->decomp.orbit_size[k]; i++) {
-      mm->pieces[index++] = puzzle->by_stab[k][i];
+  for (unsigned int k = 0; k < action->decomp.num_orbits; k++) {
+    for (unsigned int i = 0; i < action->decomp.orbit_size[k]; i++) {
+      conf[index++] = action->by_stab[k][i];
     }
   }
+  return conf;
 }
 
-void megaminx_cleanup(megaminx_t *mm)
+static int in_layer(puzzle_action_t *action, unsigned int k, unsigned int f, unsigned int g)
 {
-  free(mm->pieces);
-}
-
-void megaminx_act_(puzzle_action_t *puzzle, megaminx_t *conf, megaminx_t *move)
-{
-  megaminx_act(puzzle, conf, conf, move);
-}
-
-void megaminx_act(puzzle_action_t *puzzle, megaminx_t *conf1,
-                  megaminx_t *conf, megaminx_t *move)
-{
-  for (unsigned int i = 0; i < puzzle->decomp.num_pieces; i++) {
-    unsigned int i1 = puzzle_action_act(puzzle,
-                                 decomp_repr(&puzzle->decomp, i),
-                                 conf->pieces[i]);
-    conf1->pieces[i] = group_mul(puzzle->group,
-                                 conf->pieces[i],
-                                 move->pieces[i1]);
+  unsigned int f1 =
+    decomp_local(&action->decomp,
+                 puzzle_action_act(action,
+                            decomp_global(&action->decomp, 2, f),
+                            group_inv(action->group, g)));
+  switch (k) {
+  case 0:
+    return f1 == 0 || f1 == 1 || f1 == 4;
+    break;
+  case 1:
+    return f1 == 0 || f1 == 1;
+    break;
+  case 2:
+    return f1 == 0;
+    break;
   }
+
+  return 0;
 }
 
-void megaminx_rotate_(puzzle_action_t *puzzle, megaminx_t *conf, unsigned int s)
+turn_t *megaminx_move(puzzle_action_t *action, uint8_t *conf1, uint8_t *conf,
+                      unsigned int f, int c)
 {
-  megaminx_rotate(puzzle, conf, conf, s);
-}
+  turn_t *turn = malloc(sizeof(turn_t));
+  turn->pieces = malloc(action->decomp.num_pieces * sizeof(unsigned int));
+  turn->num_pieces = 0;
 
-void megaminx_rotate(puzzle_action_t *puzzle, megaminx_t *conf1,
-                     megaminx_t *conf, unsigned int s)
-{
-  for (unsigned int i = 0; i < puzzle->decomp.num_pieces; i++) {
-    conf1->pieces[i] = group_mul(puzzle->group, conf->pieces[i], s);
-  }
-}
+  c = ((c % 5) + 5) % 5;
+  unsigned int s = action->by_stab[2][action->decomp.orbit_size[2] * c];
+  s = group_conj(action->group, s, action->by_stab[2][f]);
+  turn->g = s;
 
-void megaminx_mul(puzzle_action_t *puzzle, megaminx_t *ret,
-                  megaminx_t *move1, megaminx_t *move2)
-{
-  for (unsigned int i = 0; i < puzzle->decomp.num_pieces; i++) {
-    unsigned int i1 = puzzle_action_act(puzzle, i, move1->pieces[i]);
-    ret->pieces[i] = group_mul(puzzle->group, move1->pieces[i], move2->pieces[i1]);
-  }
-}
-
-void megaminx_inv(puzzle_action_t *puzzle, megaminx_t *ret, megaminx_t *move)
-{
-  for (unsigned int i = 0; i < puzzle->decomp.num_pieces; i++) {
-    unsigned int i1 = puzzle_action_act(puzzle, i, move->pieces[i]);
-    ret->pieces[i1] = group_inv(puzzle->group, move->pieces[i]);
-  }
-}
-
-megaminx_t *megaminx_generators(puzzle_action_t *puzzle,
-                                abs_poly_t *dodec,
-                                poly_data_t *data,
-                                unsigned int *num)
-{
-  *num = 12;
-  megaminx_t *gen = malloc(*num * sizeof(megaminx_t));
-
-  for (unsigned int f = 0; f < *num; f++) {
-    /* cw rotation around face f */
-    unsigned int s = sconj(puzzle, 4, f * 5);
-    gen[f].pieces = calloc(puzzle->decomp.num_pieces, sizeof(unsigned int));
-    gen[f].pieces[decomp_global(&puzzle->decomp, 2, f)] = s;
-    for (unsigned int i = 0; i < 5; i++) {
-      gen[f].pieces[decomp_global(&puzzle->decomp, 0,
-                                  dodec->faces[f].vertices[i])] = s;
-      gen[f].pieces[decomp_global(&puzzle->decomp, 1,
-                                  data->edges_by_face[f][i])] = s;
+  for (unsigned int k = 0; k < action->decomp.num_orbits; k++) {
+    for (unsigned int i = 0; i < action->decomp.orbit_size[k]; i++) {
+      unsigned int i0 = action->decomp.orbit_offset[k] + i;
+      if (in_layer(action, k, f, conf[i0])) {
+        conf1[i0] = group_mul(action->group, conf[i0], s);
+        turn->pieces[turn->num_pieces++] = i0;
+      }
     }
   }
 
-  return gen;
+  return turn;
 }
 
 void even_shuffle(uint8_t *x, size_t len)
@@ -131,7 +80,7 @@ void even_shuffle(uint8_t *x, size_t len)
   }
 }
 
-void megaminx_scramble(puzzle_action_t *puzzle, megaminx_t *mm)
+void megaminx_scramble(puzzle_action_t *puzzle, uint8_t *conf)
 {
   for (unsigned int k = 0; k < 2; k++) {
     unsigned int orb_size = puzzle->decomp.orbit_size[k];
@@ -150,7 +99,7 @@ void megaminx_scramble(puzzle_action_t *puzzle, megaminx_t *mm)
         o = rand() % stab_size;
         total += o;
       }
-      mm->pieces[decomp_global(&puzzle->decomp, k, i)] =
+      conf[decomp_global(&puzzle->decomp, k, i)] =
         puzzle->by_stab[k][o * orb_size + perm[i]];
     }
 
@@ -158,7 +107,25 @@ void megaminx_scramble(puzzle_action_t *puzzle, megaminx_t *mm)
   }
 }
 
-uint8_t *megaminx_orbit(puzzle_action_t *puzzle, megaminx_t *mm, unsigned int k)
+static void megaminx_puzzle_cleanup(void *data, puzzle_t *puzzle)
 {
-  return &mm->pieces[puzzle->decomp.orbit_offset[k]];
+  puzzle_action_t *action = puzzle->face_action_data;
+  puzzle_action_cleanup(action);
+  free(action);
+}
+
+void megaminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
+{
+  puzzle->group = action->group;
+  puzzle->decomp = &action->decomp;
+  puzzle->num_faces = 12;
+
+  puzzle->orbit = puzzle_orbit_default;
+  puzzle->orbit_data = 0;
+
+  puzzle->face_action = puzzle_face_action_default;
+  puzzle->face_action_data = action;
+
+  puzzle->cleanup = megaminx_puzzle_cleanup;
+  puzzle->cleanup_data = 0;
 }

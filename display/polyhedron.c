@@ -81,3 +81,8 @@ void std_dodec(poly_t *poly)
   }
 }
 
+void poly_cleanup(poly_t *poly)
+{
+  abs_poly_cleanup(&poly->abs);
+  free(poly->vertices);
+}

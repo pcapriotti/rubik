@@ -130,4 +130,7 @@ struct puzzle_t
 };
 typedef struct puzzle_t puzzle_t;
 
+void *puzzle_orbit_default(void *data, unsigned int i);
+unsigned int puzzle_face_action_default(void *data, unsigned int x, unsigned int g);
+
 #endif /* PUZZLE_H */

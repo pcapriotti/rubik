@@ -8,6 +8,25 @@
 #include "puzzle.h"
 #include "utils.h"
 
+/* [Note]
+
+A configuration is a map from pieces to symmetries. There are two ways
+to interpret a configuration: relative and absolute. A relative
+configuration maps every piece to the symmetry that needs to be
+applied to it to bring it to its current state. An absolute
+configuration maps every piece to the symmetry to apply to bring it
+from a fixed reference state (that of piece 0) to its current state.
+
+Relative configurations form a group, where the identity is simply the
+configuration that maps every piece to the identity symmetry. Absolute
+configurations are a torsor over this group.
+
+Relative configurations compose as follows: (ab)(x) = a(x) b(x a(x)),
+where symmetries act on pieces on the right. The right action of a
+relative configuration a on absolute one u is: (ua)(x) = u(x) a(0
+u(x)).
+*/
+
 void cube_shape_init(cube_shape_t *shape, unsigned int n)
 {
   assert(n >= 1);
@@ -168,14 +187,6 @@ void *cube_puzzle_orbit(void *data, unsigned int i)
   return &shape->orbits[i];
 }
 
-unsigned int cube_puzzle_face_action(void *data, unsigned int x, unsigned int g)
-{
-  puzzle_action_t *action = data;
-  unsigned int x0 = decomp_global(&action->decomp, 2, x);
-  unsigned int y0 = puzzle_action_act(action, x0, g);
-  return decomp_local(&action->decomp, y0);
-}
-
 void cube_puzzle_cleanup(void *data, puzzle_t *puzzle)
 {
   cube_shape_t *shape = puzzle->orbit_data;
@@ -196,7 +207,7 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
   puzzle->orbit = cube_puzzle_orbit;
   puzzle->orbit_data = shape;
 
-  puzzle->face_action = cube_puzzle_face_action;
+  puzzle->face_action = puzzle_face_action_default;
   puzzle->face_action_data = action;
 
   puzzle->cleanup = cube_puzzle_cleanup;

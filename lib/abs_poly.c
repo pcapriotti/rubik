@@ -236,3 +236,9 @@ void poly_data_cleanup(poly_data_t *data)
   }
   free(data->edges_by_face);
 }
+
+void abs_poly_cleanup(abs_poly_t *poly)
+{
+  free(poly->faces);
+  free(poly->vertices);
+}

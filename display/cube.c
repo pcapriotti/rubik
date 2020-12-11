@@ -292,13 +292,21 @@ void cube_scene_set_up_key_bindings(cube_scene_t *s)
 }
 
 void cube_model_init_piece(void *data_, poly_t *poly,
-                           void *orbit_, int *facelets)
+                           unsigned int k, void *orbit_,
+                           int *facelets)
 {
   unsigned int *data = data_;
   unsigned int n = *data;
   orbit_t *orbit = orbit_;
 
   cube_piece_poly(poly, n, orbit->x, orbit->y, orbit->z, facelets);
+}
+
+void cube_model_cleanup(void *data, puzzle_model_t *model)
+{
+  free(model->init_piece_data);
+  free(model->rots);
+  free(model->colours);
 }
 
 void cube_model_init(puzzle_model_t *model, unsigned int n, quat *rots)
@@ -320,13 +328,9 @@ void cube_model_init(puzzle_model_t *model, unsigned int n, quat *rots)
   };
   model->colours = malloc(sizeof(colours));
   memcpy(model->colours, colours, sizeof(colours));
-}
 
-void cube_model_cleanup(puzzle_model_t *model)
-{
-  free(model->init_piece_data);
-  free(model->rots);
-  free(model->colours);
+  model->cleanup = cube_model_cleanup;
+  model->cleanup_data = 0;
 }
 
 puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)

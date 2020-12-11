@@ -44,7 +44,7 @@ void puzzle_scene_init(puzzle_scene_t *s,
   for (unsigned int i = 0; i < puzzle->decomp->num_orbits; i++) {
     poly_t poly;
     int *facelets = malloc(puzzle->num_faces * sizeof(int));
-    model->init_piece(model->init_piece_data, &poly,
+    model->init_piece(model->init_piece_data, &poly, i,
                       puzzle->orbit(puzzle->orbit_data, i),
                       facelets);
     piece_init(&s->piece[i], &poly, facelets, model->rots,

@@ -199,3 +199,17 @@ void decomp_split_turn(decomp_t *decomp, turn_t *turn,
     splits[k][num_pieces[k]++] = turn->pieces[i] - decomp->orbit_offset[k];
   }
 }
+
+void *puzzle_orbit_default(void *data, unsigned int i)
+{
+  return 0;
+}
+
+
+unsigned int puzzle_face_action_default(void *data, unsigned int x, unsigned int g)
+{
+  puzzle_action_t *action = data;
+  unsigned int x0 = decomp_global(&action->decomp, 2, x);
+  unsigned int y0 = puzzle_action_act(action, x0, g);
+  return decomp_local(&action->decomp, y0);
+}

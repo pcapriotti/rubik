@@ -51,6 +51,7 @@ void abs_prism(abs_poly_t *prism, unsigned int num);
 unsigned int abs_poly_num_edges(abs_poly_t *poly);
 
 void abs_poly_debug(abs_poly_t *poly);
+void abs_poly_cleanup(abs_poly_t *poly);
 
 int *abs_poly_adj(abs_poly_t *poly);
 int *abs_poly_edges(abs_poly_t *poly);
