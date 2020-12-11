@@ -11,6 +11,7 @@
 #include "piece.h"
 #include "polyhedron.h"
 #include "scene.h"
+#include "puzzle_scene.h"
 
 #include "lib/cube.h"
 #include "lib/group.h"
@@ -51,16 +52,6 @@ void cube_piece_poly(poly_t *cube, unsigned int n,
     facelets[i] = (coords[i / 2] == (~i & 1) * (n - 1)) ? (int) i : -1;
   }
 
-}
-
-int gcd(int m, int n)
-{
-  while (m) {
-    int x = m;
-    m = n % m;
-    n = x;
-  }
-  return n;
 }
 
 void quat_from_transp(quat q, unsigned int a, unsigned int b)
@@ -110,35 +101,6 @@ void quat_cube_sym(quat q, uint8_t s)
   /* printf("q: (%f, %f, %f, %f)\n", q[0], q[1], q[2], q[3]); */
 }
 
-unsigned int cube_act_face(unsigned int f, uint8_t *perm, unsigned int s)
-{
-  unsigned int i = f >> 1;
-  unsigned int f1 = (perm[i] << 1) | (f & 1);
-  if (s & (1 << i)) f1 ^= 1;
-  return f1;
-}
-
-unsigned int cube_act_vertex(unsigned int v, uint8_t *perm, unsigned int s)
-{
-  v = v ^ s;
-  unsigned int v1 = 0;
-  for (unsigned int i = 0; i < 3; i++) {
-    if (v & (1 << i)) v1 |= (1 << perm[i]);
-  }
-  return v1;
-}
-
-unsigned int cube_act_edge(unsigned int e, uint8_t *perm, unsigned int s)
-{
-  unsigned int a = e >> 2;
-  unsigned int a1 = perm[a];
-
-  unsigned int v = rotl3(e & 3, (a + 1) % 3);
-  unsigned int v1 = cube_act_vertex(v, perm, s);
-
-  return (a1 << 2) | (rotr3(v1, (a1 + 1) % 3) & 3);
-}
-
 void cube_mul_table(uint8_t *table, uint8_t *perm1, unsigned int s1)
 {
   unsigned int index = 0;
@@ -155,19 +117,11 @@ void cube_mul_table(uint8_t *table, uint8_t *perm1, unsigned int s1)
 
       table[index++] = (perm_index(perm, 3, 3) << 2) |
         ((s2 ^ u16_conj(s1, perm2, 3)) & 0x3);
-
-      /* printf("perm1: [%u %u %u], perm2: [%u %u %u] ", */
-      /*        perm1[0], perm1[1], perm1[2], */
-      /*        perm2[0], perm2[1], perm2[2]); */
-      /* printf("s1: %01x s2: %01x s2': %01x, index: %u, res: %u\n", */
-      /*        s1, s2, u16_conj(s2, perm1, 3), */
-      /*        perm_index(perm2, 3, 3), */
-      /*        table[index - 1]); */
     }
   }
 }
 
-quat *cube_puzzle_action_init(puzzle_action_t *puzzle)
+quat *cube_puzzle_action_init(puzzle_action_t *action)
 {
   static const unsigned int num_syms = 24;
 
@@ -278,7 +232,7 @@ quat *cube_puzzle_action_init(puzzle_action_t *puzzle)
     orbit[2][f] = ((f & ~1) << 2) | s;
   }
 
-  puzzle_action_init(puzzle, 3, orbit_size, group, orbit, stab);
+  puzzle_action_init(action, 3, orbit_size, group, orbit, stab);
 
   for (unsigned int k = 0; k < 3; k++) {
     free(stab[k]);
@@ -288,40 +242,13 @@ quat *cube_puzzle_action_init(puzzle_action_t *puzzle)
   return rots;
 }
 
-struct key_action_t
-{
-  void (*run)(cube_scene_t *ms, void *data);
-  void *data;
-};
-typedef struct key_action_t key_action_t;
-
-struct cube_scene_t
-{
-  key_action_t *key_bindings;
-  puzzle_action_t puzzle;
-  cube_t conf;
-  piece_t *piece;
-
-  unsigned int count;
-};
-
-void cube_scene_cleanup(cube_scene_t *s)
-{
-  free(s->key_bindings);
-  puzzle_action_cleanup(&s->puzzle);
-
-  cube_shape_t *shape = s->conf.shape;
-  cube_cleanup(&s->conf);
-  cube_shape_cleanup(shape);
-}
-
 struct move_face_data_t
 {
   unsigned int face;
   int count;
 };
 
-static struct move_face_data_t *move_face_data_new(unsigned int face, int count)
+struct move_face_data_t *move_face_data_new(unsigned int face, int count)
 {
   struct move_face_data_t *data = malloc(sizeof(struct move_face_data_t));
   data->face = face;
@@ -331,134 +258,93 @@ static struct move_face_data_t *move_face_data_new(unsigned int face, int count)
 
 void cube_action_move_face(cube_scene_t *s, void *data_)
 {
-  struct move_face_data_t *data = data_;
+  /* struct move_face_data_t *data = data_; */
 
-  printf("moving face: %u layer: %u count: %d\n",
-         data->face, s->count, data->count);
-  turn_t *turn = cube_move_(&s->puzzle, &s->conf, data->face, s->count, data->count);
+  /* printf("moving face: %u layer: %u count: %d\n", */
+  /*        data->face, s->count, data->count); */
+  /* turn_t *turn = cube_move_(&s->puzzle, &s->conf, data->face, s->count, data->count); */
 
-  const unsigned int num_orbits = s->conf.shape->decomp.num_orbits;
-  unsigned int *num_pieces = malloc(num_orbits * sizeof(unsigned int));
-  unsigned int **pieces = malloc(num_orbits * sizeof(unsigned int *));
-  decomp_split_turn(&s->conf.shape->decomp, turn, num_pieces, pieces);
+  /* const unsigned int num_orbits = s->conf.shape->decomp.num_orbits; */
+  /* unsigned int *num_pieces = malloc(num_orbits * sizeof(unsigned int)); */
+  /* unsigned int **pieces = malloc(num_orbits * sizeof(unsigned int *)); */
+  /* decomp_split_turn(&s->conf.shape->decomp, turn, num_pieces, pieces); */
 
-  for (unsigned int k = 0; k < s->conf.shape->decomp.num_orbits; k++) {
-    piece_turn(&s->piece[k], turn->g, num_pieces[k], pieces[k]);
-  }
+  /* for (unsigned int k = 0; k < s->conf.shape->decomp.num_orbits; k++) { */
+  /*   piece_turn(&s->piece[k], turn->g, num_pieces[k], pieces[k]); */
+  /* } */
 
-  free(num_pieces);
-  free(pieces);
+  /* free(num_pieces); */
+  /* free(pieces); */
 }
 
 void cube_scene_set_up_key_bindings(cube_scene_t *s)
 {
-  s->key_bindings = calloc(256, sizeof(key_action_t));
+  /* s->key_bindings = calloc(256, sizeof(key_action_t)); */
 
-  static const unsigned char face_keys[] = "jfmvkd,cls;a";
-  static const unsigned char rot_keys[] = "JFMVKD<CLS:A";
-  for (unsigned int i = 0; i < 12; i++) {
-    s->key_bindings[face_keys[i]] = (key_action_t) {
-      .run = cube_action_move_face,
-      .data = move_face_data_new(i >> 1, (i & 1) ? 1 : -1)
-    };
-  }
+  /* static const unsigned char face_keys[] = "jfmvkd,cls;a"; */
+  /* static const unsigned char rot_keys[] = "JFMVKD<CLS:A"; */
+  /* for (unsigned int i = 0; i < 12; i++) { */
+  /*   s->key_bindings[face_keys[i]] = (key_action_t) { */
+  /*     .run = cube_action_move_face, */
+  /*     .data = move_face_data_new(i >> 1, (i & 1) ? 1 : -1) */
+  /*   }; */
+  /* } */
 }
 
-static void cube_on_keypress(void *data, unsigned int c)
+void cube_model_init_piece(void *data_, poly_t *poly,
+                           void *orbit_, int *facelets)
 {
-  cube_scene_t *s = data;
-  if (c >= 256) return;
+  unsigned int *data = data_;
+  unsigned int n = *data;
+  orbit_t *orbit = orbit_;
 
-  if (c >= '0' && c <= '9') {
-    unsigned int count = c - '0';
-    s->count *= 10;
-    s->count += count;
-    return;
-  }
-
-  key_action_t *a = &s->key_bindings[c];
-  if (a->run == 0) return;
-
-  a->run(s, a->data);
-  s->count = 0;
+  cube_piece_poly(poly, n, orbit->x, orbit->y, orbit->z, facelets);
 }
 
-cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
+void cube_model_init(puzzle_model_t *model, unsigned int n, quat *rots)
 {
-  cube_scene_t *s = malloc(sizeof(cube_scene_t));
-  s->count = 0;
+  model->init_piece = cube_model_init_piece;
 
-  quat *rots = cube_puzzle_action_init(&s->puzzle);
+  unsigned int *data = malloc(sizeof(unsigned int));
+  *data = n;
+  model->init_piece_data = data;
 
+  model->rots = rots;
+  vec4 colours[] = {
+    { 1.0, 1.0, 1.0, 1.0 }, // white
+    { 1.0, 1.0, 0.0, 1.0 }, // yellow
+    { 0.0, 0.6, 0.0, 1.0 }, // green
+    { 0.0, 0.0, 1.0, 1.0 }, // blue
+    { 1.0, 0.0, 0.0, 1.0 }, // red
+    { 1.0, 0.65, 0.0, 1.0 }, // orange
+  };
+  model->colours = malloc(sizeof(colours));
+  memcpy(model->colours, colours, sizeof(colours));
+}
+
+void cube_model_cleanup(puzzle_model_t *model)
+{
+  free(model->init_piece_data);
+  free(model->rots);
+  free(model->colours);
+}
+
+puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
+{
+  puzzle_scene_t *s = malloc(sizeof(puzzle_scene_t));
+  puzzle_action_t *action = malloc(sizeof(puzzle_action_t));
+  quat *rots = cube_puzzle_action_init(action);
   cube_shape_t *shape = malloc(sizeof(cube_shape_t));
   cube_shape_init(shape, n);
-  cube_init(&s->puzzle, &s->conf, shape);
 
-  s->piece = malloc(s->conf.shape->decomp.num_orbits * sizeof(piece_t));
-  for (unsigned int i = 0; i < s->conf.shape->decomp.num_orbits; i++) {
-    int facelets[6];
-    poly_t cube;
-    orbit_t *orbit = &s->conf.shape->orbits[i];
-    cube_piece_poly(&cube, n, orbit->x, orbit->y, orbit->z, facelets);
+  uint8_t *conf = cube_new(action, shape);
 
-    piece_init(&s->piece[i], &cube, facelets, rots,
-               cube_orbit(&s->conf, i),
-               s->conf.shape->decomp.orbit_size[i]);
-    scene_add_piece(scene, &s->piece[i]);
+  puzzle_t *puzzle = malloc(sizeof(puzzle_t));
+  cube_puzzle_init(puzzle, action, shape);
+  puzzle_model_t *model = malloc(sizeof(puzzle_model_t));
+  cube_model_init(model, n, rots);
 
-    /* printf("added orbit %u, dim: %u, size: %u, pos: (%u, %u, %u)\n", */
-    /*        i, orbit->dim, orbit->size, orbit->x, orbit->y, orbit->z); */
-  }
-
-  /* face action */
-  {
-    unsigned int b;
-    glGenBuffers(1, &b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
-
-    const unsigned int size = sizeof(face_action_t) +
-      cube_num_syms * 6 * sizeof(uint32_t);
-    face_action_t *fa = malloc(size);
-    fa->num_faces = 6;
-    unsigned int index = 0;
-    for (unsigned int g = 0; g < s->puzzle.group->num; g++) {
-      for (unsigned int f = 0; f < fa->num_faces; f++) {
-        fa->action[index++] = decomp_local
-          (&s->puzzle.decomp,
-           puzzle_action_act(&s->puzzle,
-                      decomp_global(&s->puzzle.decomp, 2, f),
-                      g));
-      }
-    }
-    glBufferData(GL_SHADER_STORAGE_BUFFER, size, fa, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    free(fa);
-  }
-
-  /* colours */
-  {
-    vec4 colours[] = {
-      { 1.0, 1.0, 1.0, 1.0 }, // white
-      { 1.0, 1.0, 0.0, 1.0 }, // yellow
-      { 0.0, 0.6, 0.0, 1.0 }, // green
-      { 0.0, 0.0, 1.0, 1.0 }, // blue
-      { 1.0, 0.0, 0.0, 1.0 }, // red
-      { 1.0, 0.65, 0.0, 1.0 }, // orange
-    };
-
-    unsigned int b;
-    glGenBuffers(1, &b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_COLOURS, b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-  }
-
-  cube_scene_set_up_key_bindings(s);
-
-  scene->on_keypress_data = s;
-  scene->on_keypress = cube_on_keypress;
+  puzzle_scene_init(s, scene, conf, puzzle, model);
 
   return s;
 }

@@ -30,16 +30,20 @@ struct cube_t
 };
 typedef struct cube_t cube_t;
 
-void cube_init(puzzle_action_t *puzzle, cube_t *cube, cube_shape_t *shape);
-void cube_cleanup(cube_t *cube);
+uint8_t *cube_new(puzzle_action_t *action, cube_shape_t *shape);
 
-uint8_t *cube_orbit(cube_t *cube, unsigned int k);
 cube_t *cube_generators(cube_t *cube, puzzle_action_t *puzzle, unsigned int *num_gen);
 void cube_act(puzzle_action_t *puzzle, cube_t *cube1, cube_t *cube, cube_t *move);
 void cube_act_(puzzle_action_t *syms, cube_t *cube, cube_t *move);
-turn_t *cube_move(puzzle_action_t *puzzle, cube_t *conf1, cube_t *conf,
+turn_t *cube_move_(puzzle_action_t *action, cube_shape_t *shape,
+                   uint8_t *conf, unsigned int f, unsigned int l, int c);
+turn_t *cube_move(puzzle_action_t *action,
+                  cube_shape_t *shape,
+                  uint8_t *conf1, uint8_t *conf,
                   unsigned int f, unsigned int l, int c);
-turn_t *cube_move_(puzzle_action_t *puzzle, cube_t *conf,
-                   unsigned int f, unsigned int l, int c);
+
+void cube_puzzle_init(puzzle_t *puzzle,
+                      puzzle_action_t *action,
+                      cube_shape_t *shape);
 
 #endif /* CUBE_H */

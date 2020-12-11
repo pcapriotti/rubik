@@ -8,6 +8,7 @@
 #include "lib/puzzle.h"
 
 #include <GL/glew.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 static void on_keypress(void *data, unsigned int c)
@@ -37,17 +38,20 @@ void puzzle_scene_init(puzzle_scene_t *s,
 {
   s->count = 0;
   s->piece = malloc(puzzle->decomp->num_orbits * sizeof(piece_t));
+  s->puzzle = puzzle;
+  s->model = model;
 
   for (unsigned int i = 0; i < puzzle->decomp->num_orbits; i++) {
     poly_t poly;
     int *facelets = malloc(puzzle->num_faces * sizeof(int));
-    model->init(model->init_data, &poly,
-                puzzle->orbit(puzzle->orbit_data, i),
-                facelets);
+    model->init_piece(model->init_piece_data, &poly,
+                      puzzle->orbit(puzzle->orbit_data, i),
+                      facelets);
     piece_init(&s->piece[i], &poly, facelets, model->rots,
                conf + puzzle->decomp->orbit_offset[i],
                puzzle->decomp->orbit_size[i]);
     scene_add_piece(scene, &s->piece[i]);
+    printf("adding orbit %u to scene\n", i);
     free(facelets);
   }
 
@@ -87,4 +91,11 @@ void puzzle_scene_init(puzzle_scene_t *s,
 
   scene->on_keypress_data = s;
   scene->on_keypress = on_keypress;
+}
+
+void puzzle_scene_cleanup(puzzle_scene_t *s)
+{
+  free(s->key_bindings);
+  s->puzzle->cleanup(s->puzzle->cleanup_data, s->puzzle);
+  s->model->cleanup(s->model->cleanup_data, s->model);
 }

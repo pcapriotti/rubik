@@ -124,6 +124,9 @@ struct puzzle_t
 
   unsigned int (*face_action)(void *data, unsigned int x, unsigned int g);
   void *face_action_data;
+
+  void (*cleanup)(void *data, struct puzzle_t *puzzle);
+  void *cleanup_data;
 };
 typedef struct puzzle_t puzzle_t;
 
