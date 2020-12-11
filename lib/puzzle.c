@@ -105,7 +105,7 @@ unsigned int decomp_repr(decomp_t *decomp, unsigned int i)
   return decomp->orbit_offset[decomp_orbit_of(decomp, i)];
 }
 
-unsigned int puzzle_act(puzzle_t *puzzle, unsigned int x, unsigned int g)
+unsigned int puzzle_action_act(puzzle_action_t *puzzle, unsigned int x, unsigned int g)
 {
   unsigned int i = decomp_orbit_of(&puzzle->decomp, x);
   x -= puzzle->decomp.orbit_offset[i];
@@ -140,7 +140,7 @@ void decomp_cleanup(decomp_t *decomp)
   free(decomp->orbit_offset);
 }
 
-void puzzle_init(puzzle_t *puzzle,
+void puzzle_action_init(puzzle_action_t *puzzle,
                  unsigned int num_orbits, unsigned int *orbit_size,
                  group_t *group, uint8_t **orbit, uint8_t **stab)
 {
@@ -163,7 +163,7 @@ void puzzle_init(puzzle_t *puzzle,
   }
 }
 
-void puzzle_cleanup(puzzle_t *puzzle)
+void puzzle_action_cleanup(puzzle_action_t *puzzle)
 {
   decomp_cleanup(&puzzle->decomp);
   group_cleanup(puzzle->group);

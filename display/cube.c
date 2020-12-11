@@ -167,7 +167,7 @@ void cube_mul_table(uint8_t *table, uint8_t *perm1, unsigned int s1)
   }
 }
 
-quat *cube_puzzle_init(puzzle_t *puzzle)
+quat *cube_puzzle_action_init(puzzle_action_t *puzzle)
 {
   static const unsigned int num_syms = 24;
 
@@ -278,7 +278,7 @@ quat *cube_puzzle_init(puzzle_t *puzzle)
     orbit[2][f] = ((f & ~1) << 2) | s;
   }
 
-  puzzle_init(puzzle, 3, orbit_size, group, orbit, stab);
+  puzzle_action_init(puzzle, 3, orbit_size, group, orbit, stab);
 
   for (unsigned int k = 0; k < 3; k++) {
     free(stab[k]);
@@ -298,7 +298,7 @@ typedef struct key_action_t key_action_t;
 struct cube_scene_t
 {
   key_action_t *key_bindings;
-  puzzle_t puzzle;
+  puzzle_action_t puzzle;
   cube_t conf;
   piece_t *piece;
 
@@ -308,7 +308,7 @@ struct cube_scene_t
 void cube_scene_cleanup(cube_scene_t *s)
 {
   free(s->key_bindings);
-  puzzle_cleanup(&s->puzzle);
+  puzzle_action_cleanup(&s->puzzle);
 
   cube_shape_t *shape = s->conf.shape;
   cube_cleanup(&s->conf);
@@ -388,7 +388,7 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   cube_scene_t *s = malloc(sizeof(cube_scene_t));
   s->count = 0;
 
-  quat *rots = cube_puzzle_init(&s->puzzle);
+  quat *rots = cube_puzzle_action_init(&s->puzzle);
 
   cube_shape_t *shape = malloc(sizeof(cube_shape_t));
   cube_shape_init(shape, n);
@@ -425,7 +425,7 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
       for (unsigned int f = 0; f < fa->num_faces; f++) {
         fa->action[index++] = decomp_local
           (&s->puzzle.decomp,
-           puzzle_act(&s->puzzle,
+           puzzle_action_act(&s->puzzle,
                       decomp_global(&s->puzzle.decomp, 2, f),
                       g));
       }

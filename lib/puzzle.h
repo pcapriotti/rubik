@@ -55,7 +55,7 @@ struct decomp_t
 };
 typedef struct decomp_t decomp_t;
 
-struct puzzle_t
+struct puzzle_action_t
 {
   /* Symmetry group G of the puzzle. */
   group_t *group;
@@ -80,7 +80,7 @@ struct puzzle_t
 
   decomp_t decomp;
 };
-typedef struct puzzle_t puzzle_t;
+typedef struct puzzle_action_t puzzle_action_t;
 
 unsigned int decomp_orbit_of(decomp_t *puzzle, unsigned int x);
 unsigned int decomp_global(decomp_t *puzzle, unsigned int i, unsigned int j);
@@ -93,11 +93,11 @@ void decomp_init(decomp_t *decomp,
                  unsigned int *orbit_size);
 
 
-void puzzle_init(puzzle_t *puzzle,
-                 unsigned int num_orbits, unsigned int *orbit_size,
-                 group_t *group, uint8_t **orbit, uint8_t **stab);
-void puzzle_cleanup(puzzle_t *puzzle);
-unsigned int puzzle_act(puzzle_t *puzzle, unsigned int x, unsigned int g);
+void puzzle_action_init(puzzle_action_t *puzzle,
+                               unsigned int num_orbits, unsigned int *orbit_size,
+                               group_t *group, uint8_t **orbit, uint8_t **stab);
+void puzzle_action_cleanup(puzzle_action_t *puzzle);
+unsigned int puzzle_action_act(puzzle_action_t *puzzle, unsigned int x, unsigned int g);
 
 struct turn_t
 {

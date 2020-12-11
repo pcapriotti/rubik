@@ -181,7 +181,7 @@ static void dodecahedron_group_init(group_t *group, abs_poly_t *dodec, poly_data
   group_from_table(group, num, mul);
 }
 
-void megaminx_puzzle_init(puzzle_t *puzzle, abs_poly_t *dodec, poly_data_t *data)
+void megaminx_puzzle_action_init(puzzle_action_t *puzzle, abs_poly_t *dodec, poly_data_t *data)
 {
   const unsigned int num_syms = 60;
   unsigned int orbit_size[] = { 20, 30, 12 };
@@ -238,7 +238,7 @@ void megaminx_puzzle_init(puzzle_t *puzzle, abs_poly_t *dodec, poly_data_t *data
     }
   }
 
-  puzzle_init(puzzle, 3, orbit_size, group, orbit, stab);
+  puzzle_action_init(puzzle, 3, orbit_size, group, orbit, stab);
 
   for (unsigned int k = 0; k < 3; k++) {
     free(stab[k]);
@@ -277,14 +277,14 @@ struct megaminx_scene_t
 
   key_action_t *key_bindings;
 
-  puzzle_t puzzle;
+  puzzle_action_t puzzle;
   quat *rots;
   piece_t piece[3];
 };
 
 void megaminx_scene_del(megaminx_scene_t *ms)
 {
-  puzzle_cleanup(&ms->puzzle);
+  puzzle_action_cleanup(&ms->puzzle);
   for (unsigned int i = 0; i < ms->num_gens; i++) {
     megaminx_cleanup(&ms->gen[i]);
   }
@@ -410,7 +410,7 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
   megaminx_edge_poly(&ms->edge.poly, &ms->dodec, edge_size, ms->edge.facelets);
   megaminx_centre_poly(&ms->centre.poly, &ms->dodec, edge_size, ms->centre.facelets);
   ms->rots = megaminx_rotations(&ms->dodec);
-  megaminx_puzzle_init(&ms->puzzle, &ms->dodec.abs, &data);
+  megaminx_puzzle_action_init(&ms->puzzle, &ms->dodec.abs, &data);
 
   /* face action */
   {
@@ -427,7 +427,7 @@ megaminx_scene_t *megaminx_scene_new(scene_t *scene)
       for (unsigned int f = 0; f < fa->num_faces; f++) {
         fa->action[index++] = decomp_local
           (&ms->puzzle.decomp,
-           puzzle_act(&ms->puzzle,
+           puzzle_action_act(&ms->puzzle,
                       decomp_global(&ms->puzzle.decomp, 2, f),
                       g));
       }

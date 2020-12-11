@@ -75,7 +75,7 @@ void cube_shape_cleanup(cube_shape_t *shape)
   free(shape->orbits);
 }
 
-void cube_init(puzzle_t *puzzle, cube_t *cube, cube_shape_t *shape)
+void cube_init(puzzle_action_t *puzzle, cube_t *cube, cube_shape_t *shape)
 {
   cube->shape = shape;
   cube->pieces = malloc(cube->shape->decomp.num_pieces * sizeof(uint8_t));
@@ -89,7 +89,7 @@ void cube_init(puzzle_t *puzzle, cube_t *cube, cube_shape_t *shape)
   }
 }
 
-static unsigned int act(puzzle_t *puzzle, cube_shape_t *shape,
+static unsigned int act(puzzle_action_t *puzzle, cube_shape_t *shape,
                         unsigned int i, unsigned int x, unsigned int g)
 {
   orbit_t *orbit = &shape->orbits[i];
@@ -117,12 +117,12 @@ static inline int vertex_in_face(unsigned int v, unsigned int f)
   return ((v >> (f >> 1)) & 1) != (f & 1);
 }
 
-int in_layer(puzzle_t *puzzle, cube_shape_t *shape, orbit_t *orbit,
+int in_layer(puzzle_action_t *puzzle, cube_shape_t *shape, orbit_t *orbit,
              unsigned int f, unsigned int l, unsigned int g)
 {
   unsigned int f1 =
     decomp_local(&puzzle->decomp,
-                 puzzle_act(puzzle,
+                 puzzle_action_act(puzzle,
                             decomp_global(&puzzle->decomp, 2, f),
                             group_inv(puzzle->group, g)));
   switch (orbit->dim) {
@@ -155,13 +155,13 @@ int in_layer(puzzle_t *puzzle, cube_shape_t *shape, orbit_t *orbit,
   return 0;
 }
 
-turn_t *cube_move_(puzzle_t *puzzle, cube_t *conf,
+turn_t *cube_move_(puzzle_action_t *puzzle, cube_t *conf,
                    unsigned int f, unsigned int l, int c)
 {
   return cube_move(puzzle, conf, conf, f, l, c);
 }
 
-turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
+turn_t *cube_move(puzzle_action_t *puzzle, cube_t *conf1, cube_t *conf,
                   unsigned int f, unsigned int l, int c)
 {
   turn_t *turn = malloc(sizeof(turn_t));
@@ -188,7 +188,7 @@ turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
   return turn;
 }
 
-void cube_act(puzzle_t *puzzle, cube_t *conf1, cube_t *conf, cube_t *move)
+void cube_act(puzzle_action_t *puzzle, cube_t *conf1, cube_t *conf, cube_t *move)
 {
   conf1->shape = conf->shape;
   for (unsigned int k = 0; k < conf->shape->decomp.num_orbits; k++) {
@@ -209,7 +209,7 @@ void cube_act(puzzle_t *puzzle, cube_t *conf1, cube_t *conf, cube_t *move)
   }
 }
 
-void cube_act_(puzzle_t *syms, cube_t *cube, cube_t *move)
+void cube_act_(puzzle_action_t *syms, cube_t *cube, cube_t *move)
 {
   cube_act(syms, cube, cube, move);
 }

@@ -9,8 +9,8 @@ typedef struct abs_poly_t abs_poly_t;
 struct poly_data_t;
 typedef struct poly_data_t poly_data_t;
 
-struct puzzle_t;
-typedef struct puzzle_t puzzle_t;
+struct puzzle_action_t;
+typedef struct puzzle_action_t puzzle_action_t;
 
 /* [Note]
 
@@ -36,28 +36,28 @@ typedef struct
 } megaminx_t;
 
 /* set the ground absolute configuration */
-void megaminx_init(puzzle_t *puzzle, megaminx_t *mm);
+void megaminx_init(puzzle_action_t *puzzle, megaminx_t *mm);
 
 void megaminx_cleanup(megaminx_t *mm);
 
-uint8_t *megaminx_orbit(puzzle_t *puzzle, megaminx_t *mm, unsigned int k);
+uint8_t *megaminx_orbit(puzzle_action_t *puzzle, megaminx_t *mm, unsigned int k);
 
 /* action */
-void megaminx_act_(puzzle_t *puzzle, megaminx_t *conf, megaminx_t *move);
-void megaminx_act(puzzle_t *puzzle, megaminx_t *conf1,
+void megaminx_act_(puzzle_action_t *puzzle, megaminx_t *conf, megaminx_t *move);
+void megaminx_act(puzzle_action_t *puzzle, megaminx_t *conf1,
                   megaminx_t *conf, megaminx_t *move);
-void megaminx_rotate_(puzzle_t *puzzle, megaminx_t *conf, unsigned int s);
-void megaminx_rotate(puzzle_t *puzzle, megaminx_t *conf1,
+void megaminx_rotate_(puzzle_action_t *puzzle, megaminx_t *conf, unsigned int s);
+void megaminx_rotate(puzzle_action_t *puzzle, megaminx_t *conf1,
                      megaminx_t *conf, unsigned int s);
 
 /* generators */
-megaminx_t *megaminx_generators(puzzle_t *puzzle,
+megaminx_t *megaminx_generators(puzzle_action_t *puzzle,
                                 abs_poly_t *dodec,
                                 poly_data_t *data,
                                 unsigned int *num);
 
-void megaminx_scramble(puzzle_t *puzzle, megaminx_t *mm);
+void megaminx_scramble(puzzle_action_t *puzzle, megaminx_t *mm);
 
-void megaminx_debug(puzzle_t *puzzle, megaminx_t *mm);
+void megaminx_debug(puzzle_action_t *puzzle, megaminx_t *mm);
 
 #endif /* MEGAMINX_H */
