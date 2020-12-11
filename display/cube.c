@@ -303,8 +303,13 @@ puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   puzzle_scene_init(s, scene, conf, puzzle, model);
 
   static const unsigned char face_keys[] = "jfmvkd,cls;a";
+  static const unsigned char rot_keys[] = "JFMVKD<CLS:A";
   for (unsigned int i = 0; i < 12; i++) {
-    puzzle_scene_set_move_binding(s, face_keys[i], i >> 1, (i & 1) ? 1 : -1);
+    unsigned int f = i >> 1;
+    int c = (i & 1) ? 1 : -1;
+    puzzle_scene_set_move_binding(s, face_keys[i], f, c);
+    puzzle_scene_set_rotation_binding(s, rot_keys[i],
+                                      puzzle_action_stab(action, 2, f, c));
   }
 
   return s;

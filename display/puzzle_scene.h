@@ -60,5 +60,7 @@ void puzzle_scene_init(puzzle_scene_t *s,
 void puzzle_scene_cleanup(puzzle_scene_t *s);
 void puzzle_scene_set_move_binding(puzzle_scene_t *s, unsigned char key,
                                    unsigned int f, int c);
+void puzzle_scene_set_rotation_binding(puzzle_scene_t *s, unsigned char key,
+                                       unsigned int sym);
 
 #endif /* PUZZLE_SCENE_H */

@@ -236,11 +236,21 @@ void piece_turn(piece_t *piece, unsigned int sym,
   piece->num_animations++;
   piece->animation.time0 = -1;
   piece->animation.num_pieces = num_pieces;
-  piece->animation.pieces = pieces;
   piece->animation.rot0 = malloc(num_pieces * sizeof(quat));
   piece->animation.sym = sym;
+
+  if (pieces) {
+    piece->animation.pieces = pieces;
+  }
+  else {
+    piece->animation.pieces = malloc(piece->instances * num_pieces);
+    for (unsigned int i = 0; i < num_pieces; i++) {
+      piece->animation.pieces[i] = i;
+    }
+  }
+
   for (unsigned int i = 0; i < num_pieces; i++) {
-    unsigned int x = pieces[i];
+    unsigned int x = piece->animation.pieces[i];
     memcpy(piece->animation.rot0[i], piece->rot_buf[x], sizeof(quat));
   }
 }

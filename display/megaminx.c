@@ -325,8 +325,12 @@ puzzle_scene_t *megaminx_scene_new(scene_t *scene)
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
   static const unsigned char face_keys[] = "jfkdmv,c;als";
+  static const unsigned char rot_keys[] = "JFKDMV<C:ALS";
   for (unsigned int i = 0; i < 12; i++) {
     puzzle_scene_set_move_binding(s, face_keys[i], i & ~1, (i & 1) ? 1 : -1);
+    puzzle_scene_set_rotation_binding(s, rot_keys[i],
+                                      puzzle_action_stab(action, 2,
+                                                         i & ~1, (i & 1) ? 1 : -1));
   }
 
   return s;

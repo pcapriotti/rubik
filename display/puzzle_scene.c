@@ -67,6 +67,20 @@ void puzzle_scene_move_face(puzzle_scene_t *s, void *data_)
   free(pieces);
 }
 
+void puzzle_scene_rotate(puzzle_scene_t *s, void *data_)
+{
+  unsigned int *data = data_;
+  unsigned int sym = *data;
+
+  for (unsigned int i = 0; i < s->puzzle->decomp->num_pieces; i++) {
+    s->conf[i] = group_mul(s->puzzle->group, s->conf[i], sym);
+  }
+
+  for (unsigned int k = 0; k < s->puzzle->decomp->num_orbits; k++) {
+    piece_turn(&s->piece[k], sym, s->puzzle->decomp->orbit_size[k], 0);
+  }
+}
+
 void puzzle_scene_init(puzzle_scene_t *s,
                        scene_t *scene,
                        uint8_t *conf,
@@ -134,6 +148,9 @@ void puzzle_scene_init(puzzle_scene_t *s,
 
 void puzzle_scene_cleanup(puzzle_scene_t *s)
 {
+  for (unsigned int i = 0; i < 256; i++) {
+    free(s->key_bindings[i].data);
+  }
   free(s->key_bindings);
   s->puzzle->cleanup(s->puzzle->cleanup_data, s->puzzle);
   s->model->cleanup(s->model->cleanup_data, s->model);
@@ -145,5 +162,17 @@ void puzzle_scene_set_move_binding(puzzle_scene_t *s, unsigned char key,
   s->key_bindings[key] = (key_action_t) {
     .run = puzzle_scene_move_face,
     .data = move_face_data_new(f, c)
+  };
+}
+
+void puzzle_scene_set_rotation_binding(puzzle_scene_t *s, unsigned char key,
+                                       unsigned int sym)
+{
+  unsigned int *data = malloc(sizeof(unsigned int));
+  *data = sym;
+
+  s->key_bindings[key] = (key_action_t) {
+    .run = puzzle_scene_rotate,
+    .data = data
   };
 }

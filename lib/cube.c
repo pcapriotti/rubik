@@ -162,17 +162,14 @@ turn_t *cube_move(puzzle_action_t *action,
   turn->pieces = malloc(shape->decomp.num_pieces * sizeof(unsigned int));
   turn->num_pieces = 0;
 
-  c = ((c % 4) + 4) % 4;
-  unsigned int s = action->by_stab[2][action->decomp.orbit_size[2] * c];
-  s = group_conj(action->group, s, action->by_stab[2][f]);
-  turn->g = s;
+  turn->g = puzzle_action_stab(action, 2, f, c);
 
   for (unsigned int k = 0; k < shape->decomp.num_orbits; k++) {
     orbit_t *orbit = &shape->orbits[k];
     for (unsigned int i = 0; i < shape->decomp.orbit_size[k]; i++) {
       unsigned int i0 = shape->decomp.orbit_offset[k] + i;
       if (in_layer(action, shape, orbit, f, l, conf[i0])) {
-        conf1[i0] = group_mul(action->group, conf[i0], s);
+        conf1[i0] = group_mul(action->group, conf[i0], turn->g);
         turn->pieces[turn->num_pieces++] = i0;
       }
     }

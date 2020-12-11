@@ -115,6 +115,15 @@ unsigned int puzzle_action_act(puzzle_action_t *puzzle, unsigned int x, unsigned
   return puzzle->decomp.orbit_offset[i] + j % puzzle->decomp.orbit_size[i];
 }
 
+unsigned int puzzle_action_stab(puzzle_action_t *action,
+                                unsigned int k, unsigned int i, int c)
+{
+  int stab_size = action->decomp.num_pieces / action->decomp.orbit_size[k];
+  c = ((c % stab_size) + stab_size) % stab_size;
+  unsigned int s = action->by_stab[k][action->decomp.orbit_size[k] * c];
+  return group_conj(action->group, s, action->by_stab[k][i]);
+}
+
 void decomp_init(decomp_t *decomp,
                  unsigned int num_orbits,
                  unsigned int *orbit_size)
