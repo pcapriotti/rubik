@@ -338,7 +338,7 @@ void cube_action_move_face(cube_scene_t *s, void *data_)
   turn_t *turn = cube_move_(&s->puzzle, &s->conf, data->face, s->count, data->count);
   free(turn);
 
-  for (unsigned int k = 0; k < s->conf.shape->num_orbits; k++) {
+  for (unsigned int k = 0; k < s->conf.shape->decomp.num_orbits; k++) {
     piece_set_conf(&s->piece[k], cube_orbit(&s->conf, k));
   }
 
@@ -388,15 +388,16 @@ cube_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   cube_shape_init(shape, n);
   cube_init(&s->puzzle, &s->conf, shape);
 
-  s->piece = malloc(s->conf.shape->num_orbits * sizeof(piece_t));
-  for (unsigned int i = 0; i < s->conf.shape->num_orbits; i++) {
+  s->piece = malloc(s->conf.shape->decomp.num_orbits * sizeof(piece_t));
+  for (unsigned int i = 0; i < s->conf.shape->decomp.num_orbits; i++) {
     int facelets[6];
     poly_t cube;
     orbit_t *orbit = &s->conf.shape->orbits[i];
     cube_piece_poly(&cube, n, orbit->x, orbit->y, orbit->z, facelets);
 
     piece_init(&s->piece[i], &cube, facelets, rots,
-               &s->conf.pieces[orbit->offset], orbit->size);
+               cube_orbit(&s->conf, i),
+               s->conf.shape->decomp.orbit_size[i]);
     scene_add_piece(scene, &s->piece[i]);
 
     /* printf("added orbit %u, dim: %u, size: %u, pos: (%u, %u, %u)\n", */

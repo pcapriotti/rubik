@@ -4,15 +4,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-struct puzzle_t;
-typedef struct puzzle_t puzzle_t;
-
-struct turn_t;
-typedef struct turn_t turn_t;
+#include "puzzle.h"
 
 struct orbit_t {
-  unsigned int size;
-  size_t offset;
   int dim;
   int x, y, z;
 };
@@ -21,10 +15,9 @@ typedef struct orbit_t orbit_t;
 typedef struct
 {
   unsigned int n;
-  unsigned int num_pieces;
-
-  unsigned int num_orbits;
   orbit_t *orbits;
+
+  decomp_t decomp;
 } cube_shape_t;
 
 void cube_shape_init(cube_shape_t *shape, unsigned int n);

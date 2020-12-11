@@ -16,55 +16,58 @@ void cube_shape_init(cube_shape_t *shape, unsigned int n)
   unsigned int num_corners = n > 1 ? 8 : 0;
   unsigned int num_edges = 12 * (n - 2);
   unsigned int num_centres = n > 1 ? 6 * (n - 2) * (n - 2) : 1;
-  shape->num_pieces = num_corners + num_edges + num_centres;
+  shape->decomp.num_pieces = num_corners + num_edges + num_centres;
 
   unsigned int num_corner_orbits = num_corners != 0;
   unsigned int num_edge_orbits = (n - 1) / 2;
   unsigned int num_centre_orbits = (n - 2) * (n - 2) / 4;
   if (n % 2 == 1) num_centre_orbits++;
-  shape->num_orbits = num_corner_orbits + num_edge_orbits + num_centre_orbits;
+  unsigned int num_orbits = num_corner_orbits + num_edge_orbits + num_centre_orbits;
+  shape->decomp.num_orbits = num_orbits;
 
   unsigned int offset = 0;
 
-  shape->orbits = malloc(shape->num_orbits * sizeof(orbit_t));
+  shape->orbits = malloc(num_orbits * sizeof(orbit_t));
+  shape->decomp.orbit_size = malloc(num_orbits * sizeof(unsigned int));
+  shape->decomp.orbit_offset = malloc(num_orbits * sizeof(unsigned int));
   /* only 1 corner orbit of size 8 */
-  shape->orbits[0].size = num_corners;
+  shape->decomp.orbit_size[0] = num_corners;
+  shape->decomp.orbit_offset[0] = offset;
   shape->orbits[0].dim = 0;
-  shape->orbits[0].offset = offset;
   shape->orbits[0].x = 0;
   shape->orbits[0].y = 0;
   shape->orbits[0].z = 0;
-  offset += shape->orbits[0].size;
+  offset += shape->decomp.orbit_size[0];
 
   /* edge orbits have size 24, except the middle one when n is odd */
   for (unsigned int i = 1; i <= num_edge_orbits; i++) {
-    shape->orbits[i].size = (i * 2 == n - 1) ? 12 : 24;
+    shape->decomp.orbit_size[i] = (i * 2 == n - 1) ? 12 : 24;
+    shape->decomp.orbit_offset[i] = offset;
     shape->orbits[i].dim = 1;
-    shape->orbits[i].offset = offset;
     shape->orbits[i].x = i;
     shape->orbits[i].y = 0;
     shape->orbits[i].z = 0;
-    offset += shape->orbits[i].size;
+    offset += shape->decomp.orbit_size[i];
   }
 
   /* centre orbits have size 24, except the central one when n is odd */
   unsigned int y = 1; unsigned int z = 1;
   for (unsigned int i = num_edge_orbits + 1;
-       i < shape->num_orbits; i++) {
-    shape->orbits[i].size = 24;
+       i < shape->decomp.num_orbits; i++) {
+    shape->decomp.orbit_size[i] = 24;
+    shape->decomp.orbit_offset[i] = offset;
     shape->orbits[i].dim = 2;
-    shape->orbits[i].offset =  offset;
-    offset += shape->orbits[i].size;
     shape->orbits[i].x = n - 1;
     shape->orbits[i].y = y++;
     shape->orbits[i].z = z;
+    offset += shape->decomp.orbit_size[i];
 
     if (y > num_edge_orbits) {
       z++;
       y = (z > (n - 2) / 2) ? z : 1;
     }
   }
-  if (n % 2 == 1) shape->orbits[shape->num_orbits - 1].size = 6;
+  if (n % 2 == 1) shape->decomp.orbit_size[num_orbits - 1] = 6;
 }
 
 void cube_shape_cleanup(cube_shape_t *shape)
@@ -75,25 +78,28 @@ void cube_shape_cleanup(cube_shape_t *shape)
 void cube_init(puzzle_t *puzzle, cube_t *cube, cube_shape_t *shape)
 {
   cube->shape = shape;
-  cube->pieces = malloc(cube->shape->num_pieces * sizeof(uint8_t));
+  cube->pieces = malloc(cube->shape->decomp.num_pieces * sizeof(uint8_t));
 
   unsigned int index = 0;
-  for (unsigned int i = 0; i < cube->shape->num_orbits; i++) {
+  for (unsigned int i = 0; i < cube->shape->decomp.num_orbits; i++) {
     orbit_t *orbit = &cube->shape->orbits[i];
-    for (unsigned int j = 0; j < orbit->size; j++) {
+    for (unsigned int j = 0; j < cube->shape->decomp.orbit_size[i]; j++) {
       cube->pieces[index++] = puzzle->by_stab[orbit->dim][j];
     }
   }
 }
 
-static unsigned int act(puzzle_t *puzzle, orbit_t *orbit, unsigned int x, unsigned int g)
+static unsigned int act(puzzle_t *puzzle, cube_shape_t *shape,
+                        unsigned int i, unsigned int x, unsigned int g)
 {
+  orbit_t *orbit = &shape->orbits[i];
   unsigned int g0 = puzzle->by_stab[orbit->dim][x];
   unsigned int g1 = group_mul(puzzle->group, g0, g);
   unsigned int j = puzzle->inv_by_stab[orbit->dim][g1];
   printf("act x: %u, g: %u, g0: %u, g1: %u, j: %u\n",
          x, g, g0, g1, j);
-  return orbit->offset + j % orbit->size;
+  return shape->decomp.orbit_offset[i] +
+    j % shape->decomp.orbit_size[i];
 }
 
 void cube_cleanup(cube_t *cube)
@@ -103,7 +109,7 @@ void cube_cleanup(cube_t *cube)
 
 uint8_t *cube_orbit(cube_t *cube, unsigned int k)
 {
-  return &cube->pieces[cube->shape->orbits[k].offset];
+  return &cube->pieces[cube->shape->decomp.orbit_offset[k]];
 }
 
 static inline int vertex_in_face(unsigned int v, unsigned int f)
@@ -159,7 +165,7 @@ turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
                   unsigned int f, unsigned int l, int c)
 {
   turn_t *turn = malloc(sizeof(turn_t));
-  turn->pieces = malloc(conf->shape->num_pieces * sizeof(unsigned int));
+  turn->pieces = malloc(conf->shape->decomp.num_pieces * sizeof(unsigned int));
   turn->num_pieces = 0;
 
   c = ((c % 4) + 4) % 4;
@@ -167,10 +173,10 @@ turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
   s = group_conj(puzzle->group, s, puzzle->by_stab[2][f]);
 
   conf1->shape = conf->shape;
-  for (unsigned int k = 0; k < conf->shape->num_orbits; k++) {
+  for (unsigned int k = 0; k < conf->shape->decomp.num_orbits; k++) {
     orbit_t *orbit = &conf->shape->orbits[k];
-    for (unsigned int i = 0; i < orbit->size; i++) {
-      unsigned int i0 = orbit->offset + i;
+    for (unsigned int i = 0; i < conf->shape->decomp.orbit_size[k]; i++) {
+      unsigned int i0 = conf->shape->decomp.orbit_offset[k] + i;
       if (in_layer(puzzle, conf->shape, orbit, f, l, conf->pieces[i0])) {
         conf1->pieces[i0] = group_mul(puzzle->group, conf->pieces[i0], s);
         turn->pieces[turn->num_pieces++] = i0;
@@ -184,11 +190,11 @@ turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
 void cube_act(puzzle_t *puzzle, cube_t *conf1, cube_t *conf, cube_t *move)
 {
   conf1->shape = conf->shape;
-  for (unsigned int k = 0; k < conf->shape->num_orbits; k++) {
+  for (unsigned int k = 0; k < conf->shape->decomp.num_orbits; k++) {
     orbit_t *orbit = &conf->shape->orbits[k];
-    for (unsigned int i = 0; i < orbit->size; i++) {
-      unsigned int i0 = orbit->offset + i;
-      unsigned int i1 = act(puzzle, orbit, 0, conf->pieces[i0]);
+    for (unsigned int i = 0; i < conf->shape->decomp.orbit_size[k]; i++) {
+      unsigned int i0 = conf->shape->decomp.orbit_offset[k] + i;
+      unsigned int i1 = act(puzzle, conf->shape, k, 0, conf->pieces[i0]);
       printf("%u %u (i0: %u, i1: %u): %u =[ %u ]=> %u\n",
              k, i, i0, i1, conf->pieces[i0],
              move->pieces[i1],
