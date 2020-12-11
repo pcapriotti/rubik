@@ -86,6 +86,13 @@ unsigned int decomp_orbit_of(decomp_t *puzzle, unsigned int x);
 unsigned int decomp_global(decomp_t *puzzle, unsigned int i, unsigned int j);
 unsigned int decomp_local(decomp_t *puzzle, unsigned int j);
 unsigned int decomp_repr(decomp_t *puzzle, unsigned int i);
+
+void decomp_cleanup(decomp_t *decomp);
+void decomp_init(decomp_t *decomp,
+                 unsigned int num_orbits,
+                 unsigned int *orbit_size);
+
+
 void puzzle_init(puzzle_t *puzzle,
                  unsigned int num_orbits, unsigned int *orbit_size,
                  group_t *group, uint8_t **orbit, uint8_t **stab);

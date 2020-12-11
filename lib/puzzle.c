@@ -115,23 +115,36 @@ unsigned int puzzle_act(puzzle_t *puzzle, unsigned int x, unsigned int g)
   return puzzle->decomp.orbit_offset[i] + j % puzzle->decomp.orbit_size[i];
 }
 
+void decomp_init(decomp_t *decomp,
+                 unsigned int num_orbits,
+                 unsigned int *orbit_size)
+{
+  decomp->num_orbits = num_orbits;
+  decomp->orbit_size =
+    malloc(decomp->num_orbits * sizeof(unsigned int));
+  memcpy(decomp->orbit_size, orbit_size,
+         decomp->num_orbits * sizeof(unsigned int));
+  decomp->orbit_offset =
+    malloc((decomp->num_orbits + 1) * sizeof(unsigned int));
+  decomp->orbit_offset[0] = 0;
+  for (unsigned int i = 1; i <= num_orbits; i++) {
+    decomp->orbit_offset[i] =
+      decomp->orbit_offset[i - 1] + decomp->orbit_size[i - 1];
+  }
+  decomp->num_pieces = decomp->orbit_offset[num_orbits];
+}
+
+void decomp_cleanup(decomp_t *decomp)
+{
+  free(decomp->orbit_size);
+  free(decomp->orbit_offset);
+}
+
 void puzzle_init(puzzle_t *puzzle,
                  unsigned int num_orbits, unsigned int *orbit_size,
                  group_t *group, uint8_t **orbit, uint8_t **stab)
 {
-  puzzle->decomp.num_orbits = num_orbits;
-  puzzle->decomp.orbit_size =
-    malloc(puzzle->decomp.num_orbits * sizeof(unsigned int));
-  memcpy(puzzle->decomp.orbit_size, orbit_size,
-         puzzle->decomp.num_orbits * sizeof(unsigned int));
-  puzzle->decomp.orbit_offset =
-    malloc((puzzle->decomp.num_orbits + 1) * sizeof(unsigned int));
-  puzzle->decomp.orbit_offset[0] = 0;
-  for (unsigned int i = 1; i <= num_orbits; i++) {
-    puzzle->decomp.orbit_offset[i] =
-      puzzle->decomp.orbit_offset[i - 1] + puzzle->decomp.orbit_size[i - 1];
-  }
-  puzzle->decomp.num_pieces = puzzle->decomp.orbit_offset[num_orbits];
+  decomp_init(&puzzle->decomp, num_orbits, orbit_size);
   puzzle->group = group;
 
   puzzle->by_stab = malloc(num_orbits * sizeof(uint8_t *));
@@ -152,11 +165,10 @@ void puzzle_init(puzzle_t *puzzle,
 
 void puzzle_cleanup(puzzle_t *puzzle)
 {
+  decomp_cleanup(&puzzle->decomp);
   group_cleanup(puzzle->group);
 
   free(puzzle->group);
-  free(puzzle->decomp.orbit_size);
-  free(puzzle->decomp.orbit_offset);
   free(puzzle->by_stab);
   free(puzzle->inv_by_stab);
 }
