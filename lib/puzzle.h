@@ -113,4 +113,18 @@ void decomp_split_turn(decomp_t *decomp, turn_t *turn,
                        unsigned int *num_pieces,
                        unsigned int **splits);
 
+struct puzzle_t
+{
+  group_t *group;
+  decomp_t *decomp;
+  unsigned int num_faces;
+
+  void *(*orbit)(void *data, unsigned int i);
+  void *orbit_data;
+
+  unsigned int (*face_action)(void *data, unsigned int x, unsigned int g);
+  void *face_action_data;
+};
+typedef struct puzzle_t puzzle_t;
+
 #endif /* PUZZLE_H */
