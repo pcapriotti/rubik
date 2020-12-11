@@ -336,7 +336,6 @@ void cube_action_move_face(cube_scene_t *s, void *data_)
   printf("moving face: %u layer: %u count: %d\n",
          data->face, s->count, data->count);
   turn_t *turn = cube_move_(&s->puzzle, &s->conf, data->face, s->count, data->count);
-  free(turn);
 
   for (unsigned int k = 0; k < s->conf.shape->decomp.num_orbits; k++) {
     piece_set_conf(&s->piece[k], cube_orbit(&s->conf, k));

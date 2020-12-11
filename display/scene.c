@@ -116,6 +116,6 @@ void scene_render(scene_t *scene, double time)
                   sizeof(float), &scene->data.time);
 
   for (unsigned int i = 0; i < scene->num_pieces; i++) {
-    piece_render(scene->pieces[i], scene->data.time);
+    piece_render(scene->pieces[i], time);
   }
 }

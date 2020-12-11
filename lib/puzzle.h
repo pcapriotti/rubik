@@ -96,7 +96,7 @@ struct turn_t
 {
   unsigned int g;
   unsigned int num_pieces;
-  uint8_t *pieces;
+  unsigned int *pieces;
 };
 typedef struct turn_t turn_t;
 

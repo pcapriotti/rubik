@@ -9,6 +9,7 @@
 #include "linmath.h"
 #include "polyhedron.h"
 #include "shader.h"
+#include "utils.h"
 
 #include "shaders/piece.v.glsl.h"
 #include "shaders/piece.f.glsl.h"
@@ -120,11 +121,12 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
                 quat *rots, uint8_t *conf, unsigned int instances)
 {
   piece->instances = instances;
-  piece->conf = malloc(instances * sizeof(unsigned int));
-  piece->conf1 = malloc(instances * sizeof(unsigned int));
-  piece->start_time = malloc(instances * sizeof(float));
   piece->duration = 1.0;
   piece->rots = rots;
+  piece->num_animations = 0;
+  piece->animation.num_pieces = 0;
+  piece->animation.pieces = 0;
+  piece->animation.rot0 = 0;
 
   glGenVertexArrays(1, &piece->vao);
   glBindVertexArray(piece->vao);
@@ -156,19 +158,19 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
     free(vdata);
   }
 
-  for (unsigned int i = 0; i < instances; i++) {
-    piece->conf[i] = conf[i];
-  }
-  memcpy(piece->conf1, piece->conf, instances * sizeof(unsigned int));
-
   /* initial configuration (used for facelet colours) */
   {
     unsigned int vbo;
     glGenBuffers(1, &vbo);
 
+    uint32_t *buf = malloc(instances * sizeof(unsigned int));
+    for (unsigned int i = 0; i < instances; i++) {
+      buf[i] = conf[i];
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, instances * sizeof(unsigned int),
-                 piece->conf, GL_STATIC_DRAW);
+                 buf, GL_STATIC_DRAW);
     glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, 0, 0);
     glEnableVertexAttribArray(4);
     glVertexAttribDivisor(4, 1);
@@ -198,30 +200,80 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
 
 void piece_cleanup(piece_t *piece)
 {
-  free(piece->conf);
-  free(piece->start_time);
+  piece_cancel_animation(piece);
   free(piece->rot_buf);
 }
 
-void piece_set_conf_(piece_t *piece, uint8_t *conf, int animate)
+void piece_update_conf(piece_t *piece)
 {
-  for (unsigned int i = 0; i < piece->instances; i++) {
-    memcpy(&piece->rot_buf[i], piece->rots[conf[i]], sizeof(quat));
-  }
   glBindBuffer(GL_ARRAY_BUFFER, piece->rot_vbo);
   glBufferSubData(GL_ARRAY_BUFFER, 0,
                   piece->instances * sizeof(quat), piece->rot_buf);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void piece_render(piece_t *piece, float time)
+void piece_cancel_animation(piece_t *piece)
+{
+  for (unsigned int i = 0; i < piece->animation.num_pieces; i++) {
+    unsigned int x = piece->animation.pieces[i];
+    quat_mul(piece->rot_buf[x], piece->animation.rot0[i],
+             piece->rots[piece->animation.sym]);
+  }
+  free(piece->animation.pieces);
+  piece->animation.pieces = 0;
+  free(piece->animation.rot0);
+  piece->animation.rot0 = 0;
+  piece->animation.num_pieces = 0;
+  piece->num_animations = 0;
+}
+
+void piece_turn(piece_t *piece, unsigned int sym,
+                unsigned int num_pieces, unsigned int *pieces)
+{
+  piece_cancel_animation(piece);
+  piece->num_animations++;
+  piece->animation.time0 = -1;
+  piece->animation.num_pieces = num_pieces;
+  piece->animation.pieces = pieces;
+  piece->animation.rot0 = malloc(num_pieces * sizeof(quat));
+  for (unsigned int i = 0; i < num_pieces; i++) {
+    unsigned int x = pieces[i];
+    memcpy(piece->animation.rot0[i], piece->rot_buf[x], sizeof(quat));
+  }
+}
+
+void piece_set_conf_(piece_t *piece, uint8_t *conf, int animate)
+{
+  piece_cancel_animation(piece);
+  for (unsigned int x = 0; x < piece->instances; x++) {
+    memcpy(piece->rot_buf[x], piece->rots[conf[x]], sizeof(quat));
+  }
+  piece_update_conf(piece);
+}
+
+void piece_render(piece_t *piece, double time)
 {
   glBindVertexArray(piece->vao);
   glUseProgram(shader);
 
-  glDrawArraysInstanced(GL_TRIANGLES, 0, piece->num_elements, piece->instances);
+  if (piece->num_animations > 0) {
+    if (piece->animation.time0 < 0)
+      piece->animation.time0 = time;
 
-  piece->time = time;
+    /* interpolate rotation */
+    quat q;
+    float dt = time - piece->animation.time0;
+    quat_slerp_id(q, piece->rots[piece->animation.sym],
+                  time / piece->duration);
+
+    for (unsigned int i = 0; i < piece->animation.num_pieces; i++) {
+      unsigned int x = piece->animation.pieces[i];
+      quat_mul(piece->rot_buf[x], piece->animation.rot0[i], q);
+    }
+    piece_update_conf(piece);
+  }
+
+  glDrawArraysInstanced(GL_TRIANGLES, 0, piece->num_elements, piece->instances);
 }
 
 void piece_set_conf(piece_t *piece, uint8_t *conf)

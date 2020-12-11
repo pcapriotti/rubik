@@ -166,3 +166,22 @@ void turn_del(turn_t *turn)
   free(turn->pieces);
   free(turn);
 }
+
+void decomp_split_turn(decomp_t *decomp, turn_t *turn,
+                       unsigned int **splits,
+                       unsigned int *num_pieces)
+{
+  for (unsigned int i = 0; i < turn->num_pieces; i++) {
+    unsigned int k = decomp_orbit_of(decomp, i);
+    num_pieces[k]++;
+  }
+  for (unsigned int k = 0; k < decomp->num_orbits; k++) {
+    splits[k] = malloc(num_pieces[k] * sizeof(unsigned int));
+    num_pieces[k] = 0;
+  }
+
+  for (unsigned int i = 0; i < turn->num_pieces; i++) {
+    unsigned int k = decomp_orbit_of(decomp, i);
+    splits[k][num_pieces[k]++] = i;
+  }
+}

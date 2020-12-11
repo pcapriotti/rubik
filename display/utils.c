@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#define SLERP_EPS 0.0001
+
 void die(const char *msg)
 {
   perror(msg);
@@ -48,4 +50,31 @@ void rot_by_vertices(quat q, vec3 v1, vec3 v2, vec3 w1, vec3 w2)
   quat_rotate(q2, angle, w1);
 
   quat_mul(q, q2, q1);
+}
+
+void quat_slerp_id(quat r, quat q, float t)
+{
+  float d = q[3];
+  float sign = 1;
+  if (d < 0) {
+    d = -d;
+    sign = -1;
+  }
+
+  if (d > 1 - SLERP_EPS) {
+    /* use linear interpolation */
+    quat_scale(r, q, sign * t);
+    r[3] += 1 - t;
+    quat_norm(r, r);
+    return;
+  }
+
+  float s = sqrtf(1 - d * d);
+  float theta = atan2(s, d);
+  float a = sin(theta * (1 - t)) / s;
+  float b = sin(theta * t) / s;
+
+  quat_scale(r, q, sign * b);
+  r[3] += a;
+  return;
 }
