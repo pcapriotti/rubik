@@ -183,8 +183,10 @@ void decomp_split_turn(decomp_t *decomp, turn_t *turn,
                        unsigned int *num_pieces,
                        unsigned int **splits)
 {
+  memset(num_pieces, 0, decomp->num_orbits * sizeof(unsigned int));
   for (unsigned int i = 0; i < turn->num_pieces; i++) {
     unsigned int k = decomp_orbit_of(decomp, turn->pieces[i]);
+    assert(k < decomp->num_orbits);
     num_pieces[k]++;
   }
   for (unsigned int k = 0; k < decomp->num_orbits; k++) {
