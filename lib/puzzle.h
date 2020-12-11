@@ -127,6 +127,9 @@ struct puzzle_t
 
   void (*cleanup)(void *data, struct puzzle_t *puzzle);
   void *cleanup_data;
+
+  turn_t *(*move)(void *data, uint8_t *conf, unsigned int f, unsigned int l, int c);
+  void *move_data;
 };
 typedef struct puzzle_t puzzle_t;
 

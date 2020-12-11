@@ -30,6 +30,43 @@ static void on_keypress(void *data, unsigned int c)
   s->count = 0;
 }
 
+struct move_face_data_t
+{
+  unsigned int face;
+  int count;
+};
+
+struct move_face_data_t *move_face_data_new(unsigned int face, int count)
+{
+  struct move_face_data_t *data = malloc(sizeof(struct move_face_data_t));
+  data->face = face;
+  data->count = count;
+  return data;
+}
+
+void puzzle_scene_move_face(puzzle_scene_t *s, void *data_)
+{
+  struct move_face_data_t *data = data_;
+
+  printf("moving face: %u layer: %u count: %d\n",
+         data->face, s->count, data->count);
+  turn_t *turn = s->puzzle->move(s->puzzle->move_data, s->conf,
+                                 data->face, s->count, data->count);
+  if (!turn) return;
+
+  const unsigned int num_orbits = s->puzzle->decomp->num_orbits;
+  unsigned int *num_pieces = malloc(num_orbits * sizeof(unsigned int));
+  unsigned int **pieces = malloc(num_orbits * sizeof(unsigned int *));
+  decomp_split_turn(s->puzzle->decomp, turn, num_pieces, pieces);
+
+  for (unsigned int k = 0; k < s->puzzle->decomp->num_orbits; k++) {
+    piece_turn(&s->piece[k], turn->g, num_pieces[k], pieces[k]);
+  }
+
+  free(num_pieces);
+  free(pieces);
+}
+
 void puzzle_scene_init(puzzle_scene_t *s,
                        scene_t *scene,
                        uint8_t *conf,
@@ -40,6 +77,8 @@ void puzzle_scene_init(puzzle_scene_t *s,
   s->piece = malloc(puzzle->decomp->num_orbits * sizeof(piece_t));
   s->puzzle = puzzle;
   s->model = model;
+  s->conf = conf;
+  s->key_bindings = calloc(256, sizeof(key_action_t));
 
   for (unsigned int i = 0; i < puzzle->decomp->num_orbits; i++) {
     poly_t poly;
@@ -98,4 +137,13 @@ void puzzle_scene_cleanup(puzzle_scene_t *s)
   free(s->key_bindings);
   s->puzzle->cleanup(s->puzzle->cleanup_data, s->puzzle);
   s->model->cleanup(s->model->cleanup_data, s->model);
+}
+
+void puzzle_scene_set_move_binding(puzzle_scene_t *s, unsigned char key,
+                                   unsigned int f, int c)
+{
+  s->key_bindings[key] = (key_action_t) {
+    .run = puzzle_scene_move_face,
+    .data = move_face_data_new(f, c)
+  };
 }

@@ -31,10 +31,10 @@ static int in_layer(puzzle_action_t *action, unsigned int k, unsigned int f, uns
                             group_inv(action->group, g)));
   switch (k) {
   case 0:
-    return f1 == 0 || f1 == 1 || f1 == 4;
+    return f1 == 0 || f1 == 2 || f1 == 10;
     break;
   case 1:
-    return f1 == 0 || f1 == 1;
+    return f1 == 0 || f1 == 2;
     break;
   case 2:
     return f1 == 0;
@@ -42,6 +42,12 @@ static int in_layer(puzzle_action_t *action, unsigned int k, unsigned int f, uns
   }
 
   return 0;
+}
+
+turn_t *megaminx_move_(puzzle_action_t *action, uint8_t *conf,
+                       unsigned int f, int c)
+{
+  return megaminx_move(action, conf, conf, f, c);
 }
 
 turn_t *megaminx_move(puzzle_action_t *action, uint8_t *conf1, uint8_t *conf,
@@ -114,6 +120,15 @@ static void megaminx_puzzle_cleanup(void *data, puzzle_t *puzzle)
   free(action);
 }
 
+
+turn_t *megaminx_puzzle_move(void *data, uint8_t *conf,
+                             unsigned int f, unsigned int l, int c)
+{
+  puzzle_action_t *action = data;
+  if (l != 0) return 0;
+  return megaminx_move_(action, conf, f, c);
+}
+
 void megaminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
 {
   puzzle->group = action->group;
@@ -128,4 +143,7 @@ void megaminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
 
   puzzle->cleanup = megaminx_puzzle_cleanup;
   puzzle->cleanup_data = 0;
+
+  puzzle->move = megaminx_puzzle_move;
+  puzzle->move_data = action;
 }

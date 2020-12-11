@@ -181,6 +181,12 @@ turn_t *cube_move(puzzle_action_t *action,
   return turn;
 }
 
+struct cube_puzzle_move_data_t
+{
+  puzzle_action_t *action;
+  cube_shape_t *shape;
+};
+
 void *cube_puzzle_orbit(void *data, unsigned int i)
 {
   cube_shape_t *shape = data;
@@ -196,6 +202,15 @@ void cube_puzzle_cleanup(void *data, puzzle_t *puzzle)
   puzzle_action_t *action = puzzle->face_action_data;
   puzzle_action_cleanup(action);
   free(action);
+
+  free(puzzle->move_data);
+}
+
+turn_t *cube_puzzle_move(void *data_, uint8_t *conf,
+                         unsigned int f, unsigned int l, int c)
+{
+  struct cube_puzzle_move_data_t *data = data_;
+  return cube_move_(data->action, data->shape, conf, f, l, c);
 }
 
 void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *shape)
@@ -212,5 +227,12 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
 
   puzzle->cleanup = cube_puzzle_cleanup;
   puzzle->cleanup_data = 0;
+
+  puzzle->move = cube_puzzle_move;
+  struct cube_puzzle_move_data_t *mdata =
+    malloc(sizeof(struct cube_puzzle_move_data_t));
+  mdata->action = action;
+  mdata->shape = shape;
+  puzzle->move_data = mdata;
 }
 

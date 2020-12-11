@@ -58,5 +58,7 @@ void puzzle_scene_init(puzzle_scene_t *s,
                        puzzle_t *puzzle,
                        puzzle_model_t *model);
 void puzzle_scene_cleanup(puzzle_scene_t *s);
+void puzzle_scene_set_move_binding(puzzle_scene_t *s, unsigned char key,
+                                   unsigned int f, int c);
 
 #endif /* PUZZLE_SCENE_H */

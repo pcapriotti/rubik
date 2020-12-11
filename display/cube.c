@@ -242,54 +242,6 @@ quat *cube_puzzle_action_init(puzzle_action_t *action)
   return rots;
 }
 
-struct move_face_data_t
-{
-  unsigned int face;
-  int count;
-};
-
-struct move_face_data_t *move_face_data_new(unsigned int face, int count)
-{
-  struct move_face_data_t *data = malloc(sizeof(struct move_face_data_t));
-  data->face = face;
-  data->count = count;
-  return data;
-}
-
-void cube_action_move_face(cube_scene_t *s, void *data_)
-{
-  /* struct move_face_data_t *data = data_; */
-
-  /* printf("moving face: %u layer: %u count: %d\n", */
-  /*        data->face, s->count, data->count); */
-  /* turn_t *turn = cube_move_(&s->puzzle, &s->conf, data->face, s->count, data->count); */
-
-  /* const unsigned int num_orbits = s->conf.shape->decomp.num_orbits; */
-  /* unsigned int *num_pieces = malloc(num_orbits * sizeof(unsigned int)); */
-  /* unsigned int **pieces = malloc(num_orbits * sizeof(unsigned int *)); */
-  /* decomp_split_turn(&s->conf.shape->decomp, turn, num_pieces, pieces); */
-
-  /* for (unsigned int k = 0; k < s->conf.shape->decomp.num_orbits; k++) { */
-  /*   piece_turn(&s->piece[k], turn->g, num_pieces[k], pieces[k]); */
-  /* } */
-
-  /* free(num_pieces); */
-  /* free(pieces); */
-}
-
-void cube_scene_set_up_key_bindings(cube_scene_t *s)
-{
-  /* s->key_bindings = calloc(256, sizeof(key_action_t)); */
-
-  /* static const unsigned char face_keys[] = "jfmvkd,cls;a"; */
-  /* static const unsigned char rot_keys[] = "JFMVKD<CLS:A"; */
-  /* for (unsigned int i = 0; i < 12; i++) { */
-  /*   s->key_bindings[face_keys[i]] = (key_action_t) { */
-  /*     .run = cube_action_move_face, */
-  /*     .data = move_face_data_new(i >> 1, (i & 1) ? 1 : -1) */
-  /*   }; */
-  /* } */
-}
 
 void cube_model_init_piece(void *data_, poly_t *poly,
                            unsigned int k, void *orbit_,
@@ -349,6 +301,11 @@ puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   cube_model_init(model, n, rots);
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
+
+  static const unsigned char face_keys[] = "jfmvkd,cls;a";
+  for (unsigned int i = 0; i < 12; i++) {
+    puzzle_scene_set_move_binding(s, face_keys[i], i >> 1, (i & 1) ? 1 : -1);
+  }
 
   return s;
 }
