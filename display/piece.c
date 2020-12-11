@@ -216,14 +216,16 @@ void piece_cancel_animation(piece_t *piece)
 {
   for (unsigned int i = 0; i < piece->animation.num_pieces; i++) {
     unsigned int x = piece->animation.pieces[i];
-    quat_mul(piece->rot_buf[x], piece->animation.rot0[i],
-             piece->rots[piece->animation.sym]);
+    quat_mul(piece->rot_buf[x],
+             piece->rots[piece->animation.sym],
+             piece->animation.rot0[i]);
   }
   free(piece->animation.pieces);
   piece->animation.pieces = 0;
   free(piece->animation.rot0);
   piece->animation.rot0 = 0;
   piece->animation.num_pieces = 0;
+  piece->animation.sym = 0;
   piece->num_animations = 0;
 }
 
@@ -236,6 +238,7 @@ void piece_turn(piece_t *piece, unsigned int sym,
   piece->animation.num_pieces = num_pieces;
   piece->animation.pieces = pieces;
   piece->animation.rot0 = malloc(num_pieces * sizeof(quat));
+  piece->animation.sym = sym;
   for (unsigned int i = 0; i < num_pieces; i++) {
     unsigned int x = pieces[i];
     memcpy(piece->animation.rot0[i], piece->rot_buf[x], sizeof(quat));
@@ -263,12 +266,17 @@ void piece_render(piece_t *piece, double time)
     /* interpolate rotation */
     quat q;
     float dt = time - piece->animation.time0;
-    quat_slerp_id(q, piece->rots[piece->animation.sym],
-                  time / piece->duration);
+    if (dt <= piece->duration) {
+      quat_slerp_id(q, piece->rots[piece->animation.sym],
+                    dt / piece->duration);
 
-    for (unsigned int i = 0; i < piece->animation.num_pieces; i++) {
-      unsigned int x = piece->animation.pieces[i];
-      quat_mul(piece->rot_buf[x], piece->animation.rot0[i], q);
+      for (unsigned int i = 0; i < piece->animation.num_pieces; i++) {
+        unsigned int x = piece->animation.pieces[i];
+        quat_mul(piece->rot_buf[x], q, piece->animation.rot0[i]);
+      }
+    }
+    else {
+      piece_cancel_animation(piece);
     }
     piece_update_conf(piece);
   }

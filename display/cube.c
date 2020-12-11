@@ -337,8 +337,12 @@ void cube_action_move_face(cube_scene_t *s, void *data_)
          data->face, s->count, data->count);
   turn_t *turn = cube_move_(&s->puzzle, &s->conf, data->face, s->count, data->count);
 
+  unsigned int *num_pieces = malloc(turn->num_pieces * sizeof(unsigned int));
+  unsigned int **pieces = malloc(turn->num_pieces * sizeof(unsigned int *));
+  decomp_split_turn(&s->conf.shape->decomp, turn, num_pieces, pieces);
+
   for (unsigned int k = 0; k < s->conf.shape->decomp.num_orbits; k++) {
-    piece_set_conf(&s->piece[k], cube_orbit(&s->conf, k));
+    piece_turn(&s->piece[k], turn->g, num_pieces[k], pieces[k]);
   }
 
 }

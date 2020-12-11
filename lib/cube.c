@@ -171,6 +171,7 @@ turn_t *cube_move(puzzle_t *puzzle, cube_t *conf1, cube_t *conf,
   c = ((c % 4) + 4) % 4;
   unsigned int s = puzzle->by_stab[2][puzzle->decomp.orbit_size[2] * c];
   s = group_conj(puzzle->group, s, puzzle->by_stab[2][f]);
+  turn->g = s;
 
   conf1->shape = conf->shape;
   for (unsigned int k = 0; k < conf->shape->decomp.num_orbits; k++) {

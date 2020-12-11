@@ -180,11 +180,11 @@ void turn_del(turn_t *turn)
 }
 
 void decomp_split_turn(decomp_t *decomp, turn_t *turn,
-                       unsigned int **splits,
-                       unsigned int *num_pieces)
+                       unsigned int *num_pieces,
+                       unsigned int **splits)
 {
   for (unsigned int i = 0; i < turn->num_pieces; i++) {
-    unsigned int k = decomp_orbit_of(decomp, i);
+    unsigned int k = decomp_orbit_of(decomp, turn->pieces[i]);
     num_pieces[k]++;
   }
   for (unsigned int k = 0; k < decomp->num_orbits; k++) {
@@ -193,7 +193,7 @@ void decomp_split_turn(decomp_t *decomp, turn_t *turn,
   }
 
   for (unsigned int i = 0; i < turn->num_pieces; i++) {
-    unsigned int k = decomp_orbit_of(decomp, i);
-    splits[k][num_pieces[k]++] = i;
+    unsigned int k = decomp_orbit_of(decomp, turn->pieces[i]);
+    splits[k][num_pieces[k]++] = turn->pieces[i] - decomp->orbit_offset[k];
   }
 }

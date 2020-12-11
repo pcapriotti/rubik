@@ -109,4 +109,8 @@ typedef struct turn_t turn_t;
 
 void turn_del(turn_t *turn);
 
+void decomp_split_turn(decomp_t *decomp, turn_t *turn,
+                       unsigned int *num_pieces,
+                       unsigned int **splits);
+
 #endif /* PUZZLE_H */
