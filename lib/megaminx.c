@@ -9,6 +9,7 @@
 #include "group.h"
 #include "perm.h"
 #include "puzzle.h"
+#include "utils.h"
 
 uint8_t *megaminx_new(puzzle_action_t *action)
 {
@@ -72,25 +73,14 @@ turn_t *megaminx_move(puzzle_action_t *action, uint8_t *conf1, uint8_t *conf,
   return turn;
 }
 
-void even_shuffle(uint8_t *x, size_t len)
-{
-  shuffle(x, len);
-  uint8_t s = perm_sign(x, len);
-  if (s) {
-    uint8_t tmp = x[0];
-    x[0] = x[1];
-    x[1] = tmp;
-  }
-}
-
-void megaminx_scramble(puzzle_action_t *puzzle, uint8_t *conf)
+void megaminx_scramble(puzzle_action_t *action, uint8_t *conf)
 {
   for (unsigned int k = 0; k < 2; k++) {
-    unsigned int orb_size = puzzle->decomp.orbit_size[k];
-    unsigned int stab_size = puzzle->group->num / orb_size;
+    unsigned int orb_size = action->decomp.orbit_size[k];
+    unsigned int stab_size = action->group->num / orb_size;
     uint8_t *perm = malloc(orb_size);
     perm_id(perm, orb_size);
-    even_shuffle(perm, orb_size);
+    parity_shuffle(perm, orb_size, 0);
 
     unsigned int total = 0;
     for (unsigned int i = 0; i < orb_size; i++) {
@@ -102,8 +92,8 @@ void megaminx_scramble(puzzle_action_t *puzzle, uint8_t *conf)
         o = rand() % stab_size;
         total += o;
       }
-      conf[decomp_global(&puzzle->decomp, k, i)] =
-        puzzle->by_stab[k][o * orb_size + perm[i]];
+      conf[decomp_global(&action->decomp, k, i)] =
+        action->by_stab[k][o * orb_size + perm[i]];
     }
 
     free(perm);
@@ -126,6 +116,12 @@ turn_t *megaminx_puzzle_move(void *data, uint8_t *conf,
   return megaminx_move_(action, conf, f, c);
 }
 
+void megaminx_puzzle_scramble(void *data, uint8_t *conf)
+{
+  puzzle_action_t *action = data;
+  megaminx_scramble(action, conf);
+}
+
 void megaminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
 {
   puzzle->group = action->group;
@@ -143,4 +139,7 @@ void megaminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
 
   puzzle->move = megaminx_puzzle_move;
   puzzle->move_data = action;
+
+  puzzle->scramble = megaminx_puzzle_scramble;
+  puzzle->scramble_data = action;
 }

@@ -255,7 +255,7 @@ void piece_turn(piece_t *piece, unsigned int sym,
   }
 }
 
-void piece_set_conf_(piece_t *piece, uint8_t *conf, int animate)
+void piece_set_conf(piece_t *piece, uint8_t *conf)
 {
   piece_cancel_animation(piece);
   for (unsigned int x = 0; x < piece->instances; x++) {
@@ -292,14 +292,4 @@ void piece_render(piece_t *piece, double time)
   }
 
   glDrawArraysInstanced(GL_TRIANGLES, 0, piece->num_elements, piece->instances);
-}
-
-void piece_set_conf(piece_t *piece, uint8_t *conf)
-{
-  piece_set_conf_(piece, conf, 1);
-}
-
-void piece_set_conf_instant(piece_t *piece, uint8_t *conf)
-{
-  piece_set_conf_(piece, conf, 0);
 }

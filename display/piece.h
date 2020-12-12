@@ -41,7 +41,6 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
                 quat *rots, uint8_t *conf, unsigned int instances);
 void piece_cleanup(piece_t *piece);
 void piece_set_conf(piece_t *piece, uint8_t *conf);
-void piece_set_conf_instant(piece_t *piece, uint8_t *conf);
 void piece_turn(piece_t *piece, unsigned int sym,
                 unsigned int num_pieces, unsigned int *pieces);
 void piece_cancel_animation(piece_t *piece);

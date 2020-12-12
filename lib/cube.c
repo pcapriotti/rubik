@@ -7,6 +7,7 @@
 #include "group.h"
 #include "puzzle.h"
 #include "utils.h"
+#include "perm.h"
 
 /* [Note]
 
@@ -178,6 +179,50 @@ turn_t *cube_move(puzzle_action_t *action,
   return turn;
 }
 
+void cube_scramble(puzzle_action_t *action, cube_shape_t *shape, uint8_t *conf)
+{
+  uint8_t parity = 0;
+  for (int k = shape->decomp.num_orbits - 1; k >= 0; k--) {
+    unsigned int orb_size = shape->decomp.orbit_size[k];
+    unsigned int stab_size = action->group->num / orb_size;
+    uint8_t *perm = malloc(orb_size);
+    perm_id(perm, orb_size);
+
+    if (k == 0 && shape->n % 2 == 1) {
+      /* only even permutations on odd cubes */
+      parity_shuffle(perm, orb_size, parity);
+    }
+    else {
+      shuffle(perm, orb_size);
+
+      /* keep track of corner and edge parity */
+      if (shape->orbits[k].dim < 2)
+        parity ^= perm_sign(perm, orb_size);
+    }
+
+    unsigned int total = 0;
+    for (unsigned int i = 0; i < orb_size; i++) {
+      unsigned int o;
+      if (i == orb_size - 1) {
+        o = (stab_size - total % stab_size) % stab_size;
+        assert((total + o) % stab_size == 0);
+      }
+      else {
+        o = rand() % stab_size;
+        total += o;
+      }
+
+      unsigned int x = decomp_global(&shape->decomp, k, i);
+      unsigned int sym = action->by_stab[k][o * orb_size + perm[i]];
+      printf("setting %u (orb: %u, local: %u) to sym %u\n",
+             x, k, i, sym);
+      conf[x] = sym;
+    }
+
+    free(perm);
+  }
+}
+
 struct cube_puzzle_move_data_t
 {
   puzzle_action_t *action;
@@ -210,6 +255,12 @@ turn_t *cube_puzzle_move(void *data_, uint8_t *conf,
   return cube_move_(data->action, data->shape, conf, f, l, c);
 }
 
+void cube_puzzle_scramble(void *data_, uint8_t *conf)
+{
+  struct cube_puzzle_move_data_t *data = data_;
+  cube_scramble(data->action, data->shape, conf);
+}
+
 void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *shape)
 {
   puzzle->group = action->group;
@@ -231,5 +282,7 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
   mdata->action = action;
   mdata->shape = shape;
   puzzle->move_data = mdata;
-}
 
+  puzzle->scramble = cube_puzzle_scramble;
+  puzzle->scramble_data = mdata;
+}

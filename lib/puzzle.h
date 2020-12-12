@@ -132,6 +132,9 @@ struct puzzle_t
 
   turn_t *(*move)(void *data, uint8_t *conf, unsigned int f, unsigned int l, int c);
   void *move_data;
+
+  void (*scramble)(void *data, uint8_t *conf);
+  void *scramble_data;
 };
 typedef struct puzzle_t puzzle_t;
 

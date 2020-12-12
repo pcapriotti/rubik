@@ -81,6 +81,14 @@ void puzzle_scene_rotate(puzzle_scene_t *s, void *data_)
   }
 }
 
+void puzzle_scene_scramble(puzzle_scene_t *s, void *data)
+{
+  s->puzzle->scramble(s->puzzle->scramble_data, s->conf);
+  for (unsigned int k = 0; k < s->puzzle->decomp->num_orbits; k++) {
+    piece_set_conf(&s->piece[k], s->conf + s->puzzle->decomp->orbit_offset[k]);
+  }
+}
+
 void puzzle_scene_init(puzzle_scene_t *s,
                        scene_t *scene,
                        uint8_t *conf,
@@ -141,6 +149,11 @@ void puzzle_scene_init(puzzle_scene_t *s,
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_COLOURS, b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
   }
+
+  s->key_bindings['s' - 'a' + 1] = (key_action_t) {
+    .run = puzzle_scene_scramble,
+    .data = 0
+  };
 
   scene->on_keypress_data = s;
   scene->on_keypress = on_keypress;

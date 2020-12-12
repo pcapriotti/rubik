@@ -150,8 +150,8 @@ void decomp_cleanup(decomp_t *decomp)
 }
 
 void puzzle_action_init(puzzle_action_t *puzzle,
-                 unsigned int num_orbits, unsigned int *orbit_size,
-                 group_t *group, uint8_t **orbit, uint8_t **stab)
+                        unsigned int num_orbits, unsigned int *orbit_size,
+                        group_t *group, uint8_t **orbit, uint8_t **stab)
 {
   decomp_init(&puzzle->decomp, num_orbits, orbit_size);
   puzzle->group = group;
