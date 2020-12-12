@@ -19,7 +19,9 @@ void scene_init(scene_t *scene,
   scene->on_keypress_data = 0;
   scene->time0 = time0;
 
-  quat_identity(scene->rot);
+  memcpy(scene->rot, (quat) {-0.47, -0.36, -0.63, -0.50},
+         sizeof(quat));
+
   memcpy(scene->data.lpos, (vec3) { 3, 4, 10 }, sizeof(vec3));
   mat4x4_translate(scene->data.view, 0.0, 0.0, -4.0);
 
@@ -85,6 +87,11 @@ void scene_tb_end(scene_t *scene, float x, float y)
 {
   scene_tb_update(scene, x, y);
   scene->tb_active = 0;
+  printf("rot: (%.02f, %.02f, %.02f, %.02f)\n",
+         scene->rot[0],
+         scene->rot[1],
+         scene->rot[2],
+         scene->rot[3]);
 }
 
 void scene_update_pieces(scene_t *scene)
