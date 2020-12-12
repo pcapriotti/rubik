@@ -212,10 +212,9 @@ void cube_scramble(puzzle_action_t *action, cube_shape_t *shape, uint8_t *conf)
         total += o;
       }
 
+      orbit_t *orbit = &shape->orbits[k];
       unsigned int x = decomp_global(&shape->decomp, k, i);
-      unsigned int sym = action->by_stab[k][o * orb_size + perm[i]];
-      printf("setting %u (orb: %u, local: %u) to sym %u\n",
-             x, k, i, sym);
+      unsigned int sym = action->by_stab[orbit->dim][o * orb_size + perm[i]];
       conf[x] = sym;
     }
 
