@@ -302,8 +302,8 @@ puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
 
-  static const unsigned char face_keys[] = "jfmvkd,cls;a";
-  static const unsigned char rot_keys[] = "JFMVKD<CLS:A";
+  static const unsigned char face_keys[] = "jfmvls,ckd;a";
+  static const unsigned char rot_keys[] = "JFMVLS<CKD:A";
   for (unsigned int i = 0; i < 12; i++) {
     unsigned int f = i >> 1;
     int c = (i & 1) ? 1 : -1;
