@@ -121,7 +121,7 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets, unsigned int offset
                 quat *rots, uint8_t *conf, unsigned int instances)
 {
   piece->instances = instances;
-  piece->duration = 1.0;
+  piece->duration = 0.5;
   piece->rots = rots;
   piece->num_animations = 0;
   piece->animation.num_pieces = 0;

@@ -23,24 +23,70 @@ uint8_t *square1_new(decomp_t *decomp)
   return conf;
 }
 
-void square1_rotate(group_t *group,
-                    uint8_t *conf1, uint8_t *conf,
-                    unsigned int f, int c)
+static int in_layer(puzzle_t *puzzle, uint8_t *conf,
+                    unsigned int i, unsigned int k, unsigned int g)
 {
-  c = (c % 12 + 12) % 12;
-  unsigned int sym = c << 1;
-
-  assert(f < 3);
-
-  for (unsigned int i = 0; i < 12; i++) {
-    unsigned int x = i + f * 12;
-    conf1[x] = group_mul(group, conf[x], sym);
+  if (i < 2) {
+    return k < 2 && g % 2 == i;
   }
+  else if (i == 2) {
+    return k == 2;
+  }
+  else if (i == 3) {
+    unsigned int g0 = conf[decomp_global(puzzle->decomp, 2, 0)];
+    g = group_mul(puzzle->group, g,
+                  group_inv(puzzle->group, g0 & ~1));
+    if (k == 0) return g >= 6 && g < 16;
+    if (k == 1 && (g & 1) == 0) return g >= 2 && g <= 12;
+    if (k == 1 && (g & 1) == 1) return g >= 9 && g <= 19;
+    if (k == 2) return g >> 1 == 6;
+  }
+
+  return 0;
 }
 
-void square1_rotate_(group_t *group, uint8_t *conf, unsigned int f, int c)
+turn_t *square1_move(puzzle_t *puzzle, uint8_t *conf1, uint8_t *conf,
+                     unsigned int f, int c)
 {
-  square1_rotate(group, conf, conf, f, c);
+  turn_t *turn = malloc(sizeof(turn_t));
+  turn->num_pieces = 0;
+  turn->pieces = malloc(18 * sizeof(unsigned int));
+
+  if (f == 3) {
+    /* find position of the middle piece */
+    unsigned int p0 = ((conf[decomp_global(puzzle->decomp, 2, 0)] >> 1) + 3) % 12;
+
+    /* make sure that no corner is obstructing */
+    /* for (unsigned int i = 0; i < 8; i++) { */
+    /*   unsigned int p1 = (conf[decomp_global(puzzle->decomp, 0, i)] >> 1) % 6; */
+    /*   unsigned int d = (p0 - p1 + 6) % 6; */
+    /*   if (d == 1) return 0; */
+    /* } */
+
+    turn->g = group_conj(puzzle->group, 21, 0);
+  }
+  else if (f < 2) {
+    c = (c % 12 + 12) % 12;
+    turn->g = c << 1;
+  }
+
+  for (unsigned int k = 0; k < puzzle->decomp->num_orbits; k++) {
+    for (unsigned int i = 0; i < puzzle->decomp->orbit_size[k]; i++) {
+      unsigned int x = decomp_global(puzzle->decomp, k, i);
+      if (in_layer(puzzle, conf, f, k, conf[x])) {
+        printf("adding piece %u\n", x);
+        turn->pieces[turn->num_pieces++] = x;
+        conf1[x] = group_mul(puzzle->group, conf[x], turn->g);
+      }
+    }
+  }
+
+  return turn;
+}
+
+turn_t *square1_move_(puzzle_t *puzzle, uint8_t *conf, unsigned int f, unsigned int c)
+{
+  return square1_move(puzzle, conf, conf, f, c);
 }
 
 /* The symmetry group of the square 1 is simply the dihedral group
@@ -59,15 +105,17 @@ unsigned int dihedral_group_mul(void *data_, unsigned int x, unsigned int y)
   unsigned int *data = data_;
   unsigned int n = *data;
 
-  unsigned int i = x >> 1;
+  int i = x >> 1;
   unsigned int s = x & 1;
 
-  unsigned int j = y >> 1;
+  int j = y >> 1;
   unsigned int t = y & 1;
 
-  unsigned int k = i + (s ? j : -j);
-  k = (k % n + n) % n;
+  int k = i + (s ? -j : j);
+  k = ((k % n) + n) % n;
+
   unsigned int u = s ^ t;
+
 
   return (k << 1) | u;
 }
@@ -147,9 +195,10 @@ void square1_puzzle_cleanup(void *data, puzzle_t *puzzle)
 }
 
 turn_t *square1_puzzle_move(void *data, uint8_t *conf,
-                            unsigned int f, unsigned int l, int c)
+                            unsigned int i, unsigned int l, int c)
 {
-  return 0;
+  puzzle_t *puzzle = data;
+  return square1_move_(puzzle, conf, i, c);
 }
 
 void square1_puzzle_scramble(void *data, uint8_t *conf)
@@ -174,7 +223,7 @@ void square1_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
   puzzle->cleanup_data = 0;
 
   puzzle->move = square1_puzzle_move;
-  puzzle->move_data = 0;
+  puzzle->move_data = puzzle;
 
   puzzle->scramble = square1_puzzle_scramble;
   puzzle->scramble_data = 0;

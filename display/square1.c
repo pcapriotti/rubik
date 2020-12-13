@@ -111,9 +111,9 @@ puzzle_scene_t *square1_scene_new(scene_t *scene)
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
 
-  static const unsigned char face_keys[] = "jfmvkdls";
-  static const unsigned char rot_keys[] = "JFMVKDLS";
-  static const unsigned int rot_syms[] = { 2, 22, 22, 2, 1, 1, 2, 22 };
+  static const unsigned char face_keys[] = "jfmvlskd";
+  static const unsigned char rot_keys[] = "JFMVLSKD";
+  static const unsigned int rot_syms[] = { 2, 22, 22, 2, 2, 22, 3, 3 };
   for (unsigned int i = 0; i < 8; i++) {
     unsigned int f = i >> 1;
     int c = (i & 1) ? 1 : -1;
