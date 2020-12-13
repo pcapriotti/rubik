@@ -111,5 +111,16 @@ puzzle_scene_t *square1_scene_new(scene_t *scene)
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
 
+  static const unsigned char face_keys[] = "jfmvkdls";
+  static const unsigned char rot_keys[] = "JFMVKDLS";
+  static const unsigned int rot_syms[] = { 2, 22, 22, 2, 1, 1, 2, 22 };
+  for (unsigned int i = 0; i < 8; i++) {
+    unsigned int f = i >> 1;
+    int c = (i & 1) ? 1 : -1;
+    puzzle_scene_set_move_binding(s, face_keys[i], f, c);
+    puzzle_scene_set_rotation_binding(s, rot_keys[i], rot_syms[i]);
+  }
+
+
   return s;
 }
