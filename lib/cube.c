@@ -240,7 +240,7 @@ void cube_puzzle_cleanup(void *data, puzzle_t *puzzle)
   cube_shape_cleanup(shape);
   free(shape);
 
-  puzzle_action_t *action = puzzle->face_action_data;
+  puzzle_action_t *action = puzzle->facelet_data;
   puzzle_action_cleanup(action);
   free(action);
 
@@ -269,8 +269,8 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
   puzzle->orbit = cube_puzzle_orbit;
   puzzle->orbit_data = shape;
 
-  puzzle->face_action = puzzle_face_action_default;
-  puzzle->face_action_data = action;
+  puzzle->facelet = puzzle_facelet_default;
+  puzzle->facelet_data = action;
 
   puzzle->cleanup = cube_puzzle_cleanup;
   puzzle->cleanup_data = 0;

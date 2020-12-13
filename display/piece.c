@@ -117,7 +117,7 @@ unsigned int *gen_elements(poly_t *poly, unsigned int *num_elements)
   return elements;
 }
 
-void piece_init(piece_t *piece, poly_t *poly, int *facelets,
+void piece_init(piece_t *piece, poly_t *poly, int *facelets, unsigned int offset,
                 quat *rots, uint8_t *conf, unsigned int instances)
 {
   piece->instances = instances;
@@ -158,14 +158,14 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
     free(vdata);
   }
 
-  /* initial configuration (used for facelet colours) */
+  /* instance index */
   {
     unsigned int vbo;
     glGenBuffers(1, &vbo);
 
     uint32_t *buf = malloc(instances * sizeof(unsigned int));
     for (unsigned int i = 0; i < instances; i++) {
-      buf[i] = conf[i];
+      buf[i] = offset + i;
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -175,6 +175,7 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
     glEnableVertexAttribArray(4);
     glVertexAttribDivisor(4, 1);
   }
+
   /* rotation */
   {
     glGenBuffers(1, &piece->rot_vbo);

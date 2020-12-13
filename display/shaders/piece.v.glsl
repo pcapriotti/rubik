@@ -3,7 +3,7 @@ layout (location = 0) in vec3 p;
 layout (location = 1) in vec3 n;
 layout (location = 2) in int f;
 layout (location = 3) in vec3 b;
-layout (location = 4) in uint s0;
+layout (location = 4) in uint index;
 layout (location = 5) in vec4 q;
 
 uniform float duration;
@@ -18,10 +18,10 @@ layout (std140, binding = 0) uniform scene_data
   float time;
 };
 
-layout (std430, binding = 1) buffer _face_action
+layout (std430, binding = 1) buffer _facelet
 {
   uint num_faces;
-  uint face_action[];
+  uint facelet[];
 };
 
 layout (std430, binding = 2) buffer _colours
@@ -76,7 +76,7 @@ void main()
   if (f < 0)
     col = bcol;
   else
-    col = colours[face_action[s0 * num_faces + f]];
+    col = colours[facelet[index * num_faces + f]];
 
   bary = b;
 }

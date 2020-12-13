@@ -124,9 +124,9 @@ void square1_action_init(puzzle_action_t *action)
   }
 }
 
-unsigned int square1_face_action(void *data, unsigned int x, unsigned int g)
+unsigned int square1_facelet(void *data, unsigned int k, unsigned int x, unsigned int g)
 {
-  return x;
+  return 1;
 }
 
 void square1_puzzle_cleanup(void *data, puzzle_t *puzzle)
@@ -154,8 +154,8 @@ void square1_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
   puzzle->orbit = puzzle_orbit_default;
   puzzle->orbit_data = 0;
 
-  puzzle->face_action = square1_face_action;
-  puzzle->face_action_data = 0;
+  puzzle->facelet = square1_facelet;
+  puzzle->facelet_data = 0;
 
   puzzle->cleanup = square1_puzzle_cleanup;
   puzzle->cleanup_data = 0;

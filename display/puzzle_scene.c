@@ -108,34 +108,15 @@ void puzzle_scene_init(puzzle_scene_t *s,
     model->init_piece(model->init_piece_data, &poly, i,
                       puzzle->orbit(puzzle->orbit_data, i),
                       facelets);
-    piece_init(&s->piece[i], &poly, facelets, model->rots,
+
+    piece_init(&s->piece[i], &poly, facelets,
+               puzzle->decomp->orbit_offset[i],
+               model->rots,
                conf + puzzle->decomp->orbit_offset[i],
                puzzle->decomp->orbit_size[i]);
     scene_add_piece(scene, &s->piece[i]);
     printf("adding orbit %u to scene\n", i);
     free(facelets);
-  }
-
-  /* face action */
-  {
-    unsigned int b;
-    glGenBuffers(1, &b);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
-
-    const unsigned int size = sizeof(face_action_t) +
-      puzzle->group->num * puzzle->num_faces * sizeof(uint32_t);
-    face_action_t *fa = malloc(size);
-    fa->num_faces = puzzle->num_faces;
-    unsigned int index = 0;
-    for (unsigned int g = 0; g < puzzle->group->num; g++) {
-      for (unsigned int f = 0; f < fa->num_faces; f++) {
-        fa->action[index++] = puzzle->face_action(puzzle->face_action_data, f, g);
-      }
-    }
-    glBufferData(GL_SHADER_STORAGE_BUFFER, size, fa, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACE_ACTION, b);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    free(fa);
   }
 
   /* colours */
@@ -148,6 +129,30 @@ void puzzle_scene_init(puzzle_scene_t *s,
                  model->colours, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_COLOURS, b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+  }
+
+  /* facelet data */
+  {
+    unsigned int b;
+    glGenBuffers(1, &b);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
+
+    const unsigned int size = (1 + puzzle->decomp->num_pieces *
+                               puzzle->num_faces) * sizeof(unsigned int);
+    unsigned int *buf = malloc(size);
+    buf[0] = puzzle->num_faces;
+    unsigned int index = 1;
+    for (unsigned int k = 0; k < puzzle->decomp->num_orbits; k++) {
+      for (unsigned int x = 0; x < puzzle->decomp->orbit_size[k]; x++) {
+        for (unsigned int i = 0; i < puzzle->num_faces; i++) {
+          buf[index++] = puzzle->facelet(puzzle->facelet_data, k, x, i);
+        }
+      }
+    }
+    glBufferData(GL_SHADER_STORAGE_BUFFER, size, buf, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_FACELET, b);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    free(buf);
   }
 
   s->key_bindings['s' - 'a' + 1] = (key_action_t) {

@@ -124,8 +124,8 @@ struct puzzle_t
   void *(*orbit)(void *data, unsigned int i);
   void *orbit_data;
 
-  unsigned int (*face_action)(void *data, unsigned int x, unsigned int g);
-  void *face_action_data;
+  unsigned int (*facelet)(void *data, unsigned int k, unsigned int x, unsigned int i);
+  void *facelet_data;
 
   void (*cleanup)(void *data, struct puzzle_t *puzzle);
   void *cleanup_data;
@@ -138,7 +138,14 @@ struct puzzle_t
 };
 typedef struct puzzle_t puzzle_t;
 
+struct puzzle_facelets_default_data_t
+{
+  puzzle_action_t *action;
+  decomp_t *decomp;
+};
+
 void *puzzle_orbit_default(void *data, unsigned int i);
-unsigned int puzzle_face_action_default(void *data, unsigned int x, unsigned int g);
+unsigned int puzzle_facelet_default(void *data, unsigned int k,
+                                    unsigned int x, unsigned int i);
 
 #endif /* PUZZLE_H */

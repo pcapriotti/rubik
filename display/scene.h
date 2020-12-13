@@ -18,14 +18,9 @@ typedef struct
   __attribute__((aligned(4))) float time;
 } __attribute__((packed, aligned(4))) scene_data_t;
 
-typedef struct {
-  uint32_t num_faces;
-  __attribute__((aligned(4))) uint32_t action[];
-} __attribute__((packed, aligned(4))) face_action_t;
-
 enum {
   BINDING_SCENE_DATA,
-  BINDING_FACE_ACTION,
+  BINDING_FACELET,
   BINDING_COLOURS,
 };
 

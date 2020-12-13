@@ -214,11 +214,12 @@ void *puzzle_orbit_default(void *data, unsigned int i)
   return 0;
 }
 
-
-unsigned int puzzle_face_action_default(void *data, unsigned int x, unsigned int g)
+unsigned int puzzle_facelet_default(void *data, unsigned int k,
+                                    unsigned int x, unsigned int i)
 {
   puzzle_action_t *action = data;
-  unsigned int x0 = decomp_global(&action->decomp, 2, x);
+  unsigned int g = action->by_stab[k][x];
+  unsigned int x0 = decomp_global(&action->decomp, 2, i);
   unsigned int y0 = puzzle_action_act(action, x0, g);
   return decomp_local(&action->decomp, y0);
 }

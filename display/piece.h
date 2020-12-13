@@ -37,7 +37,7 @@ struct piece_t
 typedef struct piece_t piece_t;
 
 void piece_render(piece_t *piece, double time);
-void piece_init(piece_t *piece, poly_t *poly, int *facelets,
+void piece_init(piece_t *piece, poly_t *poly, int *facelets, unsigned int offset,
                 quat *rots, uint8_t *conf, unsigned int instances);
 void piece_cleanup(piece_t *piece);
 void piece_set_conf(piece_t *piece, uint8_t *conf);
