@@ -147,8 +147,8 @@ void run(GLFWwindow *window)
   scene_init(scene, width, height, glfwGetTime());
 
   /* cube_scene_new(scene, 4); */
-  megaminx_scene_new(scene);
-  /* square1_scene_new(scene); */
+  /* megaminx_scene_new(scene); */
+  square1_scene_new(scene);
 
   glfwSetWindowUserPointer(window, scene);
 

@@ -27,7 +27,7 @@ static void square1_poly(poly_t *poly, float side, unsigned int type, int *facel
   float y = x * tanf(M_PI / 12);
 
   for (unsigned int i = 0; i < 6; i++) {
-    facelets[i] = type;
+    facelets[i] = -1;
   }
 
   for (unsigned int i = 0; i < 2; i++) {
@@ -39,14 +39,14 @@ static void square1_poly(poly_t *poly, float side, unsigned int type, int *facel
       memcpy(poly->vertices[4 * i + 1], (vec3) { z, x, x }, sizeof(vec3));
       memcpy(poly->vertices[4 * i + 2], (vec3) { z, y, x }, sizeof(vec3));
       memcpy(poly->vertices[4 * i + 3], (vec3) { z, 0, 0 }, sizeof(vec3));
-      /* facelets[0] = 0; facelets[1] = 2; facelets[2] = 4; */
+      facelets[5] = 0; facelets[1] = 1; facelets[2] = 2;
       break;
     case EDGE:
       z = i ? 0.5 : 0.16666;
       memcpy(poly->vertices[3 * i + 0], (vec3) { z, y, x }, sizeof(vec3));
       memcpy(poly->vertices[3 * i + 1], (vec3) { z, -y, x }, sizeof(vec3));
       memcpy(poly->vertices[3 * i + 2], (vec3) { z, 0, 0 }, sizeof(vec3));
-      /* facelets[0] = 0; facelets[1] = 4; */
+      facelets[4] = 0; facelets[1] = 2;
       break;
     case MIDDLE:
       z = i ? 0.16666 : -0.16666;
@@ -54,7 +54,7 @@ static void square1_poly(poly_t *poly, float side, unsigned int type, int *facel
       memcpy(poly->vertices[4 * i + 1], (vec3) { z, x, -x }, sizeof(vec3));
       memcpy(poly->vertices[4 * i + 2], (vec3) { z, x, x }, sizeof(vec3));
       memcpy(poly->vertices[4 * i + 3], (vec3) { z, -y, x }, sizeof(vec3));
-      /* facelets[1] = 5; facelets[2] = 2; facelets[3] = 4; */
+      facelets[1] = 4; facelets[2] = 1; facelets[3] = 2;
       break;
     }
   }

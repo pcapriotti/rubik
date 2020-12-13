@@ -124,9 +124,22 @@ void square1_action_init(puzzle_action_t *action)
   }
 }
 
-unsigned int square1_facelet(void *data, unsigned int k, unsigned int x, unsigned int g)
+unsigned int square1_facelet(void *data, unsigned int k, unsigned int x, unsigned int i)
 {
-  return 1;
+  static const unsigned int col[] = { 2, 4, 3, 5 };
+  if (i == 0) return x & 1;
+
+  if (k < 2) {
+    if (x & 1) i = 3 - i;
+    x >>= 1;
+  }
+  else {
+    x <<= 1;
+  }
+
+  unsigned int index = (x + i - 1) % 4;
+
+  return col[index];
 }
 
 void square1_puzzle_cleanup(void *data, puzzle_t *puzzle)
