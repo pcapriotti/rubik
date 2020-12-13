@@ -180,7 +180,12 @@ void piece_init(piece_t *piece, poly_t *poly, int *facelets,
     glGenBuffers(1, &piece->rot_vbo);
 
     piece->rot_buf = malloc(instances * sizeof(quat));
+    printf("instances: %u\n", instances);
     for (unsigned int i = 0; i < instances; i++) {
+      printf("%u: rotation %u: (%.02f, %.02f, %.02f, %.02f)\n",
+             i, conf[i],
+             rots[conf[i]][0], rots[conf[i]][1],
+             rots[conf[i]][2], rots[conf[i]][3]);
       memcpy(&piece->rot_buf[i], rots[conf[i]], sizeof(quat));
     }
 

@@ -2,12 +2,10 @@
 
 #include <GL/glew.h>
 #include <assert.h>
-#include <memory.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "linmath.h"
 #include "piece.h"
 #include "polyhedron.h"
 #include "scene.h"
@@ -258,7 +256,19 @@ void cube_model_cleanup(void *data, puzzle_model_t *model)
 {
   free(model->init_piece_data);
   free(model->rots);
-  free(model->colours);
+}
+
+vec4 *cube_colours()
+{
+  static vec4 colours[] = {
+    { 1.0, 1.0, 1.0, 1.0 }, // white
+    { 1.0, 1.0, 0.0, 1.0 }, // yellow
+    { 0.0, 0.6, 0.0, 1.0 }, // green
+    { 0.0, 0.0, 1.0, 1.0 }, // blue
+    { 1.0, 0.0, 0.0, 1.0 }, // red
+    { 1.0, 0.65, 0.0, 1.0 }, // orange
+  };
+  return colours;
 }
 
 void cube_model_init(puzzle_model_t *model, unsigned int n, quat *rots)
@@ -270,16 +280,7 @@ void cube_model_init(puzzle_model_t *model, unsigned int n, quat *rots)
   model->init_piece_data = data;
 
   model->rots = rots;
-  vec4 colours[] = {
-    { 1.0, 1.0, 1.0, 1.0 }, // white
-    { 1.0, 1.0, 0.0, 1.0 }, // yellow
-    { 0.0, 0.6, 0.0, 1.0 }, // green
-    { 0.0, 0.0, 1.0, 1.0 }, // blue
-    { 1.0, 0.0, 0.0, 1.0 }, // red
-    { 1.0, 0.65, 0.0, 1.0 }, // orange
-  };
-  model->colours = malloc(sizeof(colours));
-  memcpy(model->colours, colours, sizeof(colours));
+  model->colours = cube_colours();
 
   model->cleanup = cube_model_cleanup;
   model->cleanup_data = 0;

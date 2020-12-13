@@ -21,6 +21,7 @@ unsigned int group_inv_mul(group_t *group, unsigned int x, unsigned int y);
 unsigned int group_mul(group_t *group, unsigned int x, unsigned int y);
 unsigned int group_conj(group_t *group, unsigned int x, unsigned int y);
 void group_cleanup(group_t *group);
+void group_memo(group_t *memo, group_t *group);
 
 /* An action of a group on a finite set of natural numbers. */
 struct action_t
