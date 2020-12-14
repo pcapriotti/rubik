@@ -39,7 +39,7 @@ static int in_layer(puzzle_t *puzzle, uint8_t *conf,
     if (k == 0) return g >= 6 && g < 16;
     if (k == 1 && (g & 1) == 0) return g >= 2 && g <= 12;
     if (k == 1 && (g & 1) == 1) return g >= 9 && g <= 19;
-    if (k == 2) return g >> 1 == 6;
+    if (k == 2) return g == 12 || g == 9;
   }
 
   return 0;
@@ -57,11 +57,15 @@ turn_t *square1_move(puzzle_t *puzzle, uint8_t *conf1, uint8_t *conf,
     unsigned int p0 = ((conf[decomp_global(puzzle->decomp, 2, 0)] >> 1) + 3) % 12;
 
     /* make sure that no corner is obstructing */
-    /* for (unsigned int i = 0; i < 8; i++) { */
-    /*   unsigned int p1 = (conf[decomp_global(puzzle->decomp, 0, i)] >> 1) % 6; */
-    /*   unsigned int d = (p0 - p1 + 6) % 6; */
-    /*   if (d == 1) return 0; */
-    /* } */
+    for (unsigned int i = 0; i < 8; i++) {
+      unsigned int p1 = (conf[decomp_global(puzzle->decomp, 0, i)] >> 1) % 6;
+      unsigned int d = (p0 - p1 + 6) % 6;
+      if (d == 1) {
+        free(turn->pieces);
+        free(turn);
+        return 0;
+      }
+    }
 
     turn->g = group_conj(puzzle->group, 21, 0);
   }
@@ -74,7 +78,6 @@ turn_t *square1_move(puzzle_t *puzzle, uint8_t *conf1, uint8_t *conf,
     for (unsigned int i = 0; i < puzzle->decomp->orbit_size[k]; i++) {
       unsigned int x = decomp_global(puzzle->decomp, k, i);
       if (in_layer(puzzle, conf, f, k, conf[x])) {
-        printf("adding piece %u\n", x);
         turn->pieces[turn->num_pieces++] = x;
         conf1[x] = group_mul(puzzle->group, conf[x], turn->g);
       }
@@ -111,7 +114,7 @@ unsigned int dihedral_group_mul(void *data_, unsigned int x, unsigned int y)
   int j = y >> 1;
   unsigned int t = y & 1;
 
-  int k = i + (s ? -j : j);
+  int k = (t ? -i : i) + j;
   k = ((k % n) + n) % n;
 
   unsigned int u = s ^ t;
