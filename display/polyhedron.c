@@ -81,6 +81,21 @@ void std_dodec(poly_t *poly)
   }
 }
 
+void std_tetra(poly_t *poly)
+{
+  abs_tetra(&poly->abs);
+
+  float x = 1.0 / 3.0;
+  float y = sqrtf(2.0) / 3.0;
+  float z = sqrtf(2.0 / 3.0);
+
+  poly->vertices = malloc(poly->abs.num_vertices * sizeof(vec3));
+  memcpy(poly->vertices[0], (vec3) { 1, 0, 0 }, sizeof(vec3));
+  memcpy(poly->vertices[1], (vec3) { -x, y + y, 0 }, sizeof(vec3));
+  memcpy(poly->vertices[2], (vec3) { -x, -y, z }, sizeof(vec3));
+  memcpy(poly->vertices[3], (vec3) { -x, -y, -z }, sizeof(vec3));
+}
+
 void poly_cleanup(poly_t *poly)
 {
   abs_poly_cleanup(&poly->abs);

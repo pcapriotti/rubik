@@ -47,6 +47,7 @@ void poly_data_cleanup(poly_data_t *data);
 void abs_cube(abs_poly_t *cube);
 void abs_dodec(abs_poly_t *dodec);
 void abs_prism(abs_poly_t *prism, unsigned int num);
+void abs_tetra(abs_poly_t *poly);
 
 unsigned int abs_poly_num_edges(abs_poly_t *poly);
 

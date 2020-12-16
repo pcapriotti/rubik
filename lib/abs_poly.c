@@ -88,6 +88,24 @@ void abs_dodec(abs_poly_t *poly)
   }
 }
 
+void abs_tetra(abs_poly_t *poly)
+{
+  poly->num_vertices = 4;
+  poly->num_faces = 4;
+  poly->faces = malloc(poly->num_vertices * sizeof(face_t));
+  poly->len = poly->num_faces * 3;
+  poly->vertices = malloc(poly->len * sizeof(unsigned int));
+
+  for (unsigned int i = 0; i < poly->num_faces; i++) {
+    poly->faces[i].num_vertices = 3;
+    poly->faces[i].vertices = poly->vertices + 3 * i;
+
+    for (unsigned int j = 0; j < 3; j++) {
+      poly->faces[i].vertices[j] = (i + j + 1) % 4;
+    }
+  }
+}
+
 void abs_prism(abs_poly_t *prism, unsigned int num)
 {
   prism->num_vertices = num * 2;
