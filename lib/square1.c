@@ -33,9 +33,9 @@ static int middle_layer_sym(unsigned int k, unsigned int g)
   return 0;
 }
 
-static int in_layer(puzzle_t *puzzle, uint8_t *conf,
+static int in_layer(puzzle_t *puzzle,
                     unsigned int i, unsigned int k,
-                    unsigned int c, unsigned int g)
+                    int c, unsigned int g)
 {
   if (i < 2) {
     return k < 2 && g % 2 == i;
@@ -44,10 +44,7 @@ static int in_layer(puzzle_t *puzzle, uint8_t *conf,
     return k == 2;
   }
   else if (i == 3) {
-    unsigned int g0 = conf[decomp_global(puzzle->decomp, 2, 0)];
-    g = group_mul(puzzle->group, g,
-                  group_inv(puzzle->group, g0 & ~1));
-    return middle_layer_sym(k, g);
+    return middle_layer_sym(k, g) ^ (c > 0);
   }
 
   return 0;
@@ -58,10 +55,13 @@ turn_t *square1_move(puzzle_t *puzzle, uint8_t *conf1, uint8_t *conf,
 {
   unsigned int sym;
 
+  /* find rotation of the middle piece */
+  unsigned int g0 = conf[decomp_global(puzzle->decomp, 2, 0)];
+  if (g0 & 1) g0 = group_mul(puzzle->group, g0, 21);
+
   if (f == 3) {
-    /* find position of the middle piece */
-    /* unsigned int p0 = ((conf[decomp_global(puzzle->decomp, 2, 0)] >> 1) + 3) % 12; */
-    unsigned int p0 = 3;
+    /* position of the middle piece */
+    unsigned int p0 = (g0 + 3) % 12;
 
     /* make sure that no corner is obstructing */
     for (unsigned int i = 0; i < 8; i++) {
@@ -89,7 +89,9 @@ turn_t *square1_move(puzzle_t *puzzle, uint8_t *conf1, uint8_t *conf,
   for (unsigned int k = 0; k < puzzle->decomp->num_orbits; k++) {
     for (unsigned int i = 0; i < puzzle->decomp->orbit_size[k]; i++) {
       unsigned int x = decomp_global(puzzle->decomp, k, i);
-      if (in_layer(puzzle, conf, f, k, c, conf[x])) {
+      unsigned int g = group_mul(puzzle->group, conf[x],
+                                 group_inv(puzzle->group, g0 & ~1));
+      if (in_layer(puzzle, f, k, c, g)) {
         turn->pieces[turn->num_pieces++] = x;
         conf1[x] = group_mul(puzzle->group, conf[x], turn->g);
       }
