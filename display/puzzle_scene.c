@@ -48,8 +48,6 @@ void puzzle_scene_move_face(puzzle_scene_t *s, void *data_)
 {
   struct move_face_data_t *data = data_;
 
-  printf("moving face: %u layer: %u count: %d\n",
-         data->face, s->count, data->count);
   turn_t *turn = s->puzzle->move(s->puzzle->move_data, s->conf,
                                  data->face, s->count, data->count);
   if (!turn) return;

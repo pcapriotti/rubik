@@ -6,6 +6,7 @@
 
 #include "group.h"
 #include "puzzle.h"
+#include "perm.h"
 
 uint8_t *square1_new(decomp_t *decomp)
 {
@@ -23,8 +24,18 @@ uint8_t *square1_new(decomp_t *decomp)
   return conf;
 }
 
+static int middle_layer_sym(unsigned int k, unsigned int g)
+{
+  if (k == 0) return g >= 6 && g < 16;
+  if (k == 1 && (g & 1) == 0) return g >= 2 && g <= 12;
+  if (k == 1 && (g & 1) == 1) return g >= 9 && g <= 19;
+  if (k == 2) return g == 12 || g == 9;
+  return 0;
+}
+
 static int in_layer(puzzle_t *puzzle, uint8_t *conf,
-                    unsigned int i, unsigned int k, unsigned int g)
+                    unsigned int i, unsigned int k,
+                    unsigned int c, unsigned int g)
 {
   if (i < 2) {
     return k < 2 && g % 2 == i;
@@ -36,10 +47,7 @@ static int in_layer(puzzle_t *puzzle, uint8_t *conf,
     unsigned int g0 = conf[decomp_global(puzzle->decomp, 2, 0)];
     g = group_mul(puzzle->group, g,
                   group_inv(puzzle->group, g0 & ~1));
-    if (k == 0) return g >= 6 && g < 16;
-    if (k == 1 && (g & 1) == 0) return g >= 2 && g <= 12;
-    if (k == 1 && (g & 1) == 1) return g >= 9 && g <= 19;
-    if (k == 2) return g == 12 || g == 9;
+    return middle_layer_sym(k, g);
   }
 
   return 0;
@@ -48,41 +56,49 @@ static int in_layer(puzzle_t *puzzle, uint8_t *conf,
 turn_t *square1_move(puzzle_t *puzzle, uint8_t *conf1, uint8_t *conf,
                      unsigned int f, int c)
 {
-  turn_t *turn = malloc(sizeof(turn_t));
-  turn->num_pieces = 0;
-  turn->pieces = malloc(18 * sizeof(unsigned int));
+  unsigned int sym;
 
   if (f == 3) {
     /* find position of the middle piece */
-    unsigned int p0 = ((conf[decomp_global(puzzle->decomp, 2, 0)] >> 1) + 3) % 12;
+    /* unsigned int p0 = ((conf[decomp_global(puzzle->decomp, 2, 0)] >> 1) + 3) % 12; */
+    unsigned int p0 = 3;
 
     /* make sure that no corner is obstructing */
     for (unsigned int i = 0; i < 8; i++) {
       unsigned int p1 = (conf[decomp_global(puzzle->decomp, 0, i)] >> 1) % 6;
       unsigned int d = (p0 - p1 + 6) % 6;
-      if (d == 1) {
-        free(turn->pieces);
-        free(turn);
-        return 0;
-      }
+      if (d == 1) return 0;
     }
 
-    turn->g = group_conj(puzzle->group, 21, 0);
+    sym = group_conj(puzzle->group, 21, 0);
   }
   else if (f < 2) {
+    if (f == 1) c = -c;
     c = (c % 12 + 12) % 12;
-    turn->g = c << 1;
+    sym = c << 1;
   }
+  else {
+    return 0;
+  }
+
+  turn_t *turn = malloc(sizeof(turn_t));
+  turn->num_pieces = 0;
+  turn->pieces = malloc(18 * sizeof(unsigned int));
+  turn->g = sym;
 
   for (unsigned int k = 0; k < puzzle->decomp->num_orbits; k++) {
     for (unsigned int i = 0; i < puzzle->decomp->orbit_size[k]; i++) {
       unsigned int x = decomp_global(puzzle->decomp, k, i);
-      if (in_layer(puzzle, conf, f, k, conf[x])) {
+      if (in_layer(puzzle, conf, f, k, c, conf[x])) {
         turn->pieces[turn->num_pieces++] = x;
         conf1[x] = group_mul(puzzle->group, conf[x], turn->g);
       }
     }
   }
+
+  printf("conf: ");
+  debug_perm(conf, 18);
+  printf("\n");
 
   return turn;
 }
@@ -193,8 +209,82 @@ unsigned int square1_facelet(void *data, unsigned int k, unsigned int x, unsigne
   return col[index];
 }
 
+void square1_perm(uint8_t *perm_inv)
+{
+  perm_id(perm_inv, 16);
+  shuffle(perm_inv, 16);
+
+  /* make sure that the two layers are complete and divisible in half */
+  unsigned int count = 0;
+  int e = -1;
+  for (unsigned int i = 0; i < 16; i++) {
+    /* remember position of the last edge */
+    if (perm_inv[i] >= 8) {
+      e = i;
+      count += 1;
+    }
+    /* check if a corner is placed where there only an edge would fit */
+    else if (count % 6 == 5 && perm_inv[i] < 8) {
+      /* for parity reasons, we must have encountered at least one edge */
+      assert(e >= 0);
+
+      /* swap with that edge */
+      uint8_t c = perm_inv[i];
+      perm_inv[i] = perm_inv[e];
+      perm_inv[e] = c;
+
+      count += 2;
+    }
+    else {
+      count += 2;
+    }
+  }
+}
+
+void square1_scramble(puzzle_t *puzzle, uint8_t *conf)
+{
+  uint8_t perm_inv[16];
+  square1_perm(perm_inv);
+
+  unsigned int count = 0;
+  unsigned int offset = rand() % 2;
+  unsigned int l = 0;
+  for (unsigned int i = 0; i < 16; i++) {
+    unsigned int j = perm_inv[i];
+
+    unsigned int k = j >= 8;
+    unsigned int x = j % 8;
+
+    unsigned int pos = (offset + (k ? count + (l ? 1 : -2) : count)) % 12;
+    unsigned int sym = (pos << 1) | l;
+
+    conf[decomp_global(puzzle->decomp, k, x)] = sym;
+    count += k ? 1 : 2;
+
+    if (count >= 12) {
+      offset = rand() % 2;
+      count = 0;
+      l++;
+    }
+  }
+
+  unsigned int x = rand() % 8;
+  unsigned int flip0 = x & 1;
+  unsigned int flip1 = (x >> 1) & 1;
+  unsigned int pos0 = flip0 ? 21 : 0;
+  unsigned int pos1 = flip1 ? 9 : 12;
+
+  conf[decomp_global(puzzle->decomp, 2, 0)] = (x >> 2) ? pos0 : pos1;
+  conf[decomp_global(puzzle->decomp, 2, 1)] = (x >> 2) ? pos1 : pos0;
+
+  printf("scramble conf: ");
+  debug_perm(conf, 18);
+  printf("\n");
+}
+
 void square1_puzzle_cleanup(void *data, puzzle_t *puzzle)
 {
+  free(puzzle->decomp);
 }
 
 turn_t *square1_puzzle_move(void *data, uint8_t *conf,
@@ -206,6 +296,9 @@ turn_t *square1_puzzle_move(void *data, uint8_t *conf,
 
 void square1_puzzle_scramble(void *data, uint8_t *conf)
 {
+  printf("scrambling\n");
+  puzzle_t *puzzle = data;
+  square1_scramble(puzzle, conf);
 }
 
 void square1_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
@@ -229,5 +322,5 @@ void square1_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
   puzzle->move_data = puzzle;
 
   puzzle->scramble = square1_puzzle_scramble;
-  puzzle->scramble_data = 0;
+  puzzle->scramble_data = puzzle;
 }
