@@ -6,14 +6,14 @@
 
 #include "lib/pyraminx.h"
 #include "lib/group.h"
+#include "lib/perm.h"
 #include "lib/puzzle.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 void pyraminx_init_piece(poly_t *piece, poly_t *tetra, int type, int *facelets)
 {
-  poly_debug(tetra);
-
   abs_tetra(&piece->abs);
   piece->vertices = malloc(4 * sizeof(vec3));
 
@@ -70,13 +70,10 @@ static quat *pyraminx_rotations(puzzle_action_t *action, poly_t *tetra)
 
   quat_identity(rots[0]);
   for (unsigned int g = 1; g < action->group->num; g++) {
-    unsigned int v0 = puzzle_action_local_act(action, 0, 0, g);
-    unsigned int v1 = puzzle_action_local_act(action, 0, 1, g);
+    unsigned int v0 = puzzle_action_local_act(action, 0, 0, g) % 4;
+    unsigned int v1 = puzzle_action_local_act(action, 0, 1, g) % 4;
 
-    if (1) {
-      quat_identity(rots[g]);
-    }
-    else if (v0 == 0) {
+    if (v0 == 0) {
       rot_by_axis_and_vertices(rots[g], tetra->vertices[0],
                                tetra->vertices[1],
                                tetra->vertices[v1]);
@@ -91,6 +88,9 @@ static quat *pyraminx_rotations(puzzle_action_t *action, poly_t *tetra)
                       tetra->vertices[0], tetra->vertices[1],
                       tetra->vertices[v0], tetra->vertices[v1]);
     }
+
+    printf("v0: %u, v1: %u, rot: (%.02f, %.02f, %.02f, %.02f)\n",
+           v0, v1, rots[g][0], rots[g][1], rots[g][2], rots[g][3]);
   }
 
   return rots;
@@ -130,6 +130,11 @@ puzzle_scene_t *pyraminx_scene_new(scene_t *scene)
   puzzle_action_t *action = malloc(sizeof(puzzle_action_t));
 
   pyraminx_action_init(action);
+  printf("by stab[0]: ");
+  debug_perm(action->by_stab[0], 12);
+  printf("\ninv: ");
+  debug_perm(action->inv_by_stab[0], 12);
+  printf("\n");
 
   uint8_t *conf = pyraminx_new(action);
 
