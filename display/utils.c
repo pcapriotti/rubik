@@ -29,9 +29,6 @@ void skip_category(const char *s, int len, int cat, int direction, int *x)
 /* rotation mapping v to w and fixing axis */
 void rot_by_axis_and_vertices(quat q, vec3 axis, vec3 v, vec3 w)
 {
-  printf("axis: (%.02f, %.02f, %.02f)\n", axis[0], axis[1], axis[2]);
-  printf("v: (%.02f, %.02f, %.02f)\n", v[0], v[1], v[2]);
-  printf("w: (%.02f, %.02f, %.02f)\n", w[0], w[1], w[2]);
   vec3 a2; vec3_mul_cross(a2, v, w);
   float p1 = vec3_mul_inner(v, axis);
   float p2 = vec3_mul_inner(w, axis);
@@ -39,10 +36,8 @@ void rot_by_axis_and_vertices(quat q, vec3 axis, vec3 v, vec3 w)
     (sqrtf(1 - p1 * p1) * sqrtf(1 - p2 * p2));
   d = d > 1.0 ? 1.0 : (d < -1.0 ? -1.0 : d);
   float angle = vec3_mul_inner(a2, axis) > 0 ? acos(d) : -acos(d);
-  printf("p1: %.02f, p2: %.02f, d: %.02f, angle: %.02f\n", p1, p2, d, angle);
 
   quat_rotate(q, angle, axis);
-  printf("q: (%.02f, %.02f, %.02f, %.02f)\n", q[0], q[1], q[2], q[3]);
 }
 
 /* return symmetry mapping a pair of adjacent vertices to another one */

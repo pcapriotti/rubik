@@ -308,7 +308,7 @@ puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   for (unsigned int i = 0; i < 12; i++) {
     unsigned int f = i >> 1;
     int c = (i & 1) ? 1 : -1;
-    puzzle_scene_set_move_binding(s, face_keys[i], f, c);
+    puzzle_scene_set_move_binding(s, face_keys[i], f, c, -1);
     puzzle_scene_set_rotation_binding(s, rot_keys[i],
                                       puzzle_action_stab(action, 2, f, c));
   }

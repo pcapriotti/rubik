@@ -117,7 +117,7 @@ puzzle_scene_t *square1_scene_new(scene_t *scene)
   for (unsigned int i = 0; i < 8; i++) {
     unsigned int f = i >> 1;
     int c = (i & 1) ? 1 : -1;
-    puzzle_scene_set_move_binding(s, face_keys[i], f, c);
+    puzzle_scene_set_move_binding(s, face_keys[i], f, c, -1);
     puzzle_scene_set_rotation_binding(s, rot_keys[i], rot_syms[i]);
   }
 

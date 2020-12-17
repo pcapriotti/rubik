@@ -34,13 +34,15 @@ struct move_face_data_t
 {
   unsigned int face;
   int count;
+  int layer;
 };
 
-struct move_face_data_t *move_face_data_new(unsigned int face, int count)
+struct move_face_data_t *move_face_data_new(unsigned int face, int count, int layer)
 {
   struct move_face_data_t *data = malloc(sizeof(struct move_face_data_t));
   data->face = face;
   data->count = count;
+  data->layer = layer;
   return data;
 }
 
@@ -48,8 +50,10 @@ void puzzle_scene_move_face(puzzle_scene_t *s, void *data_)
 {
   struct move_face_data_t *data = data_;
 
+  unsigned int layer = data->layer >= 0 ?
+    (unsigned int) data->layer : s->count;
   turn_t *turn = s->puzzle->move(s->puzzle->move_data, s->conf,
-                                 data->face, s->count, data->count);
+                                 data->face, layer, data->count);
   if (!turn) return;
 
   const unsigned int num_orbits = s->puzzle->decomp->num_orbits;
@@ -106,8 +110,6 @@ void puzzle_scene_init(puzzle_scene_t *s,
     model->init_piece(model->init_piece_data, &poly, i,
                       puzzle->orbit(puzzle->orbit_data, i),
                       facelets);
-
-    poly_debug(&poly);
 
     piece_init(&s->piece[i], &poly, facelets,
                puzzle->decomp->orbit_offset[i],
@@ -175,11 +177,11 @@ void puzzle_scene_cleanup(puzzle_scene_t *s)
 }
 
 void puzzle_scene_set_move_binding(puzzle_scene_t *s, unsigned char key,
-                                   unsigned int f, int c)
+                                   unsigned int f, int c, int l)
 {
   s->key_bindings[key] = (key_action_t) {
     .run = puzzle_scene_move_face,
-    .data = move_face_data_new(f, c)
+    .data = move_face_data_new(f, c, l)
   };
 }
 

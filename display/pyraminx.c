@@ -9,6 +9,7 @@
 #include "lib/perm.h"
 #include "lib/puzzle.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -40,11 +41,11 @@ void pyraminx_init_piece(poly_t *piece, poly_t *tetra, int type, int *facelets)
     facelets[2] = 2; facelets[1] = 1; facelets[3] = 3;
     break;
   case 1:
-    vec3_add(piece->vertices[0], tetra->vertices[0], v0[2]);
+    vec3_add(piece->vertices[0], tetra->vertices[0], v0[1]);
     vec3_add(piece->vertices[1], piece->vertices[0], v0[1]);
     vec3_add(piece->vertices[2], piece->vertices[0], v0[2]);
     vec3_add(piece->vertices[3], piece->vertices[0], v0[3]);
-    facelets[1] = 1; facelets[3] = 3;
+    facelets[2] = 2; facelets[3] = 3;
     break;
   case 2:
     vec3_add(piece->vertices[0], tetra->vertices[0], v0[1]);
@@ -68,6 +69,8 @@ static quat *pyraminx_rotations(puzzle_action_t *action, poly_t *tetra)
 {
   quat *rots = malloc(action->group->num * sizeof(quat));
 
+  poly_debug(tetra);
+
   quat_identity(rots[0]);
   for (unsigned int g = 1; g < action->group->num; g++) {
     unsigned int v0 = puzzle_action_local_act(action, 0, 0, g) % 4;
@@ -88,9 +91,6 @@ static quat *pyraminx_rotations(puzzle_action_t *action, poly_t *tetra)
                       tetra->vertices[0], tetra->vertices[1],
                       tetra->vertices[v0], tetra->vertices[v1]);
     }
-
-    printf("v0: %u, v1: %u, rot: (%.02f, %.02f, %.02f, %.02f)\n",
-           v0, v1, rots[g][0], rots[g][1], rots[g][2], rots[g][3]);
   }
 
   return rots;
@@ -130,11 +130,13 @@ puzzle_scene_t *pyraminx_scene_new(scene_t *scene)
   puzzle_action_t *action = malloc(sizeof(puzzle_action_t));
 
   pyraminx_action_init(action);
-  printf("by stab[0]: ");
-  debug_perm(action->by_stab[0], 12);
-  printf("\ninv: ");
-  debug_perm(action->inv_by_stab[0], 12);
-  printf("\n");
+  for (unsigned int i = 0; i < 3; i++) {
+    printf("by stab[%u]: ", i);
+    debug_perm(action->by_stab[i], 12);
+    printf("\ninv: ");
+    debug_perm(action->inv_by_stab[i], 12);
+    printf("\n");
+  }
 
   uint8_t *conf = pyraminx_new(action);
 
@@ -146,15 +148,19 @@ puzzle_scene_t *pyraminx_scene_new(scene_t *scene)
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
 
-  /* static const unsigned char face_keys[] = "jfmvls,ckd;a"; */
-  /* static const unsigned char rot_keys[] = "JFMVLS<CKD:A"; */
-  /* for (unsigned int i = 0; i < 12; i++) { */
-  /*   unsigned int f = i >> 1; */
-  /*   int c = (i & 1) ? 1 : -1; */
-  /*   puzzle_scene_set_move_binding(s, face_keys[i], f, c); */
-  /*   puzzle_scene_set_rotation_binding(s, rot_keys[i], */
-  /*                                     puzzle_action_stab(action, 2, f, c)); */
-  /* } */
+  static const unsigned char face_keys[] = "jfmvkd,cls.x;a/z";
+  static const unsigned char rot_keys[] = "JFKDLS:A";
+  for (unsigned int i = 0; i < 16; i++) {
+    unsigned int v = i >> 2;
+    int c = (i & 1) ? 1 : -1;
+    unsigned int l = (i >> 1) & 1;
+
+    puzzle_scene_set_move_binding(s, face_keys[i], v, c, l);
+    /* if (i < 8) {  */
+    /*   puzzle_scene_set_rotation_binding(s, rot_keys[i], */
+    /*                                     puzzle_action_stab(action, 0, v, c)); */
+    /* } */
+  }
 
   return s;
 }
