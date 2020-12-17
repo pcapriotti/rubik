@@ -101,7 +101,8 @@ void abs_tetra(abs_poly_t *poly)
     poly->faces[i].vertices = poly->vertices + 3 * i;
 
     for (unsigned int j = 0; j < 3; j++) {
-      poly->faces[i].vertices[j] = (i + j + 1) % 4;
+      unsigned int k = i % 2 == 0 ? j + 1 : 3 - j;
+      poly->faces[i].vertices[j] = (i + k) % 4;
     }
   }
 }

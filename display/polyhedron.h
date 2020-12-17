@@ -20,6 +20,9 @@ void std_cube(poly_t *poly);
 /* dodecahedron of radius 1 centred at the origin */
 void std_dodec(poly_t *poly);
 
+/* tetrahedron of radius 1 centred at the origin */
+void std_tetra(poly_t *poly);
+
 /* prism with num sides */
 void std_prism(poly_t *poly, unsigned int num);
 

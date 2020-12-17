@@ -92,8 +92,8 @@ void std_tetra(poly_t *poly)
   poly->vertices = malloc(poly->abs.num_vertices * sizeof(vec3));
   memcpy(poly->vertices[0], (vec3) { 1, 0, 0 }, sizeof(vec3));
   memcpy(poly->vertices[1], (vec3) { -x, y + y, 0 }, sizeof(vec3));
-  memcpy(poly->vertices[2], (vec3) { -x, -y, z }, sizeof(vec3));
-  memcpy(poly->vertices[3], (vec3) { -x, -y, -z }, sizeof(vec3));
+  memcpy(poly->vertices[2], (vec3) { -x, -y, -z }, sizeof(vec3));
+  memcpy(poly->vertices[3], (vec3) { -x, -y, z }, sizeof(vec3));
 }
 
 void poly_cleanup(poly_t *poly)

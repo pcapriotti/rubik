@@ -15,6 +15,7 @@ enum {
 int category(char c);
 void skip_category(const char *s, int len, int cat, int direction, int *x);
 
+void rot_by_axis_and_vertices(quat q, vec3 axis, vec3 v, vec3 w);
 void rot_by_vertices(quat q, vec3 v1, vec3 v2, vec3 w1, vec3 w2);
 
 void quat_slerp_id(quat r, quat q, float t);

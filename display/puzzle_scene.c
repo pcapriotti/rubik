@@ -107,6 +107,8 @@ void puzzle_scene_init(puzzle_scene_t *s,
                       puzzle->orbit(puzzle->orbit_data, i),
                       facelets);
 
+    poly_debug(&poly);
+
     piece_init(&s->piece[i], &poly, facelets,
                puzzle->decomp->orbit_offset[i],
                model->rots,

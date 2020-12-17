@@ -109,10 +109,17 @@ unsigned int puzzle_action_act(puzzle_action_t *puzzle, unsigned int x, unsigned
 {
   unsigned int i = decomp_orbit_of(&puzzle->decomp, x);
   x -= puzzle->decomp.orbit_offset[i];
-  unsigned int g0 = puzzle->by_stab[i][x];
-  unsigned int g1 = group_mul(puzzle->group, g0, g);
-  unsigned int j = puzzle->inv_by_stab[i][g1];
+  unsigned int j = puzzle_action_local_act(puzzle, i, x, g);
   return puzzle->decomp.orbit_offset[i] + j % puzzle->decomp.orbit_size[i];
+}
+
+unsigned int puzzle_action_local_act(puzzle_action_t *puzzle,
+                                     unsigned int k, unsigned int x,
+                                     unsigned int g)
+{
+  unsigned int g0 = puzzle->by_stab[k][x];
+  unsigned int g1 = group_mul(puzzle->group, g0, g);
+  return puzzle->inv_by_stab[k][g1];
 }
 
 unsigned int puzzle_action_stab(puzzle_action_t *action,

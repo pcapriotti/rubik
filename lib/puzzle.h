@@ -98,6 +98,9 @@ void puzzle_action_init(puzzle_action_t *puzzle,
                                group_t *group, uint8_t **orbit, uint8_t **stab);
 void puzzle_action_cleanup(puzzle_action_t *puzzle);
 unsigned int puzzle_action_act(puzzle_action_t *puzzle, unsigned int x, unsigned int g);
+unsigned int puzzle_action_local_act(puzzle_action_t *puzzle,
+                                     unsigned int k, unsigned int x,
+                                     unsigned int g);
 unsigned int puzzle_action_stab(puzzle_action_t *action,
                                 unsigned int k, unsigned int i, int c);
 
