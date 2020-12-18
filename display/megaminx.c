@@ -116,7 +116,7 @@ quat *megaminx_rotations(poly_t *dodec)
   j-th face (in order from the lowest-numbered face) adjacent to i */
 
   quat rho;
-  quat_rotate(rho, 2 * M_PI / 5, (vec3) { 0, 0, 1 });
+  quat_rotate(rho, 2 * M_PI / 5, (vec3) { 1, 0, 0 });
 
   /* swap faces 0 and 2 */
   quat tau;
@@ -324,13 +324,21 @@ puzzle_scene_t *megaminx_scene_new(scene_t *scene)
   megaminx_model_init(model, dodec);
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
-  static const unsigned char face_keys[] = "jfkdmv,c;als";
-  static const unsigned char rot_keys[] = "JFKDMV<C:ALS";
-  for (unsigned int i = 0; i < 12; i++) {
-    puzzle_scene_set_move_binding(s, face_keys[i], i & ~1, (i & 1) ? 1 : -1, -1);
+  static const unsigned char face_keys[] = "jfnbkdurmv.x,c/z;aielsow";
+  static const unsigned char rot_keys[] = "JFNBKDURMV>X<C?Z:AIELSOW";
+  for (unsigned int i = 0; i < 24; i++) {
+    puzzle_scene_set_move_binding(s, face_keys[i], i >> 1, (i & 1) ? 1 : -1, -1);
     puzzle_scene_set_rotation_binding(s, rot_keys[i],
                                       puzzle_action_stab(action, 2,
-                                                         i & ~1, (i & 1) ? 1 : -1));
+                                                         i >> 1, (i & 1) ? 1 : -1));
+  }
+
+  /* rotate puzzle so that the front face is actually on the front */
+  {
+    unsigned int sym = puzzle_action_stab(action, 2, 0, 1);
+    quat q;
+    quat_mul(q, scene->rot, model->rots[sym]);
+    memcpy(scene->rot, q, sizeof(quat));
   }
 
   return s;

@@ -87,11 +87,11 @@ void scene_tb_end(scene_t *scene, float x, float y)
 {
   scene_tb_update(scene, x, y);
   scene->tb_active = 0;
-  /* printf("rot: (%.02f, %.02f, %.02f, %.02f)\n", */
-  /*        scene->rot[0], */
-  /*        scene->rot[1], */
-  /*        scene->rot[2], */
-  /*        scene->rot[3]); */
+  printf("rot: (%.02f, %.02f, %.02f, %.02f)\n",
+         scene->rot[0],
+         scene->rot[1],
+         scene->rot[2],
+         scene->rot[3]);
 }
 
 void scene_update_pieces(scene_t *scene)

@@ -60,10 +60,10 @@ void std_dodec(poly_t *poly)
 
   mat4x4 rho;
   mat4x4_identity(rho);
-  mat4x4_rotate_Z(rho, rho, 2 * M_PI / 5);
+  mat4x4_rotate_X(rho, rho, 2 * M_PI / 5);
 
-  vec4 v0 = { r, 0, z, 1};
-  vec4 v5 = { r * phi, 0, z - r, 1 };
+  vec4 v0 = { z, r, 0, 1};
+  vec4 v5 = { z - r, r * phi, 0, 1 };
 
   for (unsigned int i = 0; i < 5; i++) {
     vec4 v;
