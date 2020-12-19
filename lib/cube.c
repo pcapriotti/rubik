@@ -110,14 +110,15 @@ uint8_t *cube_new(puzzle_action_t *action, cube_shape_t *shape)
   return conf;
 }
 
-int in_layer(puzzle_action_t *action, cube_shape_t *shape, orbit_t *orbit,
-             unsigned int f, unsigned int l, unsigned int g)
+int in_layer(puzzle_action_t *action, cube_shape_t *shape,
+             uint8_t *conf, unsigned int k, unsigned int i,
+             unsigned int f, unsigned int l)
 {
-  unsigned int f1 =
-    decomp_local(&action->decomp,
-                 puzzle_action_act(action,
-                            decomp_global(&action->decomp, 2, f),
-                            group_inv(action->group, g)));
+  unsigned int g = conf[i];
+  unsigned int f1 = puzzle_action_local_act
+    (action, 2, f, group_inv(action->group, g));
+  orbit_t *orbit = &shape->orbits[k];
+
   switch (orbit->dim) {
   case 0:
     return l == 0 && (f1 & 1);
@@ -146,37 +147,6 @@ int in_layer(puzzle_action_t *action, cube_shape_t *shape, orbit_t *orbit,
   }
 
   return 0;
-}
-
-turn_t *cube_move_(puzzle_action_t *action, cube_shape_t *shape,
-                   uint8_t *conf, unsigned int f, unsigned int l, int c)
-{
-  return cube_move(action, shape, conf, conf, f, l, c);
-}
-
-turn_t *cube_move(puzzle_action_t *action,
-                  cube_shape_t *shape,
-                  uint8_t *conf1, uint8_t *conf,
-                  unsigned int f, unsigned int l, int c)
-{
-  turn_t *turn = malloc(sizeof(turn_t));
-  turn->pieces = malloc(shape->decomp.num_pieces * sizeof(unsigned int));
-  turn->num_pieces = 0;
-
-  turn->g = puzzle_action_stab(action, 2, f, c);
-
-  for (unsigned int k = 0; k < shape->decomp.num_orbits; k++) {
-    orbit_t *orbit = &shape->orbits[k];
-    for (unsigned int i = 0; i < shape->decomp.orbit_size[k]; i++) {
-      unsigned int i0 = shape->decomp.orbit_offset[k] + i;
-      if (in_layer(action, shape, orbit, f, l, conf[i0])) {
-        conf1[i0] = group_mul(action->group, conf[i0], turn->g);
-        turn->pieces[turn->num_pieces++] = i0;
-      }
-    }
-  }
-
-  return turn;
 }
 
 void cube_scramble(puzzle_action_t *action, cube_shape_t *shape, uint8_t *conf)
@@ -226,6 +196,7 @@ struct cube_puzzle_move_data_t
 {
   puzzle_action_t *action;
   cube_shape_t *shape;
+  puzzle_t *puzzle;
 };
 
 void *cube_puzzle_orbit(void *data, unsigned int i)
@@ -247,11 +218,41 @@ void cube_puzzle_cleanup(void *data, puzzle_t *puzzle)
   free(puzzle->move_data);
 }
 
+struct in_layer_data_t
+{
+  puzzle_action_t *action;
+  cube_shape_t *shape;
+  puzzle_t *puzzle;
+  unsigned int face;
+  unsigned int layer;
+};
+
+int cube_move_in_layer(void *data_, uint8_t *conf,
+                       unsigned int k, unsigned int x)
+{
+  struct in_layer_data_t *data = data_;
+  return in_layer(data->action, data->shape, conf, k, x,
+                  data->face, data->layer);
+}
+
 turn_t *cube_puzzle_move(void *data_, uint8_t *conf,
                          unsigned int f, unsigned int l, int c)
 {
   struct cube_puzzle_move_data_t *data = data_;
-  return cube_move_(data->action, data->shape, conf, f, l, c);
+
+  struct in_layer_data_t ldata;
+  ldata.action = data->action;
+  ldata.shape = data->shape;
+  ldata.puzzle = data->puzzle;
+  ldata.face = f;
+  ldata.layer = l;
+
+  move_t move;
+  move.sym = puzzle_action_stab(data->action, 2, f, c);
+  move.in_layer_data = &ldata;
+  move.in_layer = cube_move_in_layer;
+
+  return puzzle_move(data->puzzle, conf, &move);
 }
 
 void cube_puzzle_scramble(void *data_, uint8_t *conf)
@@ -280,6 +281,7 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
     malloc(sizeof(struct cube_puzzle_move_data_t));
   mdata->action = action;
   mdata->shape = shape;
+  mdata->puzzle = puzzle;
   puzzle->move_data = mdata;
 
   puzzle->scramble = cube_puzzle_scramble;

@@ -151,4 +151,14 @@ void *puzzle_orbit_default(void *data, unsigned int i);
 unsigned int puzzle_facelet_default(void *data, unsigned int k,
                                     unsigned int x, unsigned int i);
 
+struct move_t
+{
+  unsigned int sym;
+  int (*in_layer)(void *data, uint8_t *conf, unsigned int k, unsigned int x);
+  void *in_layer_data;
+};
+typedef struct move_t move_t;
+
+turn_t *puzzle_move(puzzle_t *puzzle, uint8_t *conf, move_t *move);
+
 #endif /* PUZZLE_H */

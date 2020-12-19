@@ -110,7 +110,7 @@ unsigned int puzzle_action_act(puzzle_action_t *puzzle, unsigned int x, unsigned
   unsigned int i = decomp_orbit_of(&puzzle->decomp, x);
   x -= puzzle->decomp.orbit_offset[i];
   unsigned int j = puzzle_action_local_act(puzzle, i, x, g);
-  return puzzle->decomp.orbit_offset[i] + j % puzzle->decomp.orbit_size[i];
+  return puzzle->decomp.orbit_offset[i] + j;
 }
 
 unsigned int puzzle_action_local_act(puzzle_action_t *puzzle,
@@ -119,7 +119,7 @@ unsigned int puzzle_action_local_act(puzzle_action_t *puzzle,
 {
   unsigned int g0 = puzzle->by_stab[k][x];
   unsigned int g1 = group_mul(puzzle->group, g0, g);
-  return puzzle->inv_by_stab[k][g1];
+  return puzzle->inv_by_stab[k][g1] % puzzle->decomp.orbit_size[k];
 }
 
 unsigned int puzzle_action_stab(puzzle_action_t *action,
@@ -229,4 +229,25 @@ unsigned int puzzle_facelet_default(void *data, unsigned int k,
   unsigned int x0 = decomp_global(&action->decomp, 2, i);
   unsigned int y0 = puzzle_action_act(action, x0, g);
   return decomp_local(&action->decomp, y0);
+}
+
+turn_t *puzzle_move(puzzle_t *puzzle, uint8_t *conf, move_t *move)
+{
+  turn_t *turn = malloc(sizeof(turn_t));
+  turn->pieces = malloc(puzzle->decomp->num_pieces * sizeof(unsigned int));
+  turn->num_pieces = 0;
+
+  turn->g = move->sym;
+
+  for (unsigned int k = 0; k < puzzle->decomp->num_orbits; k++) {
+    for (unsigned int i = 0; i < puzzle->decomp->orbit_size[k]; i++) {
+      unsigned int x = puzzle->decomp->orbit_offset[k] + i;
+      if (move->in_layer(move->in_layer_data, conf, k, x)) {
+        conf[x] = group_mul(puzzle->group, conf[x], turn->g);
+        turn->pieces[turn->num_pieces++] = x;
+      }
+    }
+  }
+
+  return turn;
 }
