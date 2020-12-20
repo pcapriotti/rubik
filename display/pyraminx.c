@@ -148,18 +148,20 @@ puzzle_scene_t *pyraminx_scene_new(scene_t *scene)
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
 
-  static const unsigned char face_keys[] = "jfmvkd,cls.x;a/z";
-  static const unsigned char rot_keys[] = "JFKDLS:A";
-  for (unsigned int i = 0; i < 16; i++) {
-    unsigned int v = i >> 2;
+  static const unsigned char face_keys[] = "urjfmviekd,cowls.xpq;a/z";
+  for (unsigned int i = 0; i < 24; i++) {
+    unsigned int v = i / 6;
     int c = (i & 1) ? 1 : -1;
-    unsigned int l = (i >> 1) & 1;
+    unsigned int l = (i / 2) % 3;
 
     puzzle_scene_set_move_binding(s, face_keys[i], v, c, l);
-    /* if (i < 8) {  */
-    /*   puzzle_scene_set_rotation_binding(s, rot_keys[i], */
-    /*                                     puzzle_action_stab(action, 0, v, c)); */
-    /* } */
+  }
+  static const unsigned char rot_keys[] = "JFKDLS:A";
+  for (unsigned int i = 0; i < 8; i++) {
+    unsigned int v = i >> 1;
+    int c = (i & 1) ? 1 : -1;
+    unsigned int sym = puzzle_action_stab(action, 0, v, c);
+    puzzle_scene_set_rotation_binding(s, rot_keys[i], sym);
   }
 
   return s;

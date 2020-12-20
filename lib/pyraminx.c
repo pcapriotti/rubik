@@ -137,19 +137,22 @@ static int in_layer(puzzle_action_t *action,
   v = puzzle_action_local_act(action, 0, v,
                               group_inv(action->group, g)) % 4;
 
-  if (l == 1) {
+  if (l == 0) {
     return k == 0 && v == 0;
   }
 
+  int ret;
   switch (k) {
   case 0:
   case 2:
-    return v != 0;
+    ret = v == 0;
+    break;
   case 1:
-    return v != 0 && v != 1;
+    ret = v == 0 || v == 1;
+    break;
   }
 
-  return 0;
+  return l == 1 ? ret : !ret;
 }
 
 turn_t *pyraminx_move(puzzle_action_t *action,

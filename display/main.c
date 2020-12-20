@@ -147,8 +147,8 @@ void run(GLFWwindow *window)
   scene_t *scene = malloc(sizeof(scene_t));
   scene_init(scene, width, height, glfwGetTime());
 
-  /* pyraminx_scene_new(scene); */
-  cube_scene_new(scene, 5);
+  pyraminx_scene_new(scene);
+  /* cube_scene_new(scene, 5); */
   /* megaminx_scene_new(scene); */
   /* square1_scene_new(scene); */
 
