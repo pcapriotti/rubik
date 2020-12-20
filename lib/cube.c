@@ -192,7 +192,7 @@ void cube_scramble(puzzle_action_t *action, cube_shape_t *shape, uint8_t *conf)
   }
 }
 
-struct cube_puzzle_move_data_t
+struct cube_puzzle_data_t
 {
   puzzle_action_t *action;
   cube_shape_t *shape;
@@ -238,7 +238,7 @@ int cube_move_in_layer(void *data_, uint8_t *conf,
 turn_t *cube_puzzle_move(void *data_, uint8_t *conf,
                          unsigned int f, unsigned int l, int c)
 {
-  struct cube_puzzle_move_data_t *data = data_;
+  struct cube_puzzle_data_t *data = data_;
 
   struct in_layer_data_t ldata;
   ldata.action = data->action;
@@ -257,8 +257,19 @@ turn_t *cube_puzzle_move(void *data_, uint8_t *conf,
 
 void cube_puzzle_scramble(void *data_, uint8_t *conf)
 {
-  struct cube_puzzle_move_data_t *data = data_;
+  struct cube_puzzle_data_t *data = data_;
   cube_scramble(data->action, data->shape, conf);
+}
+
+unsigned int cube_puzzle_facelet(void *data_, unsigned int k,
+                                 unsigned int x, unsigned int i)
+{
+  struct cube_puzzle_data_t *data = data_;
+  orbit_t *orbit = &data->shape->orbits[k];
+  unsigned int g = data->action->by_stab[orbit->dim][x];
+  unsigned int x0 = decomp_global(&data->action->decomp, 2, i);
+  unsigned int y0 = puzzle_action_act(data->action, x0, g);
+  return decomp_local(&data->action->decomp, y0);
 }
 
 void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *shape)
@@ -267,23 +278,24 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
   puzzle->decomp = &shape->decomp;
   puzzle->num_faces = 6;
 
+  struct cube_puzzle_data_t *data =
+    malloc(sizeof(struct cube_puzzle_data_t));
+  data->action = action;
+  data->shape = shape;
+  data->puzzle = puzzle;
+
   puzzle->orbit = cube_puzzle_orbit;
   puzzle->orbit_data = shape;
 
-  puzzle->facelet = puzzle_facelet_default;
-  puzzle->facelet_data = action;
+  puzzle->facelet = cube_puzzle_facelet;
+  puzzle->facelet_data = data;
 
   puzzle->cleanup = cube_puzzle_cleanup;
   puzzle->cleanup_data = 0;
 
   puzzle->move = cube_puzzle_move;
-  struct cube_puzzle_move_data_t *mdata =
-    malloc(sizeof(struct cube_puzzle_move_data_t));
-  mdata->action = action;
-  mdata->shape = shape;
-  mdata->puzzle = puzzle;
-  puzzle->move_data = mdata;
+  puzzle->move_data = data;
 
   puzzle->scramble = cube_puzzle_scramble;
-  puzzle->scramble_data = mdata;
+  puzzle->scramble_data = data;
 }

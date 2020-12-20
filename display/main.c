@@ -148,7 +148,7 @@ void run(GLFWwindow *window)
   scene_init(scene, width, height, glfwGetTime());
 
   /* pyraminx_scene_new(scene); */
-  cube_scene_new(scene, 3);
+  cube_scene_new(scene, 5);
   /* megaminx_scene_new(scene); */
   /* square1_scene_new(scene); */
 
