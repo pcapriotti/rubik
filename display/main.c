@@ -136,7 +136,7 @@ static void handle_click(GLFWwindow* window, int button, int action, int mods)
   }
 }
 
-void run(GLFWwindow *window)
+void run(GLFWwindow *window, const char *puzzle, unsigned int arg)
 {
   double tm0 = glfwGetTime();
   int nframes = 0;
@@ -147,10 +147,22 @@ void run(GLFWwindow *window)
   scene_t *scene = malloc(sizeof(scene_t));
   scene_init(scene, width, height, glfwGetTime());
 
-  pyraminx_scene_new(scene);
-  /* cube_scene_new(scene, 5); */
-  /* megaminx_scene_new(scene); */
-  /* square1_scene_new(scene); */
+  if (!puzzle || !strcmp(puzzle, "cube")) {
+    cube_scene_new(scene, arg ? arg : 3);
+  }
+  else if (!strcmp(puzzle, "pyraminx")) {
+    pyraminx_scene_new(scene);
+  }
+  else if (!strcmp(puzzle, "megaminx")) {
+    megaminx_scene_new(scene);
+  }
+  else if (!strcmp(puzzle, "square1")) {
+    square1_scene_new(scene);
+  }
+  else {
+    fprintf(stderr, "Invalid puzzle `%s'\n", puzzle);
+    exit(1);
+  }
 
   glfwSetWindowUserPointer(window, scene);
 
@@ -186,6 +198,12 @@ void run(GLFWwindow *window)
 
 int main(int argc, char **argv)
 {
+  char *puzzle = argc == 2 ? argv[1] : 0;
+  unsigned int arg = 0;
+  if (argc == 3) {
+    arg = strtol(argv[2], 0, 10);
+  }
+
   if (!glfwInit()) return 1;
   glfwSetErrorCallback(handle_error);
 
@@ -217,7 +235,7 @@ int main(int argc, char **argv)
   glfwSetMouseButtonCallback(window, handle_click);
   glfwSetCursorPosCallback(window, handle_move);
 
-  run(window);
+  run(window, puzzle, arg);
 
   return 0;
 }
