@@ -42,32 +42,6 @@ vec3 quat_mul(vec4 q, vec3 v)
   return v + q.w * t + cross(q.xyz, t);
 }
 
-vec4 quat_normalize(vec4 q)
-{
-  return q / sqrt(pow(length(q.xyz), 2) + pow(q[3], 2));
-}
-
-
-#define SLERP_EPS 0.0001
-vec4 quat_slerp(vec4 q1, vec4 q2, float t)
-{
-  float d = dot(q1.xyz, q2.xyz) + q1.w * q2.w;
-  if (d < 0) {
-    d = -d;
-    q2 = -q2;
-  }
-
-  if (d > 1 - SLERP_EPS) {
-    return quat_normalize(mix(q1, q2, t));
-  }
-
-  float s = sqrt(1 - d * d);
-  float theta = atan(s, d);
-  float a = sin(theta * (1 - t)) / s;
-  float b = sin(theta * t) / s;
-  return a * q1 + b * q2;
-}
-
 void main()
 {
   pos = model * vec4(quat_mul(q, p), 1);
