@@ -3,6 +3,7 @@
 #include "group.h"
 #include "perm.h"
 #include "puzzle.h"
+#include "utils.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -91,13 +92,6 @@ void pyraminx_action_init(puzzle_action_t *action)
       printf(" orbit[1][%u]: %u\n", index - 1, orbit[1][index - 1]);
     }
   }
-
-  /* orbit[1][0] = 0; */
-  /* orbit[1][1] = 1; */
-  /* orbit[1][2] = 0; */
-  /* orbit[1][3] = 0; */
-  /* orbit[1][4] = 0; */
-  /* orbit[1][5] = 0; */
 
   /* centres are just identified with symmetries */
   for (unsigned int i = 0; i < num_syms; i++) {
@@ -193,6 +187,45 @@ turn_t *pyraminx_puzzle_move(void *data, uint8_t *conf,
 
 void pyraminx_puzzle_scramble(void *data, uint8_t *conf)
 {
+  unsigned int vo = rand() % 81;
+
+  unsigned int co = rand() % 81;
+
+  uint8_t edges[6];
+  perm_id(edges, 6);
+  parity_shuffle(edges, 6, 0);
+
+  unsigned int eo = rand() & 0x1f;
+  eo |= ((__builtin_popcount(eo) & 1) << 5);
+
+
+  puzzle_action_t *action = data;
+
+  /* vertices */
+  for (unsigned int i = 0; i < 4; i++) {
+    unsigned int o = vo % 3;
+    unsigned int sym = action->by_stab[0][i + o * 4];
+    conf[decomp_global(&action->decomp, 0, i)] = sym;
+    vo /= 3;
+  }
+
+  /* centres */
+  unsigned int cos[4];
+  for (unsigned int v = 0; v < 4; v++) {
+    cos[v] = puzzle_action_stab(action, 0, v, co % 3);
+  }
+  for (unsigned int g = 0; g < 12; g++) {
+    unsigned int v = puzzle_action_local_act(action, 0, 0, g);
+    unsigned int g1 = group_mul(action->group, g, cos[v]);
+    conf[decomp_global(&action->decomp, 2, g)] = g1;
+  }
+
+  /* edges */
+  for (unsigned int e = 0; e < 6; e++) {
+    unsigned int o = (eo >> e) & 1;
+    unsigned int g = action->by_stab[1][edges[e] + o * 6];
+    conf[decomp_global(&action->decomp, 1, e)] = g;
+  }
 }
 
 unsigned int pyraminx_facelet(void *data, unsigned int k,
@@ -224,5 +257,5 @@ void pyraminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
   puzzle->move_data = action;
 
   puzzle->scramble = pyraminx_puzzle_scramble;
-  puzzle->scramble_data = puzzle;
+  puzzle->scramble_data = action;
 }
