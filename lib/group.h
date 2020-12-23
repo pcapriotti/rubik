@@ -41,4 +41,6 @@ void group_cyclic_subgroup(group_t *group,
                            uint8_t *elems, unsigned int num,
                            unsigned int gen);
 
+void group_a4_init(group_t *group);
+
 #endif /* GROUP_H */

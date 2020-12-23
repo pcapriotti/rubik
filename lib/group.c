@@ -206,3 +206,35 @@ void group_cyclic_subgroup(group_t *group,
     elems[i] = group_mul(group, elems[i - 1], gen);
   }
 }
+
+void group_a4_init(group_t *group)
+{
+  static const unsigned int num_syms = 12;
+  uint8_t *table = malloc(num_syms * num_syms);
+
+  unsigned int i = 0;
+  for (unsigned int index = 0; index < 24; index++) {
+    uint8_t lehmer[4], perm[4];
+    lehmer_from_index(lehmer, 4, index, 4);
+    if (lehmer_sign(lehmer, 4)) continue;
+
+    perm_from_lehmer(perm, lehmer, 4);
+
+    unsigned int j = 0;
+    for (unsigned int index1 = 0; index1 < 24; index1++) {
+      uint8_t lehmer1[4], perm1[4];
+      lehmer_from_index(lehmer1, 4, index1, 4);
+      if (lehmer_sign(lehmer1, 4)) continue;
+
+      perm_from_lehmer(perm1, lehmer1, 4);
+      perm_lmul(perm1, perm, 4);
+
+      table[j + i * num_syms] = perm_index(perm1, 4, 4) / 2;
+      j++;
+    }
+
+    i++;
+  }
+
+  group_from_table(group, num_syms, table);
+}
