@@ -276,7 +276,6 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
 {
   puzzle->group = action->group;
   puzzle->decomp = &shape->decomp;
-  puzzle->num_faces = 6;
 
   struct cube_puzzle_data_t *data =
     malloc(sizeof(struct cube_puzzle_data_t));

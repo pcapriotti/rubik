@@ -43,6 +43,7 @@ struct puzzle_model_t
 
   quat *rots;
   vec4 *colours;
+  unsigned int num_colours;
 };
 typedef struct puzzle_model_t puzzle_model_t;
 

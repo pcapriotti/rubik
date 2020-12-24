@@ -20,7 +20,7 @@ layout (std140, binding = 0) uniform scene_data
 
 layout (std430, binding = 1) buffer _facelet
 {
-  uint num_faces;
+  uint num_colours;
   uint facelet[];
 };
 
@@ -50,7 +50,7 @@ void main()
   if (f < 0)
     col = bcol;
   else
-    col = colours[facelet[index * num_faces + f]];
+    col = colours[facelet[index * num_colours + f]];
 
   bary = b;
 }

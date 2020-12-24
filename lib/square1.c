@@ -309,7 +309,6 @@ void square1_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
   puzzle->decomp = malloc(sizeof(decomp_t));
   unsigned int orbit_size[] = { 8, 8, 2 };
   decomp_init(puzzle->decomp, 3, orbit_size);
-  puzzle->num_faces = 6;
 
   puzzle->orbit = puzzle_orbit_default;
   puzzle->orbit_data = 0;

@@ -120,6 +120,7 @@ void pyraminx_model_init(puzzle_model_t *model, puzzle_action_t *action)
 
   model->rots = pyraminx_rotations(action, tetra);
   model->colours = colours;
+  model->num_colours = 4;
 
   model->cleanup = pyraminx_model_cleanup;
   model->cleanup_data = 0;

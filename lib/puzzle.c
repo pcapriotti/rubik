@@ -68,6 +68,18 @@ unsigned int symmetries_act(symmetries_t *syms,
   return 0;
 }
 
+void decomp_init_trivial(decomp_t *decomp, unsigned int n)
+{
+  decomp->num_pieces = n;
+  decomp->num_orbits = n;
+  decomp->orbit_size = malloc(n * sizeof(unsigned int));
+  decomp->orbit_offset = malloc(n * sizeof(unsigned int));
+  for (unsigned int i = 0; i < n; i++) {
+    decomp->orbit_size[i] = 1;
+    decomp->orbit_offset[i] = i;
+  }
+}
+
 unsigned int decomp_orbit_of(decomp_t *decomp, unsigned int x)
 {
   assert(x < decomp->num_pieces);

@@ -82,6 +82,7 @@ struct puzzle_action_t
 };
 typedef struct puzzle_action_t puzzle_action_t;
 
+void decomp_init_trivial(decomp_t *decomp, unsigned int n);
 unsigned int decomp_orbit_of(decomp_t *puzzle, unsigned int x);
 unsigned int decomp_global(decomp_t *puzzle, unsigned int i, unsigned int j);
 unsigned int decomp_local(decomp_t *puzzle, unsigned int j);
@@ -122,7 +123,6 @@ struct puzzle_t
 {
   group_t *group;
   decomp_t *decomp;
-  unsigned int num_faces;
 
   void *(*orbit)(void *data, unsigned int i);
   void *orbit_data;

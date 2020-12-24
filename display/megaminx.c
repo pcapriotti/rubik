@@ -295,6 +295,7 @@ static void megaminx_model_init(puzzle_model_t *model,
     { 0.0, 0.5, 0.5, 1.0 }, // teal
   };
   model->colours = malloc(sizeof(colours));
+  model->num_colours = 12;
   memcpy(model->colours, colours, sizeof(colours));
 
   model->init_piece = megaminx_model_init_piece;

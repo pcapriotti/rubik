@@ -261,12 +261,12 @@ void cube_model_cleanup(void *data, puzzle_model_t *model)
 vec4 *cube_colours()
 {
   static vec4 colours[] = {
-    { 1.0, 1.0, 1.0, 1.0 }, // white
-    { 1.0, 1.0, 0.0, 1.0 }, // yellow
-    { 0.0, 0.6, 0.0, 1.0 }, // green
-    { 0.0, 0.0, 1.0, 1.0 }, // blue
-    { 1.0, 0.0, 0.0, 1.0 }, // red
-    { 1.0, 0.65, 0.0, 1.0 }, // orange
+    { 1.0, 1.0, 1.0, 1.0 }, /* white */
+    { 1.0, 1.0, 0.0, 1.0 }, /* yellow */
+    { 0.0, 0.6, 0.0, 1.0 }, /* green */
+    { 0.0, 0.0, 1.0, 1.0 }, /* blue */
+    { 1.0, 0.0, 0.0, 1.0 }, /* red */
+    { 1.0, 0.65, 0.0, 1.0 } /* orange */
   };
   return colours;
 }
@@ -282,6 +282,7 @@ void cube_model_init(puzzle_model_t *model, unsigned int n,
 
   model->rots = rots;
   model->colours = cube_colours();
+  model->num_colours = 6;
   model->decomp = decomp;
 
   model->cleanup = cube_model_cleanup;

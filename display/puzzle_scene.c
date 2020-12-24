@@ -106,7 +106,7 @@ void puzzle_scene_init(puzzle_scene_t *s,
 
   for (unsigned int i = 0; i < model->decomp->num_orbits; i++) {
     poly_t poly;
-    int *facelets = malloc(puzzle->num_faces * sizeof(int));
+    int *facelets = malloc(model->num_colours * sizeof(int));
     model->init_piece(model->init_piece_data, &poly, i,
                       puzzle->orbit(puzzle->orbit_data, i),
                       facelets);
@@ -127,7 +127,7 @@ void puzzle_scene_init(puzzle_scene_t *s,
     glGenBuffers(1, &b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
     glBufferData(GL_SHADER_STORAGE_BUFFER,
-                 puzzle->num_faces * sizeof(vec4),
+                 model->num_colours * sizeof(vec4),
                  model->colours, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_COLOURS, b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -140,13 +140,13 @@ void puzzle_scene_init(puzzle_scene_t *s,
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
 
     const unsigned int size = (1 + model->decomp->num_pieces *
-                               puzzle->num_faces) * sizeof(unsigned int);
+                               model->num_colours) * sizeof(unsigned int);
     unsigned int *buf = malloc(size);
-    buf[0] = puzzle->num_faces;
+    buf[0] = model->num_colours;
     unsigned int index = 1;
     for (unsigned int k = 0; k < model->decomp->num_orbits; k++) {
       for (unsigned int x = 0; x < model->decomp->orbit_size[k]; x++) {
-        for (unsigned int i = 0; i < puzzle->num_faces; i++) {
+        for (unsigned int i = 0; i < model->num_colours; i++) {
           buf[index++] = puzzle->facelet(puzzle->facelet_data, k, x, i);
         }
       }
