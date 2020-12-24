@@ -98,7 +98,7 @@ void puzzle_scene_init(puzzle_scene_t *s,
                        puzzle_model_t *model)
 {
   s->count = 0;
-  s->piece = malloc(puzzle->decomp->num_orbits * sizeof(piece_t));
+  s->piece = malloc(model->decomp->num_orbits * sizeof(piece_t));
   s->puzzle = puzzle;
   s->model = model;
   s->conf = conf;
