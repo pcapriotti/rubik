@@ -271,7 +271,8 @@ vec4 *cube_colours()
   return colours;
 }
 
-void cube_model_init(puzzle_model_t *model, unsigned int n, quat *rots)
+void cube_model_init(puzzle_model_t *model, unsigned int n,
+                     quat *rots, decomp_t *decomp)
 {
   model->init_piece = cube_model_init_piece;
 
@@ -281,6 +282,7 @@ void cube_model_init(puzzle_model_t *model, unsigned int n, quat *rots)
 
   model->rots = rots;
   model->colours = cube_colours();
+  model->decomp = decomp;
 
   model->cleanup = cube_model_cleanup;
   model->cleanup_data = 0;
@@ -299,7 +301,7 @@ puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   puzzle_t *puzzle = malloc(sizeof(puzzle_t));
   cube_puzzle_init(puzzle, action, shape);
   puzzle_model_t *model = malloc(sizeof(puzzle_model_t));
-  cube_model_init(model, n, rots);
+  cube_model_init(model, n, rots, &shape->decomp);
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
 

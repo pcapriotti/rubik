@@ -56,12 +56,12 @@ void puzzle_scene_move_face(puzzle_scene_t *s, void *data_)
                                  data->face, layer, data->count);
   if (!turn) return;
 
-  const unsigned int num_orbits = s->puzzle->decomp->num_orbits;
+  const unsigned int num_orbits = s->model->decomp->num_orbits;
   unsigned int *num_pieces = malloc(num_orbits * sizeof(unsigned int));
   unsigned int **pieces = malloc(num_orbits * sizeof(unsigned int *));
-  decomp_split_turn(s->puzzle->decomp, turn, num_pieces, pieces);
+  decomp_split_turn(s->model->decomp, turn, num_pieces, pieces);
 
-  for (unsigned int k = 0; k < s->puzzle->decomp->num_orbits; k++) {
+  for (unsigned int k = 0; k < s->model->decomp->num_orbits; k++) {
     piece_turn(&s->piece[k], turn->g, num_pieces[k], pieces[k]);
   }
 
@@ -74,20 +74,20 @@ void puzzle_scene_rotate(puzzle_scene_t *s, void *data_)
   unsigned int *data = data_;
   unsigned int sym = *data;
 
-  for (unsigned int i = 0; i < s->puzzle->decomp->num_pieces; i++) {
+  for (unsigned int i = 0; i < s->model->decomp->num_pieces; i++) {
     s->conf[i] = group_mul(s->puzzle->group, s->conf[i], sym);
   }
 
-  for (unsigned int k = 0; k < s->puzzle->decomp->num_orbits; k++) {
-    piece_turn(&s->piece[k], sym, s->puzzle->decomp->orbit_size[k], 0);
+  for (unsigned int k = 0; k < s->model->decomp->num_orbits; k++) {
+    piece_turn(&s->piece[k], sym, s->model->decomp->orbit_size[k], 0);
   }
 }
 
 void puzzle_scene_scramble(puzzle_scene_t *s, void *data)
 {
   s->puzzle->scramble(s->puzzle->scramble_data, s->conf);
-  for (unsigned int k = 0; k < s->puzzle->decomp->num_orbits; k++) {
-    piece_set_conf(&s->piece[k], s->conf + s->puzzle->decomp->orbit_offset[k]);
+  for (unsigned int k = 0; k < s->model->decomp->num_orbits; k++) {
+    piece_set_conf(&s->piece[k], s->conf + s->model->decomp->orbit_offset[k]);
   }
 }
 
@@ -104,7 +104,7 @@ void puzzle_scene_init(puzzle_scene_t *s,
   s->conf = conf;
   s->key_bindings = calloc(256, sizeof(key_action_t));
 
-  for (unsigned int i = 0; i < puzzle->decomp->num_orbits; i++) {
+  for (unsigned int i = 0; i < model->decomp->num_orbits; i++) {
     poly_t poly;
     int *facelets = malloc(puzzle->num_faces * sizeof(int));
     model->init_piece(model->init_piece_data, &poly, i,
@@ -112,10 +112,10 @@ void puzzle_scene_init(puzzle_scene_t *s,
                       facelets);
 
     piece_init(&s->piece[i], &poly, facelets,
-               puzzle->decomp->orbit_offset[i],
+               model->decomp->orbit_offset[i],
                model->rots,
-               conf + puzzle->decomp->orbit_offset[i],
-               puzzle->decomp->orbit_size[i]);
+               conf + model->decomp->orbit_offset[i],
+               model->decomp->orbit_size[i]);
     scene_add_piece(scene, &s->piece[i]);
     printf("adding orbit %u to scene\n", i);
     free(facelets);
@@ -139,13 +139,13 @@ void puzzle_scene_init(puzzle_scene_t *s,
     glGenBuffers(1, &b);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, b);
 
-    const unsigned int size = (1 + puzzle->decomp->num_pieces *
+    const unsigned int size = (1 + model->decomp->num_pieces *
                                puzzle->num_faces) * sizeof(unsigned int);
     unsigned int *buf = malloc(size);
     buf[0] = puzzle->num_faces;
     unsigned int index = 1;
-    for (unsigned int k = 0; k < puzzle->decomp->num_orbits; k++) {
-      for (unsigned int x = 0; x < puzzle->decomp->orbit_size[k]; x++) {
+    for (unsigned int k = 0; k < model->decomp->num_orbits; k++) {
+      for (unsigned int x = 0; x < model->decomp->orbit_size[k]; x++) {
         for (unsigned int i = 0; i < puzzle->num_faces; i++) {
           buf[index++] = puzzle->facelet(puzzle->facelet_data, k, x, i);
         }

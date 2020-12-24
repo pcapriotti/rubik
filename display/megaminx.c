@@ -276,7 +276,8 @@ void megaminx_model_cleanup(void *data, puzzle_model_t *model)
   free(dodec);
 }
 
-void megaminx_model_init(puzzle_model_t *model, poly_t* dodec)
+static void megaminx_model_init(puzzle_model_t *model,
+                                poly_t* dodec, decomp_t *decomp)
 {
   model->rots = megaminx_rotations(dodec);
   vec4 colours[] = {
@@ -300,6 +301,7 @@ void megaminx_model_init(puzzle_model_t *model, poly_t* dodec)
   model->init_piece_data = dodec;
   model->cleanup = megaminx_model_cleanup;
   model->cleanup_data = 0;
+  model->decomp = decomp;
 }
 
 puzzle_scene_t *megaminx_scene_new(scene_t *scene)
@@ -321,7 +323,7 @@ puzzle_scene_t *megaminx_scene_new(scene_t *scene)
   puzzle_t *puzzle = malloc(sizeof(puzzle_t));
   megaminx_puzzle_init(puzzle, action);
   puzzle_model_t *model = malloc(sizeof(puzzle_model_t));
-  megaminx_model_init(model, dodec);
+  megaminx_model_init(model, dodec, &action->decomp);
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
   static const unsigned char face_keys[] = "jfnbkdurmv.x,c/z;aielsow";

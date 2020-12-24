@@ -108,6 +108,7 @@ puzzle_scene_t *square1_scene_new(scene_t *scene)
   model->cleanup_data = 0;
   model->rots = square1_rotations();
   model->colours = cube_colours();
+  model->decomp = puzzle->decomp;
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
 

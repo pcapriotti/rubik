@@ -58,8 +58,8 @@ void pyraminx_init_piece(poly_t *piece, poly_t *tetra, int type, int *facelets)
 }
 
 static void pyraminx_model_init_piece(void *data, poly_t *poly,
-                               unsigned int k, void *orbit,
-                               int *facelets)
+                                      unsigned int k, void *orbit,
+                                      int *facelets)
 {
   poly_t *tetra = data;
   pyraminx_init_piece(poly, tetra, k, facelets);
@@ -116,6 +116,7 @@ void pyraminx_model_init(puzzle_model_t *model, puzzle_action_t *action)
 
   model->init_piece = pyraminx_model_init_piece;
   model->init_piece_data = tetra;
+  model->decomp = &action->decomp;
 
   model->rots = pyraminx_rotations(action, tetra);
   model->colours = colours;

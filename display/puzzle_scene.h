@@ -11,6 +11,9 @@ typedef struct scene_t scene_t;
 struct puzzle_t;
 typedef struct puzzle_t puzzle_t;
 
+struct decomp_t;
+typedef struct decomp_t decomp_t;
+
 struct puzzle_scene_t;
 typedef struct puzzle_scene_t puzzle_scene_t;
 
@@ -35,6 +38,8 @@ struct puzzle_model_t
 
   void (*cleanup)(void *data, struct puzzle_model_t *model);
   void *cleanup_data;
+
+  decomp_t *decomp;
 
   quat *rots;
   vec4 *colours;
