@@ -251,3 +251,16 @@ turn_t *puzzle_move(puzzle_t *puzzle, uint8_t *conf, move_t *move)
 
   return turn;
 }
+
+uint8_t *conf_new(puzzle_action_t *action)
+{
+  uint8_t *conf = malloc(action->decomp.num_pieces * sizeof(uint8_t));
+  unsigned int index = 0;
+  for (unsigned int i = 0; i < action->decomp.num_orbits; i++) {
+    for (unsigned int j = 0; j < action->decomp.orbit_size[i]; j++) {
+      conf[index++] = action->by_stab[i][j];
+    }
+  }
+
+  return conf;
+}

@@ -160,5 +160,6 @@ struct move_t
 typedef struct move_t move_t;
 
 turn_t *puzzle_move(puzzle_t *puzzle, uint8_t *conf, move_t *move);
+uint8_t *conf_new(puzzle_action_t *action);
 
 #endif /* PUZZLE_H */
