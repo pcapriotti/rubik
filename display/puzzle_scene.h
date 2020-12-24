@@ -33,7 +33,8 @@ typedef struct key_action_t key_action_t;
 struct puzzle_model_t
 {
   /* create piece model and return facelet data */
-  void (*init_piece)(void *data, poly_t *poly, unsigned int k, void *orbit, int *facelets);
+  int *(*init_piece)(void *data, poly_t *poly,
+                     unsigned int k, void *orbit);
   void *init_piece_data;
 
   void (*cleanup)(void *data, struct puzzle_model_t *model);

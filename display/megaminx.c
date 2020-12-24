@@ -18,7 +18,7 @@
 
 /* extract a megaminx corner from vertex 0 of a dodecahedron */
 /* edge is the ratio between the corner edge length and the full edge length */
-static void megaminx_corner_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
+static int *megaminx_corner_poly(poly_t *mm, poly_t *dodec, float edge)
 {
   abs_prism(&mm->abs, 4);
 
@@ -37,16 +37,18 @@ static void megaminx_corner_poly(poly_t *mm, poly_t *dodec, float edge, int *fac
     if (i < 4) vec3_add(mm->vertices[i], mm->vertices[i], v3);
   }
 
+  int *facelets = malloc(mm->abs.num_faces * sizeof(int));
   for (int i = 0; i < 6; i++) {
     facelets[i] = -1;
   }
   facelets[5] = 0;
   facelets[1] = 2;
   facelets[4] = 10;
+  return facelets;
 }
 
 
-static void megaminx_edge_poly(poly_t *mm, poly_t *dodec, float edge, int* facelets)
+static int *megaminx_edge_poly(poly_t *mm, poly_t *dodec, float edge)
 {
   abs_prism(&mm->abs, 4);
   mm->vertices = malloc(mm->abs.num_vertices * sizeof(vec3));
@@ -76,14 +78,16 @@ static void megaminx_edge_poly(poly_t *mm, poly_t *dodec, float edge, int* facel
   vec3_add(mm->vertices[6], mm->vertices[5], v2);
   vec3_add(mm->vertices[7], mm->vertices[4], v2);
 
+  int *facelets = malloc(mm->abs.num_faces * sizeof(int));
   for (int i = 0; i < 6; i++) {
     facelets[i] = -1;
   }
   facelets[1] = 2;
   facelets[4] = 0;
+  return facelets;
 }
 
-static void megaminx_centre_poly(poly_t *mm, poly_t *dodec, float edge, int *facelets)
+static int *megaminx_centre_poly(poly_t *mm, poly_t *dodec, float edge)
 {
   abs_prism(&mm->abs, 5);
   mm->vertices = malloc(mm->abs.num_vertices * sizeof(vec3));
@@ -102,10 +106,12 @@ static void megaminx_centre_poly(poly_t *mm, poly_t *dodec, float edge, int *fac
     vec3_add(mm->vertices[i], mm->vertices[i + 5], v3);
   }
 
+  int *facelets = malloc(mm->abs.num_faces * sizeof(int));
   for (int i = 0; i < 10; i++) {
     facelets[i] = -1;
   }
   facelets[6] = 0;
+  return facelets;
 }
 
 quat *megaminx_rotations(poly_t *dodec)
@@ -247,23 +253,24 @@ void megaminx_puzzle_action_init(puzzle_action_t *puzzle, abs_poly_t *dodec, pol
   }
 }
 
-void megaminx_model_init_piece(void *data, poly_t *poly,
-                               unsigned int k, void *orbit,
-                               int *facelets)
+int *megaminx_model_init_piece(void *data, poly_t *poly,
+                               unsigned int k, void *orbit)
 {
   static const float edge_size = 0.4;
   poly_t *dodec = data;
   switch (k) {
   case 0:
-    megaminx_corner_poly(poly, dodec, edge_size, facelets);
+    return megaminx_corner_poly(poly, dodec, edge_size);
     break;
   case 1:
-    megaminx_edge_poly(poly, dodec, edge_size, facelets);
+    return megaminx_edge_poly(poly, dodec, edge_size);
     break;
   case 2:
-    megaminx_centre_poly(poly, dodec, edge_size, facelets);
+    return megaminx_centre_poly(poly, dodec, edge_size);
     break;
   }
+
+  return 0;
 }
 
 void megaminx_model_cleanup(void *data, puzzle_model_t *model)

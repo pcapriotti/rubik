@@ -17,7 +17,7 @@ enum {
   MIDDLE
 };
 
-static void square1_poly(poly_t *poly, float side, unsigned int type, int *facelets)
+static int *square1_poly(poly_t *poly, float side, unsigned int type)
 {
   const unsigned int num = type == EDGE ? 3 : 4;
   abs_prism(&poly->abs, num);
@@ -26,6 +26,7 @@ static void square1_poly(poly_t *poly, float side, unsigned int type, int *facel
   float x = side * 0.5;
   float y = x * tanf(M_PI / 12);
 
+  int *facelets = malloc(poly->abs.num_faces * sizeof(int));
   for (unsigned int i = 0; i < 6; i++) {
     facelets[i] = -1;
   }
@@ -58,6 +59,8 @@ static void square1_poly(poly_t *poly, float side, unsigned int type, int *facel
       break;
     }
   }
+
+  return facelets;
 }
 
 static void square1_model_cleanup(void *data, puzzle_model_t *model)
@@ -65,10 +68,10 @@ static void square1_model_cleanup(void *data, puzzle_model_t *model)
   free(model->rots);
 }
 
-static void square1_init_piece(void *data, poly_t *poly,
-                               unsigned int k, void *orbit, int *facelets)
+static int *square1_init_piece(void *data, poly_t *poly,
+                               unsigned int k, void *orbit)
 {
-  square1_poly(poly, 1.0, k, facelets);
+  return square1_poly(poly, 1.0, k);
 }
 
 quat *square1_rotations()

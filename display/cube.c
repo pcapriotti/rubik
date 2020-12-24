@@ -17,9 +17,8 @@
 #include "lib/puzzle.h"
 #include "lib/utils.h"
 
-void cube_piece_poly(poly_t *cube, unsigned int n,
-                     unsigned int x, unsigned int y, unsigned int z,
-                     int *facelets)
+int *cube_piece_poly(poly_t *cube, unsigned int n,
+                     unsigned int x, unsigned int y, unsigned int z)
 {
   std_cube(cube);
   mat4x4 m;
@@ -39,10 +38,12 @@ void cube_piece_poly(poly_t *cube, unsigned int n,
   poly_trans(cube, m);
 
   unsigned int coords[3] = {x, y, z};
+
+  int *facelets = malloc(cube->abs.num_faces * sizeof(int));
   for (unsigned int i = 0; i < 6; i++) {
     facelets[i] = (coords[i / 2] == (~i & 1) * (n - 1)) ? (int) i : -1;
   }
-
+  return facelets;
 }
 
 void quat_from_transp(quat q, unsigned int a, unsigned int b)
@@ -234,15 +235,14 @@ quat *cube_puzzle_action_init(puzzle_action_t *action)
 }
 
 
-void cube_model_init_piece(void *data_, poly_t *poly,
-                           unsigned int k, void *orbit_,
-                           int *facelets)
+int *cube_model_init_piece(void *data_, poly_t *poly,
+                           unsigned int k, void *orbit_)
 {
   unsigned int *data = data_;
   unsigned int n = *data;
   orbit_t *orbit = orbit_;
 
-  cube_piece_poly(poly, n, orbit->x, orbit->y, orbit->z, facelets);
+  return cube_piece_poly(poly, n, orbit->x, orbit->y, orbit->z);
 }
 
 unsigned int cube_facelet(void *data_, unsigned int k,

@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void pyraminx_init_piece(poly_t *piece, poly_t *tetra, int type, int *facelets)
+int *pyraminx_init_piece(poly_t *piece, poly_t *tetra, int type)
 {
   abs_tetra(&piece->abs);
   piece->vertices = malloc(4 * sizeof(vec3));
@@ -25,10 +25,10 @@ void pyraminx_init_piece(poly_t *piece, poly_t *tetra, int type, int *facelets)
     vec3_scale(v0[i], v0[i], 1.0 / 3.0);
   }
 
+  int *facelets = malloc(piece->abs.num_faces * sizeof(int));
   for (unsigned int i = 0; i < 4; i++) {
     facelets[i] = -1;
   }
-
 
   memcpy(piece->vertices, tetra->vertices, 4 * sizeof(vec3));
 
@@ -55,14 +55,15 @@ void pyraminx_init_piece(poly_t *piece, poly_t *tetra, int type, int *facelets)
     facelets[3] = 3;
     break;
   }
+
+  return facelets;
 }
 
-static void pyraminx_model_init_piece(void *data, poly_t *poly,
-                                      unsigned int k, void *orbit,
-                                      int *facelets)
+static int *pyraminx_model_init_piece(void *data, poly_t *poly,
+                                      unsigned int k, void *orbit)
 {
   poly_t *tetra = data;
-  pyraminx_init_piece(poly, tetra, k, facelets);
+  return pyraminx_init_piece(poly, tetra, k);
 }
 
 static quat *pyraminx_rotations(puzzle_action_t *action, poly_t *tetra)
