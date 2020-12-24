@@ -36,14 +36,7 @@ void cube_piece_poly(poly_t *cube, unsigned int n,
   };
   mat4x4_translate(m, offset[0], offset[1], offset[2]);
   mat4x4_scale_aniso(m, m, edge, edge, edge);
-
-  for (unsigned int i = 0; i < cube->abs.num_vertices; i++) {
-    vec4 v, w;
-    memcpy(v, cube->vertices[i], sizeof(vec3));
-    v[3] = 1.0;
-    mat4x4_mul_vec4(w, m, v);
-    memcpy(cube->vertices[i], w, sizeof(vec3));
-  }
+  poly_trans(cube, m);
 
   unsigned int coords[3] = {x, y, z};
   for (unsigned int i = 0; i < 6; i++) {
@@ -254,6 +247,10 @@ void cube_model_init_piece(void *data_, poly_t *poly,
 
 void cube_model_cleanup(void *data, puzzle_model_t *model)
 {
+  cube_shape_t *shape = model->orbit_data;
+  cube_shape_cleanup(shape);
+  free(shape);
+
   free(model->init_piece_data);
   free(model->rots);
 }
@@ -271,8 +268,14 @@ vec4 *cube_colours()
   return colours;
 }
 
+static void *cube_puzzle_orbit(void *data, unsigned int i)
+{
+  cube_shape_t *shape = data;
+  return &shape->orbits[i];
+}
+
 void cube_model_init(puzzle_model_t *model, unsigned int n,
-                     quat *rots, decomp_t *decomp)
+                     quat *rots, cube_shape_t *shape)
 {
   model->init_piece = cube_model_init_piece;
 
@@ -283,7 +286,10 @@ void cube_model_init(puzzle_model_t *model, unsigned int n,
   model->rots = rots;
   model->colours = cube_colours();
   model->num_colours = 6;
-  model->decomp = decomp;
+  model->decomp = &shape->decomp;
+
+  model->orbit = cube_puzzle_orbit;
+  model->orbit_data = shape;
 
   model->cleanup = cube_model_cleanup;
   model->cleanup_data = 0;
@@ -302,7 +308,7 @@ puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   puzzle_t *puzzle = malloc(sizeof(puzzle_t));
   cube_puzzle_init(puzzle, action, shape);
   puzzle_model_t *model = malloc(sizeof(puzzle_model_t));
-  cube_model_init(model, n, rots, &shape->decomp);
+  cube_model_init(model, n, rots, shape);
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
 
@@ -318,3 +324,4 @@ puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
 
   return s;
 }
+

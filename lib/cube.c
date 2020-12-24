@@ -199,18 +199,8 @@ struct cube_puzzle_data_t
   puzzle_t *puzzle;
 };
 
-void *cube_puzzle_orbit(void *data, unsigned int i)
-{
-  cube_shape_t *shape = data;
-  return &shape->orbits[i];
-}
-
 void cube_puzzle_cleanup(void *data, puzzle_t *puzzle)
 {
-  cube_shape_t *shape = puzzle->orbit_data;
-  cube_shape_cleanup(shape);
-  free(shape);
-
   puzzle_action_t *action = puzzle->facelet_data;
   puzzle_action_cleanup(action);
   free(action);
@@ -282,9 +272,6 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
   data->action = action;
   data->shape = shape;
   data->puzzle = puzzle;
-
-  puzzle->orbit = cube_puzzle_orbit;
-  puzzle->orbit_data = shape;
 
   puzzle->facelet = cube_puzzle_facelet;
   puzzle->facelet_data = data;

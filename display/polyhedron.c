@@ -101,3 +101,14 @@ void poly_cleanup(poly_t *poly)
   abs_poly_cleanup(&poly->abs);
   free(poly->vertices);
 }
+
+void poly_trans(poly_t *poly, mat4x4 trans)
+{
+  for (unsigned int i = 0; i < poly->abs.num_vertices; i++) {
+    vec4 v, w;
+    memcpy(v, poly->vertices[i], sizeof(vec3));
+    v[3] = 1.0;
+    mat4x4_mul_vec4(w, trans, v);
+    memcpy(poly->vertices[i], w, sizeof(vec3));
+  }
+}

@@ -104,6 +104,8 @@ puzzle_scene_t *square1_scene_new(scene_t *scene)
   puzzle_model_t *model = malloc(sizeof(puzzle_model_t));
   model->init_piece = square1_init_piece;
   model->init_piece_data = 0;
+  model->orbit = puzzle_orbit_default;
+  model->orbit_data = 0;
   model->cleanup = square1_model_cleanup;
   model->cleanup_data = 0;
   model->rots = square1_rotations();

@@ -29,4 +29,6 @@ void std_prism(poly_t *poly, unsigned int num);
 void poly_debug(poly_t *poly);
 void poly_cleanup(poly_t *poly);
 
+void poly_trans(poly_t *poly, mat4x4 trans);
+
 #endif /* POLYHEDRON_H */

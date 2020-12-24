@@ -127,9 +127,6 @@ void megaminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
   puzzle->group = action->group;
   puzzle->decomp = &action->decomp;
 
-  puzzle->orbit = puzzle_orbit_default;
-  puzzle->orbit_data = 0;
-
   puzzle->facelet = puzzle_facelet_default;
   puzzle->facelet_data = action;
 

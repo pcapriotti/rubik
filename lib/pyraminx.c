@@ -204,9 +204,6 @@ void pyraminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
   puzzle->group = action->group;
   puzzle->decomp = &action->decomp;
 
-  puzzle->orbit = puzzle_orbit_default;
-  puzzle->orbit_data = 0;
-
   puzzle->facelet = pyraminx_facelet;
   puzzle->facelet_data = action;
 

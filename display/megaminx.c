@@ -300,6 +300,10 @@ static void megaminx_model_init(puzzle_model_t *model,
 
   model->init_piece = megaminx_model_init_piece;
   model->init_piece_data = dodec;
+
+  model->orbit = puzzle_orbit_default;
+  model->orbit_data = 0;
+
   model->cleanup = megaminx_model_cleanup;
   model->cleanup_data = 0;
   model->decomp = decomp;

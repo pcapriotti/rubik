@@ -39,6 +39,9 @@ struct puzzle_model_t
   void (*cleanup)(void *data, struct puzzle_model_t *model);
   void *cleanup_data;
 
+  void *(*orbit)(void *data, unsigned int i);
+  void *orbit_data;
+
   decomp_t *decomp;
 
   quat *rots;

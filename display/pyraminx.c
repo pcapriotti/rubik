@@ -122,6 +122,9 @@ void pyraminx_model_init(puzzle_model_t *model, puzzle_action_t *action)
   model->colours = colours;
   model->num_colours = 4;
 
+  model->orbit = puzzle_orbit_default;
+  model->orbit_data = 0;
+
   model->cleanup = pyraminx_model_cleanup;
   model->cleanup_data = 0;
 }
