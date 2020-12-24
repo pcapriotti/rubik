@@ -147,7 +147,7 @@ void puzzle_scene_init(puzzle_scene_t *s,
     for (unsigned int k = 0; k < model->decomp->num_orbits; k++) {
       for (unsigned int x = 0; x < model->decomp->orbit_size[k]; x++) {
         for (unsigned int i = 0; i < model->num_colours; i++) {
-          buf[index++] = puzzle->facelet(puzzle->facelet_data, k, x, i);
+          buf[index++] = model->facelet(model->facelet_data, k, x, i);
         }
       }
     }

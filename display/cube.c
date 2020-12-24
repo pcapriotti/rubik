@@ -245,13 +245,21 @@ void cube_model_init_piece(void *data_, poly_t *poly,
   cube_piece_poly(poly, n, orbit->x, orbit->y, orbit->z, facelets);
 }
 
+unsigned int cube_facelet(void *data_, unsigned int k,
+                          unsigned int x, unsigned int i)
+{
+  struct cube_puzzle_data_t *data = data_;
+  orbit_t *orbit = &data->shape->orbits[k];
+  unsigned int g = data->action->by_stab[orbit->dim][x];
+  unsigned int x0 = decomp_global(&data->action->decomp, 2, i);
+  unsigned int y0 = puzzle_action_act(data->action, x0, g);
+  return decomp_local(&data->action->decomp, y0);
+}
+
 void cube_model_cleanup(void *data, puzzle_model_t *model)
 {
-  cube_shape_t *shape = model->orbit_data;
-  cube_shape_cleanup(shape);
-  free(shape);
-
   free(model->init_piece_data);
+  free(model->facelet_data);
   free(model->rots);
 }
 
@@ -275,7 +283,8 @@ static void *cube_puzzle_orbit(void *data, unsigned int i)
 }
 
 void cube_model_init(puzzle_model_t *model, unsigned int n,
-                     quat *rots, cube_shape_t *shape)
+                     quat *rots, cube_shape_t *shape,
+                     puzzle_action_t *action)
 {
   model->init_piece = cube_model_init_piece;
 
@@ -290,6 +299,14 @@ void cube_model_init(puzzle_model_t *model, unsigned int n,
 
   model->orbit = cube_puzzle_orbit;
   model->orbit_data = shape;
+
+  cube_puzzle_data_t *pdata = malloc(sizeof(cube_puzzle_data_t));
+  pdata->action = action;
+  pdata->shape = shape;
+  pdata->puzzle = 0;
+
+  model->facelet = cube_facelet;
+  model->facelet_data = pdata;
 
   model->cleanup = cube_model_cleanup;
   model->cleanup_data = 0;
@@ -308,7 +325,7 @@ puzzle_scene_t *cube_scene_new(scene_t *scene, unsigned int n)
   puzzle_t *puzzle = malloc(sizeof(puzzle_t));
   cube_puzzle_init(puzzle, action, shape);
   puzzle_model_t *model = malloc(sizeof(puzzle_model_t));
-  cube_model_init(model, n, rots, shape);
+  cube_model_init(model, n, rots, shape, action);
 
   puzzle_scene_init(s, scene, conf, puzzle, model);
 

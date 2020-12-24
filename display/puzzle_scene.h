@@ -42,6 +42,12 @@ struct puzzle_model_t
   void *(*orbit)(void *data, unsigned int i);
   void *orbit_data;
 
+  unsigned int (*facelet)(void *data,
+                          unsigned int k,
+                          unsigned int x,
+                          unsigned int i);
+  void *facelet_data;
+
   decomp_t *decomp;
 
   quat *rots;

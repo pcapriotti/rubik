@@ -6,6 +6,7 @@
 #include <memory.h>
 
 #include "megaminx.h"
+#include "bump_cube.h"
 #include "cube.h"
 #include "polyhedron.h"
 #include "piece.h"
@@ -149,6 +150,9 @@ void run(GLFWwindow *window, const char *puzzle, unsigned int arg)
 
   if (!puzzle || !strcmp(puzzle, "cube")) {
     cube_scene_new(scene, arg ? arg : 3);
+  }
+  else if (!strcmp(puzzle, "bump")) {
+    bump_cube_scene_new(scene);
   }
   else if (!strcmp(puzzle, "pyraminx")) {
     pyraminx_scene_new(scene);

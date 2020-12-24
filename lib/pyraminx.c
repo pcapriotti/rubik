@@ -189,23 +189,10 @@ void pyraminx_puzzle_scramble(void *data, uint8_t *conf)
   }
 }
 
-unsigned int pyraminx_facelet(void *data, unsigned int k,
-                              unsigned int x, unsigned int i)
-{
-  puzzle_action_t *action = data;
-  unsigned int g = action->by_stab[k][x];
-  unsigned int x0 = decomp_global(&action->decomp, 0, i);
-  unsigned int y0 = puzzle_action_act(action, x0, g);
-  return decomp_local(&action->decomp, y0);
-}
-
 void pyraminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
 {
   puzzle->group = action->group;
   puzzle->decomp = &action->decomp;
-
-  puzzle->facelet = pyraminx_facelet;
-  puzzle->facelet_data = action;
 
   puzzle->cleanup = pyraminx_puzzle_cleanup;
   puzzle->cleanup_data = 0;

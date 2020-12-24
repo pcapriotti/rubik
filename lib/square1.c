@@ -193,24 +193,6 @@ void square1_action_init(puzzle_action_t *action)
   }
 }
 
-unsigned int square1_facelet(void *data, unsigned int k, unsigned int x, unsigned int i)
-{
-  static const unsigned int col[] = { 2, 4, 3, 5 };
-  if (i == 0) return x & 1;
-
-  if (k < 2) {
-    if (x & 1) i = 3 - i;
-    x >>= 1;
-  }
-  else {
-    x <<= 1;
-  }
-
-  unsigned int index = (x + i - 1) % 4;
-
-  return col[index];
-}
-
 void square1_perm(uint8_t *perm_inv)
 {
   perm_id(perm_inv, 16);
@@ -309,9 +291,6 @@ void square1_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
   puzzle->decomp = malloc(sizeof(decomp_t));
   unsigned int orbit_size[] = { 8, 8, 2 };
   decomp_init(puzzle->decomp, 3, orbit_size);
-
-  puzzle->facelet = square1_facelet;
-  puzzle->facelet_data = 0;
 
   puzzle->cleanup = square1_puzzle_cleanup;
   puzzle->cleanup_data = 0;

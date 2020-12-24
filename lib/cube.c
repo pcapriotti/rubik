@@ -192,20 +192,17 @@ void cube_scramble(puzzle_action_t *action, cube_shape_t *shape, uint8_t *conf)
   }
 }
 
-struct cube_puzzle_data_t
-{
-  puzzle_action_t *action;
-  cube_shape_t *shape;
-  puzzle_t *puzzle;
-};
-
 void cube_puzzle_cleanup(void *data, puzzle_t *puzzle)
 {
-  puzzle_action_t *action = puzzle->facelet_data;
-  puzzle_action_cleanup(action);
-  free(action);
+  cube_puzzle_data_t *pdata = puzzle->move_data;
 
-  free(puzzle->move_data);
+  puzzle_action_cleanup(pdata->action);
+  free(pdata->action);
+
+  cube_shape_cleanup(pdata->shape);
+  free(pdata->shape);
+
+  free(pdata);
 }
 
 struct in_layer_data_t
@@ -228,7 +225,7 @@ int cube_move_in_layer(void *data_, uint8_t *conf,
 turn_t *cube_puzzle_move(void *data_, uint8_t *conf,
                          unsigned int f, unsigned int l, int c)
 {
-  struct cube_puzzle_data_t *data = data_;
+  cube_puzzle_data_t *data = data_;
 
   struct in_layer_data_t ldata;
   ldata.action = data->action;
@@ -247,19 +244,8 @@ turn_t *cube_puzzle_move(void *data_, uint8_t *conf,
 
 void cube_puzzle_scramble(void *data_, uint8_t *conf)
 {
-  struct cube_puzzle_data_t *data = data_;
+  cube_puzzle_data_t *data = data_;
   cube_scramble(data->action, data->shape, conf);
-}
-
-unsigned int cube_puzzle_facelet(void *data_, unsigned int k,
-                                 unsigned int x, unsigned int i)
-{
-  struct cube_puzzle_data_t *data = data_;
-  orbit_t *orbit = &data->shape->orbits[k];
-  unsigned int g = data->action->by_stab[orbit->dim][x];
-  unsigned int x0 = decomp_global(&data->action->decomp, 2, i);
-  unsigned int y0 = puzzle_action_act(data->action, x0, g);
-  return decomp_local(&data->action->decomp, y0);
 }
 
 void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *shape)
@@ -267,14 +253,11 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
   puzzle->group = action->group;
   puzzle->decomp = &shape->decomp;
 
-  struct cube_puzzle_data_t *data =
-    malloc(sizeof(struct cube_puzzle_data_t));
+  cube_puzzle_data_t *data =
+    malloc(sizeof(cube_puzzle_data_t));
   data->action = action;
   data->shape = shape;
   data->puzzle = puzzle;
-
-  puzzle->facelet = cube_puzzle_facelet;
-  puzzle->facelet_data = data;
 
   puzzle->cleanup = cube_puzzle_cleanup;
   puzzle->cleanup_data = 0;

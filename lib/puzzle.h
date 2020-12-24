@@ -124,9 +124,6 @@ struct puzzle_t
   group_t *group;
   decomp_t *decomp;
 
-  unsigned int (*facelet)(void *data, unsigned int k, unsigned int x, unsigned int i);
-  void *facelet_data;
-
   void (*cleanup)(void *data, struct puzzle_t *puzzle);
   void *cleanup_data;
 

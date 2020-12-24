@@ -89,6 +89,28 @@ quat *square1_rotations()
   return rots;
 }
 
+unsigned int square1_facelet(void *data,
+                             unsigned int k,
+                             unsigned int x,
+                             unsigned int i)
+{
+  static const unsigned int col[] = { 2, 4, 3, 5 };
+  if (i == 0) return x & 1;
+
+  if (k < 2) {
+    if (x & 1) i = 3 - i;
+    x >>= 1;
+  }
+  else {
+    x <<= 1;
+  }
+
+  unsigned int index = (x + i - 1) % 4;
+
+  return col[index];
+}
+
+
 puzzle_scene_t *square1_scene_new(scene_t *scene)
 {
   puzzle_scene_t *s = malloc(sizeof(puzzle_scene_t));
@@ -104,10 +126,16 @@ puzzle_scene_t *square1_scene_new(scene_t *scene)
   puzzle_model_t *model = malloc(sizeof(puzzle_model_t));
   model->init_piece = square1_init_piece;
   model->init_piece_data = 0;
+
   model->orbit = puzzle_orbit_default;
   model->orbit_data = 0;
+
+  model->facelet = square1_facelet;
+  model->facelet_data = 0;
+
   model->cleanup = square1_model_cleanup;
   model->cleanup_data = 0;
+
   model->rots = square1_rotations();
   model->colours = cube_colours();
   model->num_colours = 6;

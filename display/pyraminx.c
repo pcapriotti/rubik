@@ -102,6 +102,16 @@ static void pyraminx_model_cleanup(void *data, puzzle_model_t *model)
   free(model->rots);
 }
 
+unsigned int pyraminx_facelet(void *data, unsigned int k,
+                              unsigned int x, unsigned int i)
+{
+  puzzle_action_t *action = data;
+  unsigned int g = action->by_stab[k][x];
+  unsigned int x0 = decomp_global(&action->decomp, 0, i);
+  unsigned int y0 = puzzle_action_act(action, x0, g);
+  return decomp_local(&action->decomp, y0);
+}
+
 void pyraminx_model_init(puzzle_model_t *model, puzzle_action_t *action)
 {
   poly_t *tetra = malloc(sizeof(poly_t));
@@ -124,6 +134,9 @@ void pyraminx_model_init(puzzle_model_t *model, puzzle_action_t *action)
 
   model->orbit = puzzle_orbit_default;
   model->orbit_data = 0;
+
+  model->facelet = pyraminx_facelet;
+  model->facelet_data = action;
 
   model->cleanup = pyraminx_model_cleanup;
   model->cleanup_data = 0;

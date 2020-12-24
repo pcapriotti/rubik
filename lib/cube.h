@@ -23,18 +23,16 @@ typedef struct
 void cube_shape_init(cube_shape_t *shape, unsigned int n);
 void cube_shape_cleanup(cube_shape_t *shape);
 
-struct cube_t
+struct cube_puzzle_data_t
 {
+  puzzle_action_t *action;
   cube_shape_t *shape;
-  uint8_t *pieces;
+  puzzle_t *puzzle;
 };
-typedef struct cube_t cube_t;
+typedef struct cube_puzzle_data_t cube_puzzle_data_t;
 
 uint8_t *cube_new(puzzle_action_t *action, cube_shape_t *shape);
 
-cube_t *cube_generators(cube_t *cube, puzzle_action_t *puzzle, unsigned int *num_gen);
-void cube_act(puzzle_action_t *puzzle, cube_t *cube1, cube_t *cube, cube_t *move);
-void cube_act_(puzzle_action_t *syms, cube_t *cube, cube_t *move);
 turn_t *cube_move_(puzzle_action_t *action, cube_shape_t *shape,
                    uint8_t *conf, unsigned int f, unsigned int l, int c);
 turn_t *cube_move(puzzle_action_t *action,

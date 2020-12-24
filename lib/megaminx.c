@@ -102,9 +102,6 @@ void megaminx_scramble(puzzle_action_t *action, uint8_t *conf)
 
 static void megaminx_puzzle_cleanup(void *data, puzzle_t *puzzle)
 {
-  puzzle_action_t *action = puzzle->facelet_data;
-  puzzle_action_cleanup(action);
-  free(action);
 }
 
 
@@ -126,9 +123,6 @@ void megaminx_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action)
 {
   puzzle->group = action->group;
   puzzle->decomp = &action->decomp;
-
-  puzzle->facelet = puzzle_facelet_default;
-  puzzle->facelet_data = action;
 
   puzzle->cleanup = megaminx_puzzle_cleanup;
   puzzle->cleanup_data = 0;
