@@ -268,3 +268,21 @@ void cube_puzzle_init(puzzle_t *puzzle, puzzle_action_t *action, cube_shape_t *s
   puzzle->scramble = cube_puzzle_scramble;
   puzzle->scramble_data = data;
 }
+
+void cube_orbit_act_(unsigned int n, orbit_t *orbit, unsigned int g)
+{
+  uint8_t perm[3];
+  perm_from_index(perm, 3, g >> 2, 3);
+  uint8_t sign = perm_sign(perm, 3);
+
+  uint8_t flips = g & 3;
+  flips |= (__builtin_popcount(flips) ^ sign) << 2;
+
+  uint8_t coords[3] = { orbit->x, orbit->y, orbit->z };
+  for (unsigned int i = 0; i < 3; i++) {
+    coords[i] = flips & (1 << i) ? n - coords[i] - 1 : coords[i];
+  }
+  orbit->x = coords[perm[0]];
+  orbit->y = coords[perm[1]];
+  orbit->z = coords[perm[2]];
+}

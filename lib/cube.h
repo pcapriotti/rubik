@@ -12,6 +12,8 @@ struct orbit_t {
 };
 typedef struct orbit_t orbit_t;
 
+void cube_orbit_act_(unsigned int n, orbit_t *orbit, unsigned int g);
+
 typedef struct
 {
   unsigned int n;
